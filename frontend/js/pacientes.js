@@ -9,9 +9,6 @@ if (!clinicaID) {
   window.location.href = "index.html";
 }
 
-/* =========================
-   DATOS DE SESIÓN
-========================= */
 const rol = localStorage.getItem("rol") || "admin";
 
 /* =========================
@@ -36,11 +33,18 @@ try {
 }
 
 /* =========================
-   GUARDAR
+   GUARDAR (LOCAL + NUBE)
 ========================= */
-function guardar() {
+async function guardar() {
+  // 1. Guardar en el navegador (siempre funciona)
   savePacientes(pacientes);
   render();
+
+  // 2. Intentar subir a Render (Nube)
+  console.log("☁️ Sincronizando con la nube...");
+  if (typeof syncAllToCloud === "function") {
+      await syncAllToCloud();
+  }
 }
 
 /* =========================
@@ -48,15 +52,8 @@ function guardar() {
 ========================= */
 function validarPaciente(nombre, edad, telefono) {
   if (!nombre) return "El nombre es obligatorio";
-
-  if (edad && (edad < 0 || edad > 120)) {
-    return "Edad no válida";
-  }
-
-  if (telefono && telefono.length < 6) {
-    return "Teléfono no válido";
-  }
-
+  if (edad && (edad < 0 || edad > 120)) return "Edad no válida";
+  if (telefono && telefono.length < 6) return "Teléfono no válido";
   return null;
 }
 
@@ -65,7 +62,6 @@ function validarPaciente(nombre, edad, telefono) {
 ========================= */
 function render(data = pacientes) {
   lista.innerHTML = "";
-
   if (!data.length) {
     lista.innerHTML = "<li>No hay pacientes registrados</li>";
     return;
@@ -73,7 +69,6 @@ function render(data = pacientes) {
 
   data.forEach(p => {
     const li = document.createElement("li");
-
     li.innerHTML = `
       <strong>${p.nombre}</strong><br>
       Edad: ${p.edad || "-"}<br>
@@ -90,12 +85,11 @@ function render(data = pacientes) {
       ${
         rol !== "recepcion"
           ? `<button type="button" onclick="eliminarPaciente(${p.id})">
-               🗑️ Eliminar
+                🗑️ Eliminar
              </button>`
           : ""
       }
     `;
-
     lista.appendChild(li);
   });
 }
@@ -114,11 +108,8 @@ function agregarPaciente() {
     return;
   }
 
-  // Evitar duplicados
   const existe = pacientes.some(
-    p =>
-      p.nombre.toLowerCase() === nombre.toLowerCase() &&
-      p.telefono === telefono
+    p => p.nombre.toLowerCase() === nombre.toLowerCase() && p.telefono === telefono
   );
 
   if (existe) {
@@ -142,7 +133,7 @@ function agregarPaciente() {
 }
 
 /* =========================
-   EDITAR (PRO)
+   EDITAR
 ========================= */
 function editarPaciente(id) {
   const p = pacientes.find(p => p.id === id);
@@ -154,12 +145,7 @@ function editarPaciente(id) {
   const nuevaEdad = prompt("Edad:", p.edad || "");
   const nuevoTelefono = prompt("Teléfono:", p.telefono || "");
 
-  const error = validarPaciente(
-    nuevoNombre.trim(),
-    nuevaEdad,
-    nuevoTelefono
-  );
-
+  const error = validarPaciente(nuevoNombre.trim(), nuevaEdad, nuevoTelefono);
   if (error) {
     alert(error);
     return;
@@ -188,36 +174,22 @@ function eliminarPaciente(id) {
   guardar();
 }
 
-/* =========================
-   HISTORIAL
-========================= */
 function verHistorial(id) {
   localStorage.setItem("pacienteActual", String(id));
   window.location.href = "historial.html";
 }
 
-/* =========================
-   BUSCAR / FILTRAR
-========================= */
 function filtrarPacientes() {
   const texto = busquedaInput.value.toLowerCase();
-
   const filtrados = pacientes.filter(p =>
     p.nombre.toLowerCase().includes(texto) ||
     (p.telefono && p.telefono.includes(texto))
   );
-
   render(filtrados);
 }
 
-/* =========================
-   VOLVER
-========================= */
 function volver() {
   window.location.href = "dashboard.html";
 }
 
-/* =========================
-   INIT
-========================= */
 render();
