@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ClinicOS | Historial Clínico</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="container">
+    <h1>Historial clínico</h1>
+    <p class="subtitulo" id="pacienteNombre">Paciente</p>
+
+    <!-- NOTA MÉDICA -->
+    <div class="card">
+      <label><strong>Tipo de nota</strong></label>
+      <select id="tipoNota">
+        <option value="Consulta">Consulta</option>
+        <option value="Diagnóstico">Diagnóstico</option>
+        <option value="Seguimiento">Seguimiento</option>
+        <option value="Receta">Receta</option>
+      </select>
+
+      <label><strong>Nota médica</strong></label>
+      <textarea
+        id="nota"
+        placeholder="Escribir nota médica detallada..."
+        style="width:100%;height:120px;border-radius:8px;padding:10px;"
+      ></textarea>
+
+      <div style="margin-top:10px;">
+        <button type="button" onclick="agregarNota()">Agregar nota</button>
+        <button type="button" onclick="exportarPDF()" style="margin-left:10px;">
+          Descargar PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- HISTORIAL -->
+    <ul class="lista" id="listaHistorial"></ul>
+
+    <button class="logout" type="button" onclick="volver()">Volver</button>
+  </div>
+
+  <script src="js/session.js"></script>
+  <script src="js/storage.js"></script>
+
+  <!-- PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="js/pdf.js"></script>
+
+  <script src="js/historial.js"></script>
+</body>
+</html>

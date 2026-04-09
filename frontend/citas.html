@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ClinicOS | Citas</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <div class="container">
+    <h1>Gestión de Citas</h1>
+
+    <!-- FORMULARIO -->
+    <label>Paciente</label>
+    <select id="pacienteSelect">
+      <option value="">Seleccione un paciente</option>
+    </select>
+
+    <label>Fecha</label>
+    <input type="date" id="fecha">
+
+    <label>Hora</label>
+    <input type="time" id="hora">
+
+    <button type="button" onclick="agregarCita()">Agregar Cita</button>
+
+    <h2>Lista de Citas</h2>
+    <ul class="lista" id="listaCitas"></ul>
+
+    <button class="logout" type="button" onclick="volver()">Volver</button>
+  </div>
+
+  <!-- SESIÓN -->
+  <script src="js/session.js"></script>
+
+  <!-- STORAGE (OBLIGATORIO) -->
+  <script src="js/storage.js"></script>
+
+  <!-- CITAS -->
+  <script src="js/citas.js"></script>
+
+</body>
+</html>
