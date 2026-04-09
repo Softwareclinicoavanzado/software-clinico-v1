@@ -31,7 +31,6 @@ const loginBtn = document.getElementById("loginBtn");
 const params = new URLSearchParams(window.location.search);
 let clinicaID = params.get("clinica");
 
-// 🔒 fallback automático (IMPORTANTE para celular)
 if (!clinicaID) {
   clinicaID = localStorage.getItem("clinicaID") || "clinica1";
 }
@@ -73,12 +72,18 @@ loginBtn.onclick = () => {
     return;
   }
 
-  // ✅ sesión limpia y completa
   localStorage.setItem("clinicaID", clinicaID);
   localStorage.setItem("clinicaNombre", clinica.nombre);
   localStorage.setItem("rol", data.rol);
   localStorage.setItem("usuario", usuario);
   localStorage.setItem("loginTime", new Date().toISOString());
 
-  window.location.href = "dashboard.html";
+  // 🔥 Sincronizamos antes de entrar al dashboard para asegurar que todo esté en la nube
+  if (typeof syncAllToCloud === "function") {
+      syncAllToCloud().finally(() => {
+          window.location.href = "dashboard.html";
+      });
+  } else {
+      window.location.href = "dashboard.html";
+  }
 };
