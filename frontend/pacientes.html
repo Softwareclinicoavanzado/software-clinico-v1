@@ -4,49 +4,43 @@
   <meta charset="UTF-8">
   <title>ClinicOS | Pacientes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
 
   <div class="container">
     <h1>Pacientes</h1>
 
-    <!-- FORMULARIO (SIN SUBMIT AUTOMÁTICO) -->
-    <div class="form-group">
-      <input type="text" id="nombre" placeholder="Nombre completo">
-      <input type="number" id="edad" placeholder="Edad">
-      <input type="text" id="telefono" placeholder="Teléfono">
+    <div class="card"> <div class="form-group">
+        <input type="text" id="nombre" placeholder="Nombre completo">
+        <input type="number" id="edad" placeholder="Edad">
+        <input type="text" id="telefono" placeholder="Teléfono">
 
-      <!-- 🔥 CLAVE: type="button" -->
-      <button type="button" onclick="agregarPaciente()">
-        Agregar paciente
-      </button>
+        <button type="button" onclick="agregarPaciente()">
+          Añadir a la lista
+        </button>
+      </div>
     </div>
 
-    <!-- BUSCADOR -->
+    <br>
+
     <input
       type="text"
       id="busqueda"
-      placeholder="Buscar paciente..."
+      placeholder="🔍 Buscar paciente por nombre o tel..."
       oninput="filtrarPacientes()"
     >
 
-    <!-- LISTA -->
     <ul class="lista" id="listaPacientes"></ul>
 
-    <button class="logout" type="button" onclick="volver()">
-      Volver
+    <button class="secondary" type="button" onclick="volver()">
+      Volver al Dashboard
     </button>
   </div>
 
-  <!-- SESIÓN -->
-  <script src="js/session.js"></script>
-
-  <!-- STORAGE (OBLIGATORIO) -->
-  <script src="js/storage.js"></script>
-
-  <!-- PACIENTES -->
-  <script src="js/pacientes.js"></script>
+  <script src="./js/session.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/pacientes.js"></script>
 
 </body>
 </html>
