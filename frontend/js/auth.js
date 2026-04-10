@@ -19,10 +19,10 @@ const clinicas = {
 };
 
 /* =========================
-   ELEMENTOS
+   ELEMENTOS (Protegidos para que no den error)
 ========================= */
 const mensaje = document.getElementById("mensaje");
-const error = document.getElementById("error");
+const errorDisplay = document.getElementById("error"); // Cambiado el nombre interno para no chocar
 const loginBtn = document.getElementById("loginBtn");
 
 /* =========================
@@ -36,54 +36,65 @@ if (!clinicaID) {
 }
 
 /* =========================
-   MENSAJE
+   MENSAJE DE BIENVENIDA
 ========================= */
-if (!clinicas[clinicaID]) {
-  mensaje.innerText = "Clínica no válida";
-  loginBtn.disabled = true;
-} else {
-  mensaje.innerText = "Acceso a " + clinicas[clinicaID].nombre;
+if (mensaje) {
+    if (!clinicas[clinicaID]) {
+      mensaje.innerText = "Clínica no válida";
+      if (loginBtn) loginBtn.disabled = true;
+    } else {
+      mensaje.innerText = "Acceso a " + clinicas[clinicaID].nombre;
+    }
 }
 
 /* =========================
    LOGIN
 ========================= */
-loginBtn.onclick = () => {
-  error.innerText = "";
+if (loginBtn) {
+    loginBtn.onclick = () => {
+      if (errorDisplay) errorDisplay.innerText = "";
 
-  const usuario = document.getElementById("usuario").value.trim();
-  const password = document.getElementById("password").value.trim();
+      const usuarioInput = document.getElementById("usuario");
+      const passwordInput = document.getElementById("password");
 
-  if (!usuario || !password) {
-    error.innerText = "Completa todos los campos";
-    return;
-  }
+      if (!usuarioInput || !passwordInput) return;
 
-  const clinica = clinicas[clinicaID];
-  if (!clinica || !clinica.usuarios[usuario]) {
-    error.innerText = "Usuario no válido";
-    return;
-  }
+      const usuario = usuarioInput.value.trim();
+      const password = passwordInput.value.trim();
 
-  const data = clinica.usuarios[usuario];
+      if (!usuario || !password) {
+        if (errorDisplay) errorDisplay.innerText = "Completa todos los campos";
+        return;
+      }
 
-  if (data.password !== password) {
-    error.innerText = "Contraseña incorrecta";
-    return;
-  }
+      const clinica = clinicas[clinicaID];
+      if (!clinica || !clinica.usuarios[usuario]) {
+        if (errorDisplay) errorDisplay.innerText = "Usuario no válido";
+        return;
+      }
 
-  localStorage.setItem("clinicaID", clinicaID);
-  localStorage.setItem("clinicaNombre", clinica.nombre);
-  localStorage.setItem("rol", data.rol);
-  localStorage.setItem("usuario", usuario);
-  localStorage.setItem("loginTime", new Date().toISOString());
+      const data = clinica.usuarios[usuario];
 
-  // 🔥 Sincronizamos antes de entrar al dashboard para asegurar que todo esté en la nube
-  if (typeof syncAllToCloud === "function") {
-      syncAllToCloud().finally(() => {
+      if (data.password !== password) {
+        if (errorDisplay) errorDisplay.innerText = "Contraseña incorrecta";
+        return;
+      }
+
+      // Guardar sesión
+      localStorage.setItem("clinicaID", clinicaID);
+      localStorage.setItem("clinicaNombre", clinica.nombre);
+      localStorage.setItem("rol", data.rol);
+      localStorage.setItem("usuario", usuario);
+      localStorage.setItem("loginTime", new Date().toISOString());
+
+      // Sincronización con Render
+      if (typeof syncAllToCloud === "function") {
+          if (errorDisplay) errorDisplay.innerText = "Sincronizando con la nube...";
+          syncAllToCloud().finally(() => {
+              window.location.href = "dashboard.html";
+          });
+      } else {
           window.location.href = "dashboard.html";
-      });
-  } else {
-      window.location.href = "dashboard.html";
-  }
-};
+      }
+    };
+}
