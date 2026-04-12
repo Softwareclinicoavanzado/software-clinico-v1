@@ -3,8 +3,7 @@
 ========================= */
 
 const STORAGE_VERSION = "1.1.2";
-// Asegúrate de que esta URL sea la de tu servicio en Render
-const API_URL = "https://software-clinico-v1.onrender.com"; 
+const API_URL = "https://software-clinico-v1.onrender.com";
 
 function getClinicaID() {
     const id = localStorage.getItem("clinicaID");
@@ -21,17 +20,22 @@ function safeParse(key, fallback = []) {
 }
 
 function saveLocal(key, data) {
-    localStorage.setItem(key, JSON.stringify(data));
+    try {
+        localStorage.setItem(key, JSON.stringify(data));
+        localStorage.setItem(`${key}_last_sync`, new Date().toISOString());
+    } catch (e) {
+        console.error("Error crítico de espacio local");
+    }
 }
 
-// --- MÓDULOS ---
+// --- MÓDULOS DE DATOS ---
 function getPacientes() {
     return safeParse(`pacientes_${getClinicaID()}`, []);
 }
 
 function savePacientes(data) {
     saveLocal(`pacientes_${getClinicaID()}`, data);
-    syncData('/api/pacientes', data); // Sincroniza pacientes
+    silentSync('pacientes', data); 
 }
 
 function getCitas() {
@@ -40,29 +44,39 @@ function getCitas() {
 
 function saveCitas(data) {
     saveLocal(`citas_${getClinicaID()}`, data);
-    syncData('/api/citas', data); // Sincroniza citas
+    silentSync('citas', data);
 }
 
-// --- NUEVA FUNCIÓN DE SINCRONIZACIÓN POR MÓDULO ---
-async function syncData(endpoint, data) {
-    const clinicaID = getClinicaID();
+// --- SINCRONIZACIÓN ASÍNCRONA ORIGINAL ---
+async function silentSync(tipo = 'general', data = null) {
+    const id = getClinicaID();
+    
+    // Si mandamos un dato específico (como un nuevo paciente)
+    let payload = data;
+    if (Array.isArray(data)) payload = data[data.length - 1];
+
     try {
-        // Si es una lista (pacientes/citas), mandamos el último agregado o toda la lista
-        // Para simplificar tu main.py actual, mandamos el último elemento si es POST
-        const payload = Array.isArray(data) ? data[data.length - 1] : data;
-        
-        await fetch(`${API_URL}${endpoint}?clinica_id=${clinicaID}`, {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        const endpoint = tipo === 'pacientes' ? '/api/pacientes' : (tipo === 'citas' ? '/api/citas' : '/sync');
+
+        const response = await fetch(`${API_URL}${endpoint}?clinica_id=${id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload || { clinica_id: id, status: "ping" }),
+            signal: controller.signal
         });
-        console.log(`☁️ Sincronizado con ${endpoint}`);
-    } catch (e) {
-        console.warn("📡 Falló la conexión, guardado localmente.");
+
+        clearTimeout(timeoutId);
+        if (response.ok) console.log(`☁️ Nube actualizada: ${tipo}`);
+    } catch (error) {
+        console.log("📡 Modo Local: Guardado. Se sincronizará luego.");
     }
 }
 
 async function syncAllToCloud() {
-    // Esta función la dejamos para compatibilidad con tus botones
-    console.log("Sincronización completa activada...");
+    await silentSync();
 }
+
+console.log(`🚀 Storage Engine v${STORAGE_VERSION} cargado.`);
