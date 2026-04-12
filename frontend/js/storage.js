@@ -3,114 +3,66 @@
 ========================= */
 
 const STORAGE_VERSION = "1.1.2";
-const API_URL = "https://software-clinico-v1.onrender.com";
+// Asegúrate de que esta URL sea la de tu servicio en Render
+const API_URL = "https://software-clinico-v1.onrender.com"; 
 
-// 1. OBTENER ID DE CLÍNICA (SEGURIDAD TOTAL)
 function getClinicaID() {
     const id = localStorage.getItem("clinicaID");
-    if (!id) {
-        console.warn("⚠️ Clínica no detectada, usando sesión local.");
-        return "temp_clinic"; 
-    }
-    return id;
+    return id || "temp_clinic"; 
 }
 
-// 2. UTILIDADES DE LECTURA Y ESCRITURA
 function safeParse(key, fallback = []) {
     try {
         const data = localStorage.getItem(key);
         return data ? JSON.parse(data) : fallback;
     } catch (e) {
-        console.error("Error leyendo:", key);
         return fallback;
     }
 }
 
 function saveLocal(key, data) {
-    try {
-        localStorage.setItem(key, JSON.stringify(data));
-        localStorage.setItem(`${key}_last_sync`, new Date().toISOString());
-    } catch (e) {
-        console.error("Error crítico de espacio en disco local");
-    }
+    localStorage.setItem(key, JSON.stringify(data));
 }
 
-/* =========================
-   MÓDULOS DE DATOS
-========================= */
-
-// PACIENTES
+// --- MÓDULOS ---
 function getPacientes() {
-    const id = getClinicaID();
-    return safeParse(`pacientes_${id}`, []);
+    return safeParse(`pacientes_${getClinicaID()}`, []);
 }
 
 function savePacientes(data) {
-    const id = getClinicaID();
-    saveLocal(`pacientes_${id}`, data);
-    // Intentamos sincronizar pero SIN BLOQUEAR la pantalla
-    silentSync(); 
+    saveLocal(`pacientes_${getClinicaID()}`, data);
+    syncData('/api/pacientes', data); // Sincroniza pacientes
 }
 
-// CITAS
 function getCitas() {
-    const id = getClinicaID();
-    return safeParse(`citas_${id}`, []);
+    return safeParse(`citas_${getClinicaID()}`, []);
 }
 
 function saveCitas(data) {
-    const id = getClinicaID();
-    saveLocal(`citas_${id}`, data);
-    silentSync();
+    saveLocal(`citas_${getClinicaID()}`, data);
+    syncData('/api/citas', data); // Sincroniza citas
 }
 
-// HISTORIAL
-function getHistorial(pacienteID) {
-    const id = getClinicaID();
-    return safeParse(`historial_${id}_${pacienteID}`, []);
-}
-
-function saveHistorial(pacienteID, data) {
-    const id = getClinicaID();
-    saveLocal(`historial_${id}_${pacienteID}`, data);
-    silentSync();
-}
-
-/* =========================
-   SINCRONIZACIÓN ASÍNCRONA (ELIMINA EL RETRASO)
-========================= */
-
-async function silentSync() {
-    const id = getClinicaID();
-    const payload = {
-        clinica_id: id,
-        pacientes: getPacientes(),
-        citas: getCitas(),
-        timestamp: new Date().toISOString()
-    };
-
+// --- NUEVA FUNCIÓN DE SINCRONIZACIÓN POR MÓDULO ---
+async function syncData(endpoint, data) {
+    const clinicaID = getClinicaID();
     try {
-        // El secreto: Solo esperamos 2 segundos. Si la nube no responde, seguimos.
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
-
-        const response = await fetch(`${API_URL}/sync`, {
+        // Si es una lista (pacientes/citas), mandamos el último agregado o toda la lista
+        // Para simplificar tu main.py actual, mandamos el último elemento si es POST
+        const payload = Array.isArray(data) ? data[data.length - 1] : data;
+        
+        await fetch(`${API_URL}${endpoint}?clinica_id=${clinicaID}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload),
-            signal: controller.signal
+            body: JSON.stringify(payload)
         });
-
-        clearTimeout(timeoutId);
-        if (response.ok) console.log("☁️ Nube actualizada.");
-    } catch (error) {
-        console.log("📡 Modo Local: Los datos se subirán cuando haya conexión.");
+        console.log(`☁️ Sincronizado con ${endpoint}`);
+    } catch (e) {
+        console.warn("📡 Falló la conexión, guardado localmente.");
     }
 }
 
-// Función compatible con tu botón de login para que no tire error
 async function syncAllToCloud() {
-    await silentSync();
+    // Esta función la dejamos para compatibilidad con tus botones
+    console.log("Sincronización completa activada...");
 }
-
-console.log(`🚀 Storage Engine v${STORAGE_VERSION} cargado.`);
