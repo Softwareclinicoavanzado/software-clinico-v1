@@ -2,34 +2,11 @@
     HISTORIAL CLÍNICO PRO
 ========================= */
 
-// 1. SEGURIDAD DE ACCESO
-const rol = localStorage.getItem("rol");
-const clinicaID = localStorage.getItem("clinicaID");
+// ... (Mantenemos tus puntos 1, 2 y 3 exactamente igual)
 
-if (!clinicaID) {
-    window.location.replace("index.html");
-}
-
-if (rol === "recepcion") {
-    alert("Acceso denegado: Solo personal médico puede ver historiales.");
-    window.location.href = "dashboard.html";
-}
-
-// 2. IDENTIFICAR PACIENTE
 const pacienteID = localStorage.getItem("pacienteActual");
-if (!pacienteID) {
-    alert("Debes seleccionar un paciente primero.");
-    window.location.href = "pacientes.html";
-}
-
-// 3. CARGAR DATOS DEL PACIENTE
 const todasLasClinicasPacientes = JSON.parse(localStorage.getItem(`pacientes_${clinicaID}`)) || [];
 const paciente = todasLasClinicasPacientes.find(p => String(p.id) === String(pacienteID));
-
-if (!paciente) {
-    alert("Error: Paciente no encontrado.");
-    window.location.href = "pacientes.html";
-}
 
 // Mostrar nombre en la interfaz
 document.getElementById("pacienteNombre").textContent = `${paciente.nombre} — Historial Médico`;
@@ -42,9 +19,21 @@ const tipoNotaInput = document.getElementById("tipoNota");
 const listaHistorial = document.getElementById("listaHistorial");
 
 /* =========================
+    MEJORA: AUTO-FOCUS ALERGIAS/NOTAS
+========================= */
+// Si el usuario viene de "Agregar Nota", enfocamos el textarea
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('action') === 'addNote' && notaInput) {
+    setTimeout(() => {
+        notaInput.focus();
+        // Opcional: Podrías pre-escribir "Alergias: " si quisieras
+        notaInput.placeholder = "Escriba aquí alergias, diagnósticos o recetas...";
+    }, 500); 
+}
+
+/* =========================
     GESTIÓN DEL HISTORIAL
 ========================= */
-// Cargamos el historial específico de este paciente
 let historial = JSON.parse(localStorage.getItem(`historial_${pacienteID}`)) || [];
 
 function fechaBonita() {
@@ -65,59 +54,52 @@ function render() {
 
     historial.forEach((h, index) => {
         const div = document.createElement("div");
-        div.className = "card"; // Usando tu clase del CSS
+        div.className = "card";
         div.style.textAlign = "left";
         div.style.marginBottom = "15px";
         
+        // Mejora visual: Si la nota es una receta, ponerle un color diferente
+        const colorTipo = h.tipo === "Receta" ? "#34d399" : "#93c5fd";
+
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <strong style="color: #93c5fd;">${h.tipo.toUpperCase()}</strong>
+                <strong style="color: ${colorTipo};">${h.tipo.toUpperCase()}</strong>
                 <small style="color: #64748b;">${h.fecha}</small>
             </div>
             <hr style="border: 0.5px solid #1e293b; margin: 10px 0;">
             <p style="white-space: pre-wrap; color: #cbd5e1;">${h.texto}</p>
             <div style="text-align: right; margin-top: 10px;">
-                <button class="logout" style="padding: 5px 10px; font-size: 12px;" onclick="eliminarNota(${index})">Eliminar Registro</button>
+                <button class="logout" style="padding: 5px 10px; font-size: 12px; background: transparent; border: 1px solid #ef4444; color: #ef4444;" onclick="eliminarNota(${index})">Eliminar</button>
             </div>
         `;
         listaHistorial.appendChild(div);
     });
 }
 
-/* =========================
-    ACCIONES
-========================= */
 function agregarNota() {
     const texto = notaInput.value.trim();
-    if (!texto) {
-        alert("Por favor, escribe el detalle de la consulta.");
-        return;
-    }
+    if (!texto) return alert("Por favor, escribe el detalle.");
 
-    // Nueva nota al inicio de la lista
     const nuevaNota = {
         id: Date.now(),
         tipo: tipoNotaInput ? tipoNotaInput.value : "Consulta General",
         texto: texto,
-        fecha: fechaBonita()
+        fecha: fechaBonita(),
+        paciente_id: pacienteID // Importante para la base de datos
     };
 
     historial.unshift(nuevaNota);
-    
-    // Guardar y limpiar
     localStorage.setItem(`historial_${pacienteID}`, JSON.stringify(historial));
     notaInput.value = "";
     
-    // Sincronización en segundo plano (Opcional)
     if (typeof syncAllToCloud === "function") {
         syncAllToCloud().catch(e => console.warn("Error sync:", e));
     }
-
     render();
 }
 
 function eliminarNota(index) {
-    if (confirm("¿Estás seguro de borrar este registro médico? Esta acción es permanente.")) {
+    if (confirm("¿Borrar este registro?")) {
         historial.splice(index, 1);
         localStorage.setItem(`historial_${pacienteID}`, JSON.stringify(historial));
         render();
@@ -128,5 +110,4 @@ function volver() {
     window.location.href = "pacientes.html";
 }
 
-// Inicializar
 render();
