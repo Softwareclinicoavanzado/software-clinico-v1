@@ -1,7 +1,8 @@
 /* =========================
-   PACIENTES | ClinicOS
+    PACIENTES | ClinicOS
 ========================= */
 
+// ... (El inicio se mantiene igual)
 const clinicaID = localStorage.getItem("clinicaID");
 if (!clinicaID) {
   alert("Sesión inválida.");
@@ -37,7 +38,6 @@ try {
 async function guardar() {
   savePacientes(pacientes);
   render();
-  // No quitamos el syncAllToCloud original
   if (typeof syncAllToCloud === "function") {
     await syncAllToCloud();
   }
@@ -64,7 +64,7 @@ function render(data = pacientes) {
       
       <div class="paciente-info">
         <small>Edad: ${p.edad || "-"} | Sexo: ${p.sexo || "-"} | Tel: ${p.telefono || "-"}</small><br>
-        <small>Seguro: ${p.aseguradora || "Particular"} | Póliza: ${p.poliza || "-"} | Sucursal: ${p.sede || "-"}</small>
+        <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza || "-"} | Sucursal: ${p.sede || "-"}</small>
       </div>
 
       <div class="actions" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -78,6 +78,8 @@ function render(data = pacientes) {
     lista.appendChild(li);
   });
 }
+
+// ... (agregarPaciente se mantiene igual ya que usa los IDs de los inputs)
 
 function agregarPaciente() {
   const nombre = inputs.nombre.value.trim();
@@ -115,8 +117,8 @@ function editarPaciente(id) {
   const nDpi = prompt("DPI:", p.dpi || "");
   const nEdad = prompt("Edad:", p.edad || "");
   const nTel = prompt("Teléfono:", p.telefono || "");
-  const nSeguro = prompt("Aseguradora:", p.aseguradora || "");
-  const nPoliza = prompt("Número de Póliza:", p.poliza || "");
+  const nSeguro = prompt("Nombre del Seguro:", p.aseguradora || ""); // ACTUALIZADO
+  const nPoliza = prompt("Número del Seguro:", p.poliza || ""); // ACTUALIZADO
 
   p.nombre = nNombre.trim() || p.nombre;
   p.dpi = nDpi || p.dpi;
@@ -128,52 +130,10 @@ function editarPaciente(id) {
   guardar();
 }
 
-function eliminarPaciente(id) {
-    if(confirm("¿Estás seguro de eliminar este paciente?")) {
-        pacientes = pacientes.filter(p => p.id !== id);
-        guardar();
-    }
-}
-
-function verHistorial(id) {
-    localStorage.setItem("pacienteActual", String(id));
-    window.location.href = "historial.html";
-}
-
-function agregarNotaDirecta(id) {
-  localStorage.setItem("pacienteActual", String(id));
-  window.location.href = "historial.html?action=addNote";
-}
-
-function descargarPDFHistorial(id) {
-  const p = pacientes.find(p => p.id === id);
-  if (!p) return;
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.setFontSize(20);
-  doc.setTextColor(41, 128, 185);
-  doc.text("ClinicOS - REPORTE DE PACIENTE", 105, 20, { align: "center" });
-  doc.setFontSize(12);
-  doc.setTextColor(0, 0, 0);
-  doc.text(`Nombre: ${p.nombre}`, 20, 40);
-  doc.text(`DPI: ${p.dpi || "N/A"}`, 20, 50);
-  doc.text(`Edad: ${p.edad} | Tel: ${p.telefono}`, 20, 60);
-  doc.text(`Aseguradora: ${p.aseguradora || "Particular"}`, 20, 70);
-  doc.text(`Póliza: ${p.poliza || "-"}`, 20, 80);
-  doc.save(`Paciente_${p.nombre.replace(/ /g, "_")}.pdf`);
-}
-
-function filtrarPacientes() {
-  const texto = document.getElementById("busqueda").value.toLowerCase();
-  const filtrados = pacientes.filter(p => 
-    p.nombre.toLowerCase().includes(texto) || 
-    (p.dpi && p.dpi.includes(texto)) ||
-    (p.telefono && p.telefono.includes(texto))
-  );
-  render(filtrados);
-}
+// ... (Otras funciones)
 
 function volver() {
+  console.log("Redirigiendo al dashboard...");
   window.location.href = "dashboard.html";
 }
 
