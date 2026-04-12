@@ -5,19 +5,38 @@
   <title>ClinicOS | Pacientes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
 </head>
 <body>
 
   <div class="container">
-    <h1>Pacientes</h1>
+    <h1>Gestión de Pacientes</h1>
 
-    <div class="card"> <div class="form-group">
+    <div class="card">
+      <div class="form-grid">
         <input type="text" id="nombre" placeholder="Nombre completo">
         <input type="number" id="edad" placeholder="Edad">
         <input type="text" id="telefono" placeholder="Teléfono">
+        
+        <label style="color: white; font-size: 0.8rem;">Fecha de Nacimiento:</label>
+        <input type="date" id="fechaNacimiento">
+        
+        <select id="sexo">
+          <option value="">Seleccionar Sexo</option>
+          <option value="Hombre">Hombre</option>
+          <option value="Mujer">Mujer</option>
+          <option value="Otro">Otro</option>
+        </select>
 
-        <button type="button" onclick="agregarPaciente()">
-          Añadir a la lista
+        <input type="text" id="contactoEmergencia" placeholder="Contacto de emergencia (Nombre/Tel)">
+        <input type="text" id="aseguradora" placeholder="Aseguradora / Seguro Médico">
+        <input type="text" id="poliza" placeholder="N° de Póliza">
+        <input type="text" id="medicoAsignado" placeholder="Médico Asignado">
+        <input type="text" id="sede" placeholder="Sede o Sucursal">
+
+        <button type="button" class="btn-primary" onclick="agregarPaciente()">
+          🚀 Añadir al Sistema
         </button>
       </div>
     </div>
@@ -27,7 +46,7 @@
     <input
       type="text"
       id="busqueda"
-      placeholder="🔍 Buscar paciente por nombre o tel..."
+      placeholder="🔍 Buscar paciente por nombre, tel o aseguradora..."
       oninput="filtrarPacientes()"
     >
 
@@ -41,6 +60,5 @@
   <script src="./js/session.js"></script>
   <script src="./js/storage.js"></script>
   <script src="./js/pacientes.js"></script>
-
-</body>
+  <script src="./js/pdf.js"></script> </body>
 </html>
