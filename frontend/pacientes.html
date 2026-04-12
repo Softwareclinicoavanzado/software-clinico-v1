@@ -33,8 +33,8 @@
         </select>
 
         <input type="text" id="contactoEmergencia" placeholder="Contacto de emergencia (Nombre/Tel)">
-        <input type="text" id="aseguradora" placeholder="Aseguradora / Seguro Médico">
-        <input type="text" id="poliza" placeholder="N° de Póliza">
+        <input type="text" id="aseguradora" placeholder="Nombre del Seguro">
+        <input type="text" id="poliza" placeholder="Número del Seguro">
         <input type="text" id="medicoAsignado" placeholder="Médico Asignado">
         <input type="text" id="sede" placeholder="Sede o Sucursal">
 
@@ -49,13 +49,13 @@
     <input
       type="text"
       id="busqueda"
-      placeholder="🔍 Buscar por nombre, DPI, tel o aseguradora..."
+      placeholder="🔍 Buscar por nombre, DPI, tel o seguro..."
       oninput="filtrarPacientes()"
     >
 
     <ul class="lista" id="listaPacientes"></ul>
 
-    <button class="secondary" type="button" onclick="volver()">
+    <button class="secondary" type="button" onclick="volver()" style="margin-top: 20px; width: 100%;">
       Volver al Dashboard
     </button>
   </div>
