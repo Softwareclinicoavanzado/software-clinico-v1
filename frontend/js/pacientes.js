@@ -9,6 +9,7 @@ if (!clinicaID) {
 }
 
 const rol = localStorage.getItem("rol") || "admin";
+const API_URL = "https://software-clinico-v1.onrender.com";
 
 const inputs = {
   nombre: document.getElementById("nombre"),
@@ -36,6 +37,7 @@ try {
 async function guardar() {
   savePacientes(pacientes);
   render();
+  // No quitamos el syncAllToCloud original
   if (typeof syncAllToCloud === "function") {
     await syncAllToCloud();
   }
@@ -43,6 +45,7 @@ async function guardar() {
 
 function render(data = pacientes) {
   const lista = document.getElementById("listaPacientes");
+  if (!lista) return;
   lista.innerHTML = "";
   
   if (!data.length) {
@@ -61,7 +64,7 @@ function render(data = pacientes) {
       
       <div class="paciente-info">
         <small>Edad: ${p.edad || "-"} | Sexo: ${p.sexo || "-"} | Tel: ${p.telefono || "-"}</small><br>
-        <small>Seguro: ${p.aseguradora || "Particular"} | Sucursal: ${p.sede || "-"}</small>
+        <small>Seguro: ${p.aseguradora || "Particular"} | Póliza: ${p.poliza || "-"} | Sucursal: ${p.sede || "-"}</small>
       </div>
 
       <div class="actions" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
@@ -106,48 +109,57 @@ function editarPaciente(id) {
   const p = pacientes.find(p => p.id === id);
   if (!p) return;
 
-  const nNombre = prompt("Nombre completo:", p.nombre) || p.nombre;
-  const nDpi = prompt("DPI:", p.dpi || "") || p.dpi;
-  const nEdad = prompt("Edad:", p.edad || "") || p.edad;
-  const nTel = prompt("Teléfono:", p.telefono || "") || p.telefono;
+  const nNombre = prompt("Nombre completo:", p.nombre);
+  if (nNombre === null) return;
 
-  p.nombre = nNombre.trim();
-  p.dpi = nDpi.trim();
-  p.edad = nEdad;
-  p.telefono = nTel;
+  const nDpi = prompt("DPI:", p.dpi || "");
+  const nEdad = prompt("Edad:", p.edad || "");
+  const nTel = prompt("Teléfono:", p.telefono || "");
+  const nSeguro = prompt("Aseguradora:", p.aseguradora || "");
+  const nPoliza = prompt("Número de Póliza:", p.poliza || "");
+
+  p.nombre = nNombre.trim() || p.nombre;
+  p.dpi = nDpi || p.dpi;
+  p.edad = nEdad || p.edad;
+  p.telefono = nTel || p.telefono;
+  p.aseguradora = nSeguro || p.aseguradora;
+  p.poliza = nPoliza || p.poliza;
 
   guardar();
 }
 
+function eliminarPaciente(id) {
+    if(confirm("¿Estás seguro de eliminar este paciente?")) {
+        pacientes = pacientes.filter(p => p.id !== id);
+        guardar();
+    }
+}
+
+function verHistorial(id) {
+    localStorage.setItem("pacienteActual", String(id));
+    window.location.href = "historial.html";
+}
+
 function agregarNotaDirecta(id) {
   localStorage.setItem("pacienteActual", String(id));
-  // Redirigir al historial con un parámetro para abrir el área de notas automáticamente
   window.location.href = "historial.html?action=addNote";
 }
 
 function descargarPDFHistorial(id) {
   const p = pacientes.find(p => p.id === id);
   if (!p) return;
-
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-
   doc.setFontSize(20);
   doc.setTextColor(41, 128, 185);
   doc.text("ClinicOS - REPORTE DE PACIENTE", 105, 20, { align: "center" });
-  
   doc.setFontSize(12);
   doc.setTextColor(0, 0, 0);
   doc.text(`Nombre: ${p.nombre}`, 20, 40);
   doc.text(`DPI: ${p.dpi || "N/A"}`, 20, 50);
-  doc.text(`Edad: ${p.edad} | Sexo: ${p.sexo}`, 20, 60);
-  doc.text(`Teléfono: ${p.telefono}`, 20, 70);
-  doc.text(`Seguro: ${p.aseguradora || "N/A"} (Póliza: ${p.poliza || "-"})`, 20, 80);
-  doc.text(`Fecha de ingreso: ${p.creado}`, 20, 90);
-
-  doc.text("--------------------------------------------------", 20, 100);
-  doc.text("Resumen de notas médicas:", 20, 110);
-  
+  doc.text(`Edad: ${p.edad} | Tel: ${p.telefono}`, 20, 60);
+  doc.text(`Aseguradora: ${p.aseguradora || "Particular"}`, 20, 70);
+  doc.text(`Póliza: ${p.poliza || "-"}`, 20, 80);
   doc.save(`Paciente_${p.nombre.replace(/ /g, "_")}.pdf`);
 }
 
