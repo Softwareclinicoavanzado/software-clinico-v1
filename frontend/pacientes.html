@@ -16,11 +16,14 @@
     <div class="card">
       <div class="form-grid">
         <input type="text" id="nombre" placeholder="Nombre completo">
+        <input type="text" id="dpi" placeholder="DPI (Documento de Identificación)">
         <input type="number" id="edad" placeholder="Edad">
         <input type="text" id="telefono" placeholder="Teléfono">
         
-        <label style="color: white; font-size: 0.8rem;">Fecha de Nacimiento:</label>
-        <input type="date" id="fechaNacimiento">
+        <div class="input-group">
+            <label style="color: white; font-size: 0.8rem; display: block; margin-bottom: 5px;">Fecha de Nacimiento:</label>
+            <input type="date" id="fechaNacimiento">
+        </div>
         
         <select id="sexo">
           <option value="">Seleccionar Sexo</option>
@@ -46,7 +49,7 @@
     <input
       type="text"
       id="busqueda"
-      placeholder="🔍 Buscar paciente por nombre, tel o aseguradora..."
+      placeholder="🔍 Buscar por nombre, DPI, tel o aseguradora..."
       oninput="filtrarPacientes()"
     >
 
@@ -60,5 +63,5 @@
   <script src="./js/session.js"></script>
   <script src="./js/storage.js"></script>
   <script src="./js/pacientes.js"></script>
-  <script src="./js/pdf.js"></script> </body>
+</body>
 </html>
