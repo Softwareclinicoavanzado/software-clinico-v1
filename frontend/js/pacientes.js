@@ -1,16 +1,15 @@
 /* =========================
     PACIENTES | ClinicOS
 ========================= */
-
 const clinicaID = localStorage.getItem("clinicaID");
 if (!clinicaID) {
-    alert("Sesión inválida.");
     window.location.href = "index.html";
 }
 
 const rol = localStorage.getItem("rol") || "admin";
-const API_URL = "https://software-clinico-v1.onrender.com";
+let pacientes = [];
 
+// Elementos del DOM
 const inputs = {
     nombre: document.getElementById("nombre"),
     dpi: document.getElementById("dpi"),
@@ -25,22 +24,16 @@ const inputs = {
     sede: document.getElementById("sede")
 };
 
-let pacientes = [];
-
-// Carga inicial de datos desde storage.js
-try {
+// Carga Inicial
+function cargarDatos() {
     pacientes = getPacientes();
-} catch (e) {
-    console.error("Error al cargar:", e);
-    pacientes = [];
+    render();
 }
 
 async function guardar() {
     savePacientes(pacientes);
     render();
-    if (typeof syncAllToCloud === "function") {
-        await syncAllToCloud();
-    }
+    if (typeof syncAllToCloud === "function") await syncAllToCloud();
 }
 
 function render(data = pacientes) {
@@ -59,20 +52,17 @@ function render(data = pacientes) {
         li.innerHTML = `
             <div class="paciente-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-size: 1.1rem;"><strong>${p.nombre}</strong> <small style="opacity: 0.8;">(DPI: ${p.dpi || "S/D"})</small></span>
-                <button class="btn-pdf" onclick="descargarPDFHistorial(${p.id})" style="padding: 5px 10px; font-size: 0.8rem;">📄 PDF</button>
+                <button class="btn-pdf" onclick="descargarPDFHistorial(${p.id})" style="padding: 5px 10px; font-size: 0.8rem; cursor:pointer;">📄 Exportar</button>
             </div>
-            
             <div class="paciente-info">
                 <small>Edad: ${p.edad || "-"} | Sexo: ${p.sexo || "-"} | Tel: ${p.telefono || "-"}</small><br>
                 <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza || "-"} | Sucursal: ${p.sede || "-"}</small>
             </div>
-
             <div class="actions" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <button type="button" onclick="verHistorial(${p.id})">📋 Ver Historial</button>
                 <button type="button" onclick="editarPaciente(${p.id})">✏️ Editar Perfil</button>
-                <button type="button" class="btn-nota" onclick="agregarNotaDirecta(${p.id})" style="grid-column: span 2; background-color: #2ecc71;">📝 Agregar Nota (Alergias/Diagnóstico)</button>
-                
-                ${rol !== "recepcion" ? `<button type="button" class="btn-danger" onclick="eliminarPaciente(${p.id})" style="grid-column: span 2; background-color: #e74c3c;">🗑️ Eliminar Paciente</button>` : ""}
+                <button type="button" class="btn-nota" onclick="agregarNotaDirecta(${p.id})" style="grid-column: span 2; background-color: #2ecc71;">📝 Nueva Nota Médica</button>
+                ${rol !== "recepcion" ? `<button type="button" class="btn-danger" onclick="eliminarPaciente(${p.id})" style="grid-column: span 2; background-color: #e74c3c; color:white;">🗑️ Eliminar Paciente</button>` : ""}
             </div>
         `;
         lista.appendChild(li);
@@ -105,28 +95,14 @@ function agregarPaciente() {
     guardar();
 }
 
-function editarPaciente(id) {
-    const p = pacientes.find(p => p.id === id);
-    if (!p) return;
-
-    const nNombre = prompt("Nombre completo:", p.nombre);
-    if (nNombre === null) return;
-
-    p.nombre = nNombre.trim() || p.nombre;
-    p.dpi = prompt("DPI:", p.dpi || "") || p.dpi;
-    p.edad = prompt("Edad:", p.edad || "") || p.edad;
-    p.telefono = prompt("Teléfono:", p.telefono || "") || p.telefono;
-    p.aseguradora = prompt("Nombre del Seguro:", p.aseguradora || "") || p.aseguradora;
-    p.poliza = prompt("Número del Seguro:", p.poliza || "") || p.poliza;
-
-    guardar();
-}
-
-function eliminarPaciente(id) {
-    if(confirm("¿Estás seguro de eliminar este paciente?")) {
-        pacientes = pacientes.filter(p => p.id !== id);
-        guardar();
-    }
+function filtrarPacientes() {
+    const texto = document.getElementById("busqueda").value.toLowerCase();
+    const filtrados = pacientes.filter(p => 
+        p.nombre.toLowerCase().includes(texto) || 
+        (p.dpi && p.dpi.includes(texto)) ||
+        (p.telefono && p.telefono.includes(texto))
+    );
+    render(filtrados);
 }
 
 function verHistorial(id) {
@@ -139,30 +115,25 @@ function agregarNotaDirecta(id) {
     window.location.href = "historial.html?action=addNote";
 }
 
-function filtrarPacientes() {
-    const texto = document.getElementById("busqueda").value.toLowerCase();
-    const filtrados = pacientes.filter(p => 
-        p.nombre.toLowerCase().includes(texto) || 
-        (p.dpi && p.dpi.includes(texto)) ||
-        (p.telefono && p.telefono.includes(texto)) ||
-        (p.aseguradora && p.aseguradora.toLowerCase().includes(texto))
-    );
-    render(filtrados);
-}
-
 function descargarPDFHistorial(id) {
     const p = pacientes.find(p => p.id === id);
     if (!p) return;
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.text(`Reporte: ${p.nombre}`, 10, 10);
-    doc.text(`DPI: ${p.dpi}`, 10, 20);
-    doc.save(`${p.nombre}.pdf`);
+    
+    doc.setFontSize(16);
+    doc.text("FICHA DEL PACIENTE - ClinicOS", 10, 20);
+    doc.setFontSize(12);
+    doc.text(`Nombre: ${p.nombre}`, 10, 40);
+    doc.text(`DPI: ${p.dpi || "N/A"}`, 10, 50);
+    doc.text(`Edad: ${p.edad || "N/A"}`, 10, 60);
+    doc.text(`Seguro: ${p.aseguradora || "Particular"}`, 10, 70);
+    doc.text(`Fecha de Registro: ${p.creado}`, 10, 80);
+    
+    doc.save(`Paciente_${p.nombre}.pdf`);
 }
 
-function volver() {
-    window.location.href = "dashboard.html";
-}
+function volver() { window.location.href = "dashboard.html"; }
 
-// Inicializar la vista
-render();
+// Ejecución
+cargarDatos();
