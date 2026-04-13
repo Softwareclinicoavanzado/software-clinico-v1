@@ -1,13 +1,11 @@
 /* =========================
    STORAGE MANAGER PRO++ (ULTRA-STABLE)
 ========================= */
-
 const STORAGE_VERSION = "1.1.2";
 const API_URL = "https://software-clinico-v1.onrender.com";
 
 function getClinicaID() {
-    const id = localStorage.getItem("clinicaID");
-    return id || "temp_clinic"; 
+    return localStorage.getItem("clinicaID") || "temp_clinic"; 
 }
 
 function safeParse(key, fallback = []) {
@@ -47,18 +45,15 @@ function saveCitas(data) {
     silentSync('citas', data);
 }
 
-// --- SINCRONIZACIÓN ASÍNCRONA ORIGINAL ---
+// --- SINCRONIZACIÓN ASÍNCRONA ---
 async function silentSync(tipo = 'general', data = null) {
     const id = getClinicaID();
-    
-    // Si mandamos un dato específico (como un nuevo paciente)
     let payload = data;
     if (Array.isArray(data)) payload = data[data.length - 1];
 
     try {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 2000);
-
         const endpoint = tipo === 'pacientes' ? '/api/pacientes' : (tipo === 'citas' ? '/api/citas' : '/sync');
 
         const response = await fetch(`${API_URL}${endpoint}?clinica_id=${id}`, {
@@ -71,12 +66,9 @@ async function silentSync(tipo = 'general', data = null) {
         clearTimeout(timeoutId);
         if (response.ok) console.log(`☁️ Nube actualizada: ${tipo}`);
     } catch (error) {
-        console.log("📡 Modo Local: Guardado. Se sincronizará luego.");
+        console.log("📡 Modo Local Activo");
     }
 }
 
-async function syncAllToCloud() {
-    await silentSync();
-}
-
+async function syncAllToCloud() { await silentSync(); }
 console.log(`🚀 Storage Engine v${STORAGE_VERSION} cargado.`);
