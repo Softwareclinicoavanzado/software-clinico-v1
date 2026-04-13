@@ -1,4 +1,4 @@
-// Asegurar que las funciones sean globales para que el HTML las vea
+// Asegurar que las funciones sean globales para que los botones onclick las vean
 window.irPacientes = function() {
     window.location.href = "pacientes.html";
 };
@@ -12,22 +12,27 @@ window.logout = function() {
     window.location.replace("index.html");
 };
 
-// Lógica de carga de datos
 document.addEventListener("DOMContentLoaded", () => {
     const clinicaID = localStorage.getItem("clinicaID");
     const clinicaNombre = localStorage.getItem("clinicaNombre");
     const rol = localStorage.getItem("rol");
 
+    // Si falta la sesión, mandarlo al login de una vez
     if (!clinicaID || !clinicaNombre || !rol) {
         window.location.replace("index.html");
         return;
     }
 
-    document.getElementById("clinica").innerText = `Bienvenido a ${clinicaNombre}`;
-    document.getElementById("usuarioInfo").innerText = `Rol: ${rol.toUpperCase()}`;
-
-    const pacientes = JSON.parse(localStorage.getItem(`pacientes_${clinicaID}`)) || [];
-    document.getElementById("totalPacientes").innerText = pacientes.length;
+    // Actualizar interfaz
+    const clinicaElem = document.getElementById("clinica");
+    const usuarioElem = document.getElementById("usuarioInfo");
     
-    // Aquí puedes meter la lógica de las citas de hoy que ya tenías
+    if(clinicaElem) clinicaElem.innerText = `Bienvenido a ${clinicaNombre}`;
+    if(usuarioElem) usuarioElem.innerText = `Rol: ${rol.toUpperCase()}`;
+
+    // Contador de pacientes real
+    const pacientesKey = `pacientes_${clinicaID}`;
+    const pacientes = JSON.parse(localStorage.getItem(pacientesKey)) || [];
+    const totalElem = document.getElementById("totalPacientes");
+    if(totalElem) totalElem.innerText = pacientes.length;
 });
