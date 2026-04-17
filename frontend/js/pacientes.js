@@ -24,7 +24,6 @@ const inputs = {
     sede: document.getElementById("sede")
 };
 
-// Carga Inicial
 function cargarDatos() {
     pacientes = getPacientes();
     render();
@@ -52,7 +51,7 @@ function render(data = pacientes) {
         li.innerHTML = `
             <div class="paciente-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-size: 1.1rem;"><strong>${p.nombre}</strong> <small style="opacity: 0.8;">(DPI: ${p.dpi || "S/D"})</small></span>
-                <button class="btn-pdf" onclick="descargarPDFHistorial(${p.id})" style="padding: 5px 10px; font-size: 0.8rem; cursor:pointer;">📄 Exportar</button>
+                <button class="btn-pdf" onclick="descargarPDFHistorial(${p.id})" style="padding: 5px 10px; font-size: 0.8rem; cursor:pointer; background-color: #3498db; color: white; border: none; border-radius: 4px;">📄 Exportar Reporte</button>
             </div>
             <div class="paciente-info">
                 <small>Edad: ${p.edad || "-"} | Sexo: ${p.sexo || "-"} | Tel: ${p.telefono || "-"}</small><br>
@@ -86,17 +85,104 @@ function agregarPaciente() {
         poliza: inputs.poliza.value,
         medicoAsignado: inputs.medicoAsignado.value,
         sede: inputs.sede.value,
-        creado: new Date().toLocaleDateString(),
+        creado: new Date().toLocaleDateString("es-GT"),
         clinica_id: clinicaID
     };
 
     pacientes.push(nuevoPaciente);
     Object.values(inputs).forEach(input => { if(input) input.value = ""; });
-    
-    // Guardamos y redirigimos a la vista de lista para ver el cambio
     savePacientes(pacientes);
-    alert("Paciente registrado!");
+    alert("¡Paciente registrado!");
     window.location.href = "pacientes.html?mode=ver";
+}
+
+// ==========================================
+//   NUEVA FUNCIÓN DE EXPORTACIÓN COMPLETA
+// ==========================================
+function descargarPDFHistorial(id) {
+    const p = pacientes.find(p => p.id === id);
+    if (!p) return;
+
+    // Jalar historial desde tu formato de storage: historial_ID
+    const historial = JSON.parse(localStorage.getItem(`historial_${id}`)) || [];
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    let y = 20;
+
+    // Encabezado
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(18);
+    doc.text("REPORTE MÉDICO INTEGRAL", 105, y, { align: "center" });
+    y += 10;
+    doc.setDrawColor(52, 152, 219);
+    doc.setLineWidth(1);
+    doc.line(20, y, 190, y);
+    y += 15;
+
+    // Información del Paciente
+    doc.setFontSize(12);
+    doc.setTextColor(40);
+    doc.text("DATOS DEL PACIENTE", 20, y);
+    y += 8;
+    doc.setFont("helvetica", "normal");
+    
+    const datos = [
+        `Nombre: ${p.nombre}`,
+        `DPI: ${p.dpi || "N/A"}`,
+        `Edad: ${p.edad || "N/A"}`,
+        `Teléfono: ${p.telefono || "N/A"}`,
+        `Seguro: ${p.aseguradora || "Particular"} (Póliza: ${p.poliza || "N/A"})`,
+        `Médico Asignado: ${p.medicoAsignado || "N/A"}`
+    ];
+
+    datos.forEach(linea => {
+        doc.text(linea, 25, y);
+        y += 7;
+    });
+
+    y += 10;
+    doc.setFont("helvetica", "bold");
+    doc.text("HISTORIAL DE NOTAS Y EVOLUCIÓN", 20, y);
+    y += 10;
+
+    if (historial.length === 0) {
+        doc.setFont("helvetica", "italic");
+        doc.text("No se registran notas médicas en el historial.", 25, y);
+    } else {
+        historial.forEach((nota) => {
+            // Verificar si la nota cabe en la página, si no, crear nueva
+            if (y > 250) {
+                doc.addPage();
+                y = 20;
+            }
+
+            // Fondo para el título de la nota
+            doc.setFillColor(245, 245, 245);
+            doc.rect(20, y - 5, 170, 8, 'F');
+            
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(10);
+            doc.setTextColor(52, 73, 94);
+            doc.text(`${nota.tipo.toUpperCase()} - ${nota.fecha}`, 25, y);
+            y += 8;
+
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(0);
+            
+            // Ajuste automático de texto largo (multi-línea)
+            const splitText = doc.splitTextToSize(nota.texto, 160);
+            doc.text(splitText, 25, y);
+            y += (splitText.length * 6) + 10;
+        });
+    }
+
+    // Pie de página
+    doc.setFontSize(9);
+    doc.setTextColor(150);
+    doc.text(`Generado por ClinicOS - ${new Date().toLocaleString()}`, 105, 285, { align: "center" });
+
+    doc.save(`Reporte_${p.nombre.replace(/\s+/g, '_')}.pdf`);
 }
 
 function filtrarPacientes() {
@@ -119,47 +205,25 @@ function agregarNotaDirecta(id) {
     window.location.href = "historial.html?action=addNote";
 }
 
-function descargarPDFHistorial(id) {
-    const p = pacientes.find(p => p.id === id);
-    if (!p) return;
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    doc.setFontSize(16);
-    doc.text("FICHA DEL PACIENTE - ClinicOS", 10, 20);
-    doc.setFontSize(12);
-    doc.text(`Nombre: ${p.nombre}`, 10, 40);
-    doc.text(`DPI: ${p.dpi || "N/A"}`, 10, 50);
-    doc.text(`Edad: ${p.edad || "N/A"}`, 10, 60);
-    doc.text(`Seguro: ${p.aseguradora || "Particular"}`, 10, 70);
-    doc.text(`Fecha de Registro: ${p.creado}`, 10, 80);
-    
-    doc.save(`Paciente_${p.nombre}.pdf`);
-}
-
 function volver() { window.location.href = "dashboard.html"; }
 
-// --- NUEVA LÓGICA DE CONTROL DE VISTAS ---
 function gestionarVistas() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
-    
     const form = document.getElementById("seccionFormulario");
     const lista = document.getElementById("seccionLista");
     const titulo = document.getElementById("tituloPagina");
 
     if (modo === "nuevo") {
-        form.style.display = "block";
-        lista.style.display = "none";
-        titulo.innerText = "Registrar Paciente";
+        if(form) form.style.display = "block";
+        if(lista) lista.style.display = "none";
+        if(titulo) titulo.innerText = "Registrar Paciente";
     } else {
-        // Por defecto o si es 'ver', mostramos la lista
-        form.style.display = "none";
-        lista.style.display = "block";
-        titulo.innerText = "Listado de Pacientes";
+        if(form) form.style.display = "none";
+        if(lista) lista.style.display = "block";
+        if(titulo) titulo.innerText = "Listado de Pacientes";
     }
 }
 
-// Ejecución
 cargarDatos();
 gestionarVistas();
