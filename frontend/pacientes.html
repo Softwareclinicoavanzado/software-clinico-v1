@@ -11,9 +11,9 @@
 <body>
 
   <div class="container">
-    <h1>Gestión de Pacientes</h1>
+    <h1 id="tituloPagina">Gestión de Pacientes</h1>
 
-    <div class="card">
+    <div class="card" id="seccionFormulario">
       <div class="form-grid">
         <input type="text" id="nombre" placeholder="Nombre completo">
         <input type="text" id="dpi" placeholder="DPI (Documento de Identificación)">
@@ -44,16 +44,16 @@
       </div>
     </div>
 
-    <br>
-
-    <input
-      type="text"
-      id="busqueda"
-      placeholder="🔍 Buscar por nombre, DPI, tel o seguro..."
-      oninput="filtrarPacientes()"
-    >
-
-    <ul class="lista" id="listaPacientes"></ul>
+    <div id="seccionLista">
+        <br>
+        <input
+          type="text"
+          id="busqueda"
+          placeholder="🔍 Buscar por nombre, DPI, tel o seguro..."
+          oninput="filtrarPacientes()"
+        >
+        <ul class="lista" id="listaPacientes"></ul>
+    </div>
 
     <button class="secondary" type="button" onclick="volver()" style="margin-top: 20px; width: 100%;">
       Volver al Dashboard
