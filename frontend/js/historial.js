@@ -5,16 +5,17 @@ const rol = localStorage.getItem("rol");
 const clinicaID = localStorage.getItem("clinicaID");
 const pacienteID = localStorage.getItem("pacienteActual");
 
+// Protección de ruta
 if (!clinicaID || !pacienteID) {
     window.location.href = "pacientes.html";
 }
 
-// Bloqueo de Recepción
 if (rol === "recepcion") {
     alert("Acceso denegado: Solo médicos.");
     window.location.href = "pacientes.html";
 }
 
+// Cargar datos del paciente
 const pacientesLocales = JSON.parse(localStorage.getItem(`pacientes_${clinicaID}`)) || [];
 const paciente = pacientesLocales.find(p => String(p.id) === String(pacienteID));
 
@@ -27,8 +28,6 @@ if (!paciente) {
 const notaInput = document.getElementById("nota");
 const tipoNotaInput = document.getElementById("tipoNota");
 const listaHistorial = document.getElementById("listaHistorial");
-
-// Nuevas referencias para las secciones
 const seccionAgregar = document.getElementById("seccionAgregarNota");
 const seccionVer = document.getElementById("seccionVerHistorial");
 const tituloPrincipal = document.getElementById("tituloPrincipal");
@@ -37,25 +36,33 @@ let historial = JSON.parse(localStorage.getItem(`historial_${pacienteID}`)) || [
 
 function render() {
     if (!listaHistorial) return;
-    listaHistorial.innerHTML = historial.length === 0 
-        ? `<div class="card"><p>No hay registros médicos previos.</p></div>`
-        : "";
+    listaHistorial.innerHTML = "";
+
+    if (historial.length === 0) {
+        listaHistorial.innerHTML = `<div class="card"><p style="text-align:center; opacity:0.6;">No hay registros médicos en este historial.</p></div>`;
+        return;
+    }
 
     historial.forEach((h, index) => {
         const div = document.createElement("div");
         div.className = "card";
         div.style.marginBottom = "15px";
-        const colorTipo = h.tipo === "Receta" ? "#34d399" : "#93c5fd";
+        div.style.borderLeft = h.tipo === "Receta" ? "4px solid #34d399" : "4px solid #3498db";
 
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between;">
-                <strong style="color: ${colorTipo};">${h.tipo.toUpperCase()}</strong>
-                <small style="color: #64748b;">${h.fecha}</small>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div>
+                    <strong style="color: ${h.tipo === "Receta" ? "#34d399" : "#93c5fd"}; font-size: 1.1rem;">
+                        ${h.tipo.toUpperCase()}
+                    </strong><br>
+                    <small style="color: #64748b;">${h.fecha}</small>
+                </div>
+                <button onclick="eliminarNota(${index})" 
+                        style="background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;">
+                    Eliminar
+                </button>
             </div>
-            <p style="white-space: pre-wrap; margin-top:10px;">${h.texto}</p>
-            <div style="text-align: right;">
-                <button onclick="eliminarNota(${index})" style="background:none; border:1px solid #ef4444; color:#ef4444; cursor:pointer; padding:2px 5px; font-size:10px;">Eliminar</button>
-            </div>
+            <p style="white-space: pre-wrap; margin-top:12px; color: #e2e8f0; line-height: 1.4;">${h.texto}</p>
         `;
         listaHistorial.appendChild(div);
     });
@@ -63,7 +70,7 @@ function render() {
 
 async function agregarNota() {
     const texto = notaInput.value.trim();
-    if (!texto) return alert("Escribe el detalle.");
+    if (!texto) return alert("Por favor, escribe el detalle de la nota.");
 
     const nuevaNota = {
         id: Date.now(),
@@ -76,8 +83,9 @@ async function agregarNota() {
     localStorage.setItem(`historial_${pacienteID}`, JSON.stringify(historial));
     notaInput.value = "";
     
-    // Al guardar, lo enviamos automáticamente a la vista de modificar para que vea su nota
-    alert("Nota agregada correctamente.");
+    alert("✅ Nota guardada en el historial.");
+    
+    // Después de agregar, lo mandamos a ver el historial completo
     window.location.href = "historial.html?mode=modificar";
 
     // Sync silencioso al backend
@@ -87,7 +95,7 @@ async function agregarNota() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(nuevaNota)
         });
-    } catch (e) { console.log("Guardado en local"); }
+    } catch (e) { console.warn("Modo local: Sincronización pendiente."); }
 }
 
 function exportarPDF() {
@@ -95,19 +103,27 @@ function exportarPDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     
-    doc.text(`Historial: ${paciente.nombre}`, 10, 10);
-    let y = 30;
+    doc.setFontSize(16);
+    doc.text(`HISTORIAL CLÍNICO: ${paciente.nombre}`, 10, 20);
+    doc.setFontSize(10);
+    doc.text(`Generado el: ${new Date().toLocaleString()}`, 10, 28);
+    
+    let y = 40;
     historial.forEach(h => {
+        if (y > 270) { doc.addPage(); y = 20; }
+        doc.setFont("helvetica", "bold");
         doc.text(`${h.fecha} - ${h.tipo}`, 10, y);
-        y += 10;
-        doc.text(h.texto.substring(0, 50), 15, y);
-        y += 15;
+        y += 7;
+        doc.setFont("helvetica", "normal");
+        const lines = doc.splitTextToSize(h.texto, 180);
+        doc.text(lines, 15, y);
+        y += (lines.length * 6) + 10;
     });
-    doc.save(`Historial_${paciente.nombre}.pdf`);
+    doc.save(`Historial_${paciente.nombre.replace(/\s+/g, '_')}.pdf`);
 }
 
 function eliminarNota(index) {
-    if(confirm("¿Borrar registro?")) {
+    if(confirm("¿Estás seguro de eliminar este registro permanente?")) {
         historial.splice(index, 1);
         localStorage.setItem(`historial_${pacienteID}`, JSON.stringify(historial));
         render();
@@ -116,25 +132,28 @@ function eliminarNota(index) {
 
 function volver() { window.location.href = "pacientes.html"; }
 
-// Lógica para gestionar qué se muestra según el modo
+// FUNCIÓN CLAVE: Separa las vistas según el parámetro de la URL
 function gestionarVistaActual() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
+    const pNombre = document.getElementById("pacienteNombre");
 
     if (modo === "nuevaNota") {
+        // MODO AGREGAR
         tituloPrincipal.textContent = "Nueva Nota Médica";
-        document.getElementById("pacienteNombre").textContent = `${paciente.nombre} — Creando registro`;
-        seccionAgregar.style.display = "block";
-        seccionVer.style.display = "none";
+        pNombre.textContent = `Paciente: ${paciente.nombre}`;
+        seccionAgregar.style.display = "block"; // Muestra formulario
+        seccionVer.style.display = "none";      // Oculta historial
         setTimeout(() => notaInput.focus(), 300);
     } else {
-        tituloPrincipal.textContent = "Modificar Historial Médico";
-        document.getElementById("pacienteNombre").textContent = `${paciente.nombre} — Gestión de registros`;
-        seccionAgregar.style.display = "none";
-        seccionVer.style.display = "block";
+        // MODO MODIFICAR (DEFAULT)
+        tituloPrincipal.textContent = "Gestión de Historial";
+        pNombre.textContent = `Paciente: ${paciente.nombre}`;
+        seccionAgregar.style.display = "none";  // Oculta formulario
+        seccionVer.style.display = "block";     // Muestra historial
         render();
     }
 }
 
-// Ejecutamos la gestión de vista al cargar
+// Inicializar
 gestionarVistaActual();
