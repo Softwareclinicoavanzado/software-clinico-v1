@@ -24,10 +24,14 @@ if (!paciente) {
 }
 
 // Referencias DOM
-document.getElementById("pacienteNombre").textContent = `${paciente.nombre} — Historial Médico`;
 const notaInput = document.getElementById("nota");
 const tipoNotaInput = document.getElementById("tipoNota");
 const listaHistorial = document.getElementById("listaHistorial");
+
+// Nuevas referencias para las secciones
+const seccionAgregar = document.getElementById("seccionAgregarNota");
+const seccionVer = document.getElementById("seccionVerHistorial");
+const tituloPrincipal = document.getElementById("tituloPrincipal");
 
 let historial = JSON.parse(localStorage.getItem(`historial_${pacienteID}`)) || [];
 
@@ -71,8 +75,11 @@ async function agregarNota() {
     historial.unshift(nuevaNota);
     localStorage.setItem(`historial_${pacienteID}`, JSON.stringify(historial));
     notaInput.value = "";
-    render();
     
+    // Al guardar, lo enviamos automáticamente a la vista de modificar para que vea su nota
+    alert("Nota agregada correctamente.");
+    window.location.href = "historial.html?mode=modificar";
+
     // Sync silencioso al backend
     try {
         fetch(`https://software-clinico-v1.onrender.com/api/historial?paciente_id=${pacienteID}`, {
@@ -109,10 +116,25 @@ function eliminarNota(index) {
 
 function volver() { window.location.href = "pacientes.html"; }
 
-// Auto-foco si viene de "Agregar Nota"
-const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('action') === 'addNote') {
-    setTimeout(() => notaInput.focus(), 300);
+// Lógica para gestionar qué se muestra según el modo
+function gestionarVistaActual() {
+    const params = new URLSearchParams(window.location.search);
+    const modo = params.get("mode");
+
+    if (modo === "nuevaNota") {
+        tituloPrincipal.textContent = "Nueva Nota Médica";
+        document.getElementById("pacienteNombre").textContent = `${paciente.nombre} — Creando registro`;
+        seccionAgregar.style.display = "block";
+        seccionVer.style.display = "none";
+        setTimeout(() => notaInput.focus(), 300);
+    } else {
+        tituloPrincipal.textContent = "Modificar Historial Médico";
+        document.getElementById("pacienteNombre").textContent = `${paciente.nombre} — Gestión de registros`;
+        seccionAgregar.style.display = "none";
+        seccionVer.style.display = "block";
+        render();
+    }
 }
 
-render();
+// Ejecutamos la gestión de vista al cargar
+gestionarVistaActual();
