@@ -58,7 +58,7 @@ function render(data = pacientes) {
                 <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza || "-"} | Sucursal: ${p.sede || "-"}</small>
             </div>
             <div class="actions" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <button type="button" onclick="verHistorial(${p.id})">📋 Ver Historial</button>
+                <button type="button" onclick="verHistorial(${p.id})">⚙️ Modificar Historial</button>
                 <button type="button" onclick="editarPaciente(${p.id})">✏️ Editar Perfil</button>
                 <button type="button" class="btn-nota" onclick="agregarNotaDirecta(${p.id})" style="grid-column: span 2; background-color: #2ecc71;">📝 Nueva Nota Médica</button>
                 ${rol !== "recepcion" ? `<button type="button" class="btn-danger" onclick="eliminarPaciente(${p.id})" style="grid-column: span 2; background-color: #e74c3c; color:white;">🗑️ Eliminar Paciente</button>` : ""}
@@ -96,21 +96,14 @@ function agregarPaciente() {
     window.location.href = "pacientes.html?mode=ver";
 }
 
-// ==========================================
-//   NUEVA FUNCIÓN DE EXPORTACIÓN COMPLETA
-// ==========================================
 function descargarPDFHistorial(id) {
     const p = pacientes.find(p => p.id === id);
     if (!p) return;
-
-    // Jalar historial desde tu formato de storage: historial_ID
     const historial = JSON.parse(localStorage.getItem(`historial_${id}`)) || [];
-
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     let y = 20;
 
-    // Encabezado
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.text("REPORTE MÉDICO INTEGRAL", 105, y, { align: "center" });
@@ -120,7 +113,6 @@ function descargarPDFHistorial(id) {
     doc.line(20, y, 190, y);
     y += 15;
 
-    // Información del Paciente
     doc.setFontSize(12);
     doc.setTextColor(40);
     doc.text("DATOS DEL PACIENTE", 20, y);
@@ -151,37 +143,24 @@ function descargarPDFHistorial(id) {
         doc.text("No se registran notas médicas en el historial.", 25, y);
     } else {
         historial.forEach((nota) => {
-            // Verificar si la nota cabe en la página, si no, crear nueva
-            if (y > 250) {
-                doc.addPage();
-                y = 20;
-            }
-
-            // Fondo para el título de la nota
+            if (y > 250) { doc.addPage(); y = 20; }
             doc.setFillColor(245, 245, 245);
             doc.rect(20, y - 5, 170, 8, 'F');
-            
             doc.setFont("helvetica", "bold");
             doc.setFontSize(10);
             doc.setTextColor(52, 73, 94);
             doc.text(`${nota.tipo.toUpperCase()} - ${nota.fecha}`, 25, y);
             y += 8;
-
             doc.setFont("helvetica", "normal");
             doc.setTextColor(0);
-            
-            // Ajuste automático de texto largo (multi-línea)
             const splitText = doc.splitTextToSize(nota.texto, 160);
             doc.text(splitText, 25, y);
             y += (splitText.length * 6) + 10;
         });
     }
-
-    // Pie de página
     doc.setFontSize(9);
     doc.setTextColor(150);
     doc.text(`Generado por ClinicOS - ${new Date().toLocaleString()}`, 105, 285, { align: "center" });
-
     doc.save(`Reporte_${p.nombre.replace(/\s+/g, '_')}.pdf`);
 }
 
@@ -195,14 +174,16 @@ function filtrarPacientes() {
     render(filtrados);
 }
 
+// CAMBIO: Ahora envía modo 'modificar'
 function verHistorial(id) {
     localStorage.setItem("pacienteActual", String(id));
-    window.location.href = "historial.html";
+    window.location.href = "historial.html?mode=modificar";
 }
 
+// CAMBIO: Ahora envía modo 'nuevaNota'
 function agregarNotaDirecta(id) {
     localStorage.setItem("pacienteActual", String(id));
-    window.location.href = "historial.html?action=addNote";
+    window.location.href = "historial.html?mode=nuevaNota";
 }
 
 function volver() { window.location.href = "dashboard.html"; }
