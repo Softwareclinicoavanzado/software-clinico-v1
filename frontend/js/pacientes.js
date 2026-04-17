@@ -92,7 +92,11 @@ function agregarPaciente() {
 
     pacientes.push(nuevoPaciente);
     Object.values(inputs).forEach(input => { if(input) input.value = ""; });
-    guardar();
+    
+    // Guardamos y redirigimos a la vista de lista para ver el cambio
+    savePacientes(pacientes);
+    alert("Paciente registrado!");
+    window.location.href = "pacientes.html?mode=ver";
 }
 
 function filtrarPacientes() {
@@ -135,5 +139,27 @@ function descargarPDFHistorial(id) {
 
 function volver() { window.location.href = "dashboard.html"; }
 
+// --- NUEVA LÓGICA DE CONTROL DE VISTAS ---
+function gestionarVistas() {
+    const params = new URLSearchParams(window.location.search);
+    const modo = params.get("mode");
+    
+    const form = document.getElementById("seccionFormulario");
+    const lista = document.getElementById("seccionLista");
+    const titulo = document.getElementById("tituloPagina");
+
+    if (modo === "nuevo") {
+        form.style.display = "block";
+        lista.style.display = "none";
+        titulo.innerText = "Registrar Paciente";
+    } else {
+        // Por defecto o si es 'ver', mostramos la lista
+        form.style.display = "none";
+        lista.style.display = "block";
+        titulo.innerText = "Listado de Pacientes";
+    }
+}
+
 // Ejecución
 cargarDatos();
+gestionarVistas();
