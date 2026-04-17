@@ -1,6 +1,7 @@
 // Asegurar que las funciones sean globales para que los botones onclick las vean
-window.irPacientes = function() {
-    window.location.href = "pacientes.html";
+window.irPacientes = function(modo) {
+    // Redirige pasando el modo (ver o nuevo) en la URL
+    window.location.href = `pacientes.html?mode=${modo}`;
 };
 
 window.irCitas = function() {
@@ -17,20 +18,17 @@ document.addEventListener("DOMContentLoaded", () => {
     const clinicaNombre = localStorage.getItem("clinicaNombre");
     const rol = localStorage.getItem("rol");
 
-    // Si falta la sesión, mandarlo al login de una vez
     if (!clinicaID || !clinicaNombre || !rol) {
         window.location.replace("index.html");
         return;
     }
 
-    // Actualizar interfaz
     const clinicaElem = document.getElementById("clinica");
     const usuarioElem = document.getElementById("usuarioInfo");
     
     if(clinicaElem) clinicaElem.innerText = `Bienvenido a ${clinicaNombre}`;
     if(usuarioElem) usuarioElem.innerText = `Rol: ${rol.toUpperCase()}`;
 
-    // Contador de pacientes real
     const pacientesKey = `pacientes_${clinicaID}`;
     const pacientes = JSON.parse(localStorage.getItem(pacientesKey)) || [];
     const totalElem = document.getElementById("totalPacientes");
