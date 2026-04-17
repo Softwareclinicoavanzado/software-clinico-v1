@@ -12,47 +12,45 @@
     <h1 id="tituloPrincipal">Historial clínico</h1>
     <p class="subtitulo" id="pacienteNombre">Paciente</p>
 
-    <div class="card" id="seccionAgregarNota">
-      <h3>Nueva Nota Médica</h3>
+    <div class="card" id="seccionAgregarNota" style="display: none;">
+      <h3 style="color: #2ecc71; margin-bottom: 15px;">📝 Redactar Nota Médica</h3>
       <label><strong>Tipo de nota</strong></label>
-      <select id="tipoNota">
+      <select id="tipoNota" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white;">
         <option value="Consulta">Consulta</option>
         <option value="Diagnóstico">Diagnóstico</option>
         <option value="Seguimiento">Seguimiento</option>
         <option value="Receta">Receta</option>
       </select>
 
-      <label><strong>Nota médica</strong></label>
+      <label><strong>Detalle de la nota</strong></label>
       <textarea
         id="nota"
         placeholder="Escribir nota médica detallada..."
-        style="width:100%;height:120px;border-radius:8px;padding:10px;"
+        style="width:100%; height:150px; border-radius:8px; padding:10px; background: #1a1a1a; color: white; border: 1px solid #333;"
       ></textarea>
 
-      <div style="margin-top:10px;">
-        <button type="button" onclick="agregarNota()">Agregar nota</button>
+      <div style="margin-top:15px;">
+        <button type="button" onclick="agregarNota()" style="background-color: #2ecc71; width: 100%;">Guardar Nota Médica</button>
       </div>
     </div>
 
-    <div id="seccionVerHistorial">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3>Registros Médicos</h3>
-            <button type="button" onclick="exportarPDF()" style="background-color: #3498db; padding: 5px 15px;">
-                Descargar PDF
+    <div id="seccionVerHistorial" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="color: #3498db;">📋 Registros del Historial</h3>
+            <button type="button" onclick="exportarPDF()" style="background-color: #3498db; padding: 8px 12px; font-size: 0.9rem;">
+                📄 PDF
             </button>
         </div>
-        <ul class="lista" id="listaHistorial"></ul>
+        <ul class="lista" id="listaHistorial" style="padding: 0;"></ul>
     </div>
 
-    <button class="logout" type="button" onclick="volver()" style="margin-top: 20px;">Volver</button>
+    <button class="logout" type="button" onclick="volver()" style="margin-top: 20px; border: 1px solid #e74c3c; color: #e74c3c; background: transparent;">Volver</button>
   </div>
 
   <script src="js/session.js"></script>
   <script src="js/storage.js"></script>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="js/pdf.js"></script>
-
   <script src="js/historial.js"></script>
 </body>
 </html>
