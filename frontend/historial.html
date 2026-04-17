@@ -9,11 +9,11 @@
 <body>
 
   <div class="container">
-    <h1>Historial clínico</h1>
+    <h1 id="tituloPrincipal">Historial clínico</h1>
     <p class="subtitulo" id="pacienteNombre">Paciente</p>
 
-    <!-- NOTA MÉDICA -->
-    <div class="card">
+    <div class="card" id="seccionAgregarNota">
+      <h3>Nueva Nota Médica</h3>
       <label><strong>Tipo de nota</strong></label>
       <select id="tipoNota">
         <option value="Consulta">Consulta</option>
@@ -31,22 +31,25 @@
 
       <div style="margin-top:10px;">
         <button type="button" onclick="agregarNota()">Agregar nota</button>
-        <button type="button" onclick="exportarPDF()" style="margin-left:10px;">
-          Descargar PDF
-        </button>
       </div>
     </div>
 
-    <!-- HISTORIAL -->
-    <ul class="lista" id="listaHistorial"></ul>
+    <div id="seccionVerHistorial">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3>Registros Médicos</h3>
+            <button type="button" onclick="exportarPDF()" style="background-color: #3498db; padding: 5px 15px;">
+                Descargar PDF
+            </button>
+        </div>
+        <ul class="lista" id="listaHistorial"></ul>
+    </div>
 
-    <button class="logout" type="button" onclick="volver()">Volver</button>
+    <button class="logout" type="button" onclick="volver()" style="margin-top: 20px;">Volver</button>
   </div>
 
   <script src="js/session.js"></script>
   <script src="js/storage.js"></script>
 
-  <!-- PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="js/pdf.js"></script>
 
