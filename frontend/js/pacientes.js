@@ -25,11 +25,13 @@ const inputs = {
 };
 
 function cargarDatos() {
+    // getPacientes() viene de storage.js
     pacientes = getPacientes();
     render();
 }
 
 async function guardar() {
+    // savePacientes() viene de storage.js
     savePacientes(pacientes);
     render();
     if (typeof syncAllToCloud === "function") await syncAllToCloud();
@@ -94,6 +96,35 @@ function agregarPaciente() {
     savePacientes(pacientes);
     alert("¡Paciente registrado!");
     window.location.href = "pacientes.html?mode=ver";
+}
+
+/* ==========================================
+    FUNCIÓN ELIMINAR (LA QUE FALTABA)
+========================================== */
+function eliminarPaciente(id) {
+    const p = pacientes.find(pac => pac.id === id);
+    if (!p) return;
+
+    const confirmacion = confirm(`⚠️ ¿ELIMINAR PACIENTE?\n\nNombre: ${p.nombre}\n\nSe borrará su perfil e historial de forma permanente.`);
+
+    if (confirmacion) {
+        // Filtrar la lista local
+        pacientes = pacientes.filter(pac => pac.id !== id);
+        
+        // Guardar en LocalStorage (Actualiza la clínica actual)
+        savePacientes(pacientes);
+        
+        // Limpiar el historial asociado a ese ID para no dejar basura
+        localStorage.removeItem(`historial_${id}`);
+        
+        // Refrescar la lista en pantalla
+        render();
+        
+        console.log(`Paciente ${id} eliminado.`);
+        
+        // Sync al backend
+        if (typeof syncAllToCloud === "function") syncAllToCloud();
+    }
 }
 
 function descargarPDFHistorial(id) {
@@ -174,13 +205,11 @@ function filtrarPacientes() {
     render(filtrados);
 }
 
-// CAMBIO: Ahora envía modo 'modificar'
 function verHistorial(id) {
     localStorage.setItem("pacienteActual", String(id));
     window.location.href = "historial.html?mode=modificar";
 }
 
-// CAMBIO: Ahora envía modo 'nuevaNota'
 function agregarNotaDirecta(id) {
     localStorage.setItem("pacienteActual", String(id));
     window.location.href = "historial.html?mode=nuevaNota";
@@ -206,5 +235,6 @@ function gestionarVistas() {
     }
 }
 
+// Iniciar aplicación
 cargarDatos();
 gestionarVistas();
