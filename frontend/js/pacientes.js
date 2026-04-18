@@ -1,7 +1,6 @@
 /* =========================
     PACIENTES | ClinicOS
 ========================= */
-// CORRECCIÓN DE ID: Usamos la función de storage.js para asegurar sincronía
 const clinicaID = typeof getClinicaID === "function" ? getClinicaID() : localStorage.getItem("clinicaID");
 
 if (!clinicaID) {
@@ -10,6 +9,7 @@ if (!clinicaID) {
 
 const rol = localStorage.getItem("rol") || "admin";
 let pacientes = [];
+let editandoID = null; // Variable para controlar si estamos editando o creando
 
 // Elementos del DOM
 const inputs = {
@@ -27,13 +27,11 @@ const inputs = {
 };
 
 function cargarDatos() {
-    // getPacientes() viene de storage.js
     pacientes = getPacientes();
     render();
 }
 
 async function guardar() {
-    // savePacientes() viene de storage.js
     savePacientes(pacientes);
     render();
     if (typeof syncAllToCloud === "function") await syncAllToCloud();
@@ -72,37 +70,95 @@ function render(data = pacientes) {
     });
 }
 
+// Función para cargar los datos en el formulario para editar
+function editarPaciente(id) {
+    const p = pacientes.find(pac => pac.id === id);
+    if (!p) return;
+
+    editandoID = id; // Activamos modo edición
+
+    // Llenamos el formulario con los datos actuales
+    inputs.nombre.value = p.nombre || "";
+    inputs.dpi.value = p.dpi || "";
+    inputs.edad.value = p.edad || "";
+    inputs.telefono.value = p.telefono || "";
+    inputs.fechaNacimiento.value = p.fechaNacimiento || "";
+    inputs.sexo.value = p.sexo || "";
+    inputs.contactoEmergencia.value = p.contactoEmergencia || "";
+    inputs.aseguradora.value = p.aseguradora || "";
+    inputs.poliza.value = p.poliza || "";
+    inputs.medicoAsignado.value = p.medicoAsignado || "";
+    inputs.sede.value = p.sede || "";
+
+    // Cambiamos la interfaz para mostrar el formulario
+    document.getElementById("seccionFormulario").style.display = "block";
+    document.getElementById("seccionLista").style.display = "none";
+    document.getElementById("tituloPagina").innerText = "Actualizar Perfil de Paciente";
+    
+    // Cambiamos el texto del botón principal
+    const btnSubmit = document.querySelector(".btn-primary");
+    if (btnSubmit) btnSubmit.innerText = "💾 Guardar Cambios";
+}
+
 function agregarPaciente() {
     const nombre = inputs.nombre.value.trim();
     if (!nombre) return alert("El nombre es obligatorio");
 
-    const nuevoPaciente = {
-        id: Date.now(),
-        nombre: nombre,
-        dpi: inputs.dpi.value.trim(),
-        edad: inputs.edad.value,
-        telefono: inputs.telefono.value,
-        fechaNacimiento: inputs.fechaNacimiento.value,
-        sexo: inputs.sexo.value,
-        contactoEmergencia: inputs.contactoEmergencia.value,
-        aseguradora: inputs.aseguradora.value,
-        poliza: inputs.poliza.value,
-        medicoAsignado: inputs.medicoAsignado.value,
-        sede: inputs.sede.value,
-        creado: new Date().toLocaleDateString("es-GT"),
-        clinica_id: clinicaID
-    };
+    if (editandoID) {
+        // Lógica de Actualización
+        const index = pacientes.findIndex(p => p.id === editandoID);
+        if (index !== -1) {
+            pacientes[index] = {
+                ...pacientes[index], // Mantenemos ID y fecha de creación
+                nombre: nombre,
+                dpi: inputs.dpi.value.trim(),
+                edad: inputs.edad.value,
+                telefono: inputs.telefono.value,
+                fechaNacimiento: inputs.fechaNacimiento.value,
+                sexo: inputs.sexo.value,
+                contactoEmergencia: inputs.contactoEmergencia.value,
+                aseguradora: inputs.aseguradora.value,
+                poliza: inputs.poliza.value,
+                medicoAsignado: inputs.medicoAsignado.value,
+                sede: inputs.sede.value
+            };
+            alert("¡Perfil actualizado!");
+        }
+        editandoID = null; // Reset modo edición
+    } else {
+        // Lógica de Nuevo Registro
+        const nuevoPaciente = {
+            id: Date.now(),
+            nombre: nombre,
+            dpi: inputs.dpi.value.trim(),
+            edad: inputs.edad.value,
+            telefono: inputs.telefono.value,
+            fechaNacimiento: inputs.fechaNacimiento.value,
+            sexo: inputs.sexo.value,
+            contactoEmergencia: inputs.contactoEmergencia.value,
+            aseguradora: inputs.aseguradora.value,
+            poliza: inputs.poliza.value,
+            medicoAsignado: inputs.medicoAsignado.value,
+            sede: inputs.sede.value,
+            creado: new Date().toLocaleDateString("es-GT"),
+            clinica_id: clinicaID
+        };
+        pacientes.push(nuevoPaciente);
+        alert("¡Paciente registrado!");
+    }
 
-    pacientes.push(nuevoPaciente);
+    // Limpiar campos y guardar
     Object.values(inputs).forEach(input => { if(input) input.value = ""; });
     savePacientes(pacientes);
-    alert("¡Paciente registrado!");
+    
+    // Resetear textos de la UI y volver a la lista
+    document.getElementById("tituloPagina").innerText = "Gestión de Pacientes";
+    const btnSubmit = document.querySelector(".btn-primary");
+    if (btnSubmit) btnSubmit.innerText = "🚀 Añadir al Sistema";
+    
     window.location.href = "pacientes.html?mode=ver";
 }
 
-/* ==========================================
-    FUNCIÓN ELIMINAR (CON FIX DE STORAGE)
-========================================== */
 function eliminarPaciente(id) {
     const p = pacientes.find(pac => pac.id === id);
     if (!p) return;
@@ -110,19 +166,10 @@ function eliminarPaciente(id) {
     const confirmacion = confirm(`⚠️ ¿ELIMINAR PACIENTE?\n\nNombre: ${p.nombre}\n\nSe borrará su perfil e historial de forma permanente.`);
 
     if (confirmacion) {
-        // 1. Filtrar localmente
         pacientes = pacientes.filter(pac => pac.id !== id);
-        
-        // 2. Usar savePacientes de storage.js para que sincronice bien
         savePacientes(pacientes);
-        
-        // 3. Limpiar historial
         localStorage.removeItem(`historial_${id}`);
-        
-        // 4. Refrescar
         render();
-        
-        // 5. Sincronizar nube
         if (typeof syncAllToCloud === "function") syncAllToCloud();
     }
 }
@@ -235,6 +282,5 @@ function gestionarVistas() {
     }
 }
 
-// Iniciar aplicación
 cargarDatos();
 gestionarVistas();
