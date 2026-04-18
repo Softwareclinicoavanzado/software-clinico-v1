@@ -1,7 +1,9 @@
 /* =========================
     PACIENTES | ClinicOS
 ========================= */
-const clinicaID = localStorage.getItem("clinicaID");
+// CORRECCIÓN DE ID: Usamos la función de storage.js para asegurar sincronía
+const clinicaID = typeof getClinicaID === "function" ? getClinicaID() : localStorage.getItem("clinicaID");
+
 if (!clinicaID) {
     window.location.href = "index.html";
 }
@@ -99,7 +101,7 @@ function agregarPaciente() {
 }
 
 /* ==========================================
-    FUNCIÓN ELIMINAR (LA QUE FALTABA)
+    FUNCIÓN ELIMINAR (CON FIX DE STORAGE)
 ========================================== */
 function eliminarPaciente(id) {
     const p = pacientes.find(pac => pac.id === id);
@@ -108,21 +110,19 @@ function eliminarPaciente(id) {
     const confirmacion = confirm(`⚠️ ¿ELIMINAR PACIENTE?\n\nNombre: ${p.nombre}\n\nSe borrará su perfil e historial de forma permanente.`);
 
     if (confirmacion) {
-        // Filtrar la lista local
+        // 1. Filtrar localmente
         pacientes = pacientes.filter(pac => pac.id !== id);
         
-        // Guardar en LocalStorage (Actualiza la clínica actual)
+        // 2. Usar savePacientes de storage.js para que sincronice bien
         savePacientes(pacientes);
         
-        // Limpiar el historial asociado a ese ID para no dejar basura
+        // 3. Limpiar historial
         localStorage.removeItem(`historial_${id}`);
         
-        // Refrescar la lista en pantalla
+        // 4. Refrescar
         render();
         
-        console.log(`Paciente ${id} eliminado.`);
-        
-        // Sync al backend
+        // 5. Sincronizar nube
         if (typeof syncAllToCloud === "function") syncAllToCloud();
     }
 }
