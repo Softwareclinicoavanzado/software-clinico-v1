@@ -1,9 +1,8 @@
-// Asegurar que las funciones sean globales para que los botones onclick las vean
+// Funciones globales de navegación
 window.irPacientes = function(modo) {
     window.location.href = `pacientes.html?mode=${modo}`;
 };
 
-// MODIFICADO: Ahora recibe el modo (ver o nuevo)
 window.irCitas = function(modo) {
     window.location.href = `citas.html?mode=${modo}`;
 };
