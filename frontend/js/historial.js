@@ -47,13 +47,26 @@ function render() {
         const div = document.createElement("div");
         div.className = "card";
         div.style.marginBottom = "15px";
-        div.style.borderLeft = h.tipo === "Receta" ? "4px solid #34d399" : "4px solid #3498db";
+        
+        // Lógica de colores de borde
+        if (h.tipo === "Alergia") {
+            div.style.borderLeft = "4px solid #e74c3c";
+        } else if (h.tipo === "Receta") {
+            div.style.borderLeft = "4px solid #34d399";
+        } else {
+            div.style.borderLeft = "4px solid #3498db";
+        }
+
+        // Lógica de colores de texto de título
+        let colorTitulo = "#93c5fd";
+        if (h.tipo === "Alergia") colorTitulo = "#e74c3c";
+        if (h.tipo === "Receta") colorTitulo = "#34d399";
 
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
-                    <strong style="color: ${h.tipo === "Receta" ? "#34d399" : "#93c5fd"}; font-size: 1.1rem;">
-                        ${h.tipo.toUpperCase()}
+                    <strong style="color: ${colorTitulo}; font-size: 1.1rem;">
+                        ${h.tipo === "Alergia" ? "⚠️ " + h.tipo.toUpperCase() : h.tipo.toUpperCase()}
                     </strong><br>
                     <small style="color: #64748b;">${h.fecha}</small>
                 </div>
@@ -111,10 +124,21 @@ function exportarPDF() {
     let y = 40;
     historial.forEach(h => {
         if (y > 270) { doc.addPage(); y = 20; }
-        doc.setFont("helvetica", "bold");
-        doc.text(`${h.fecha} - ${h.tipo}`, 10, y);
+        
+        // Resaltar Alergia en el PDF
+        if (h.tipo === "Alergia") {
+            doc.setTextColor(231, 76, 60); // Rojo
+            doc.setFont("helvetica", "bold");
+            doc.text(`⚠️ ${h.fecha} - ${h.tipo.toUpperCase()}`, 10, y);
+        } else {
+            doc.setTextColor(0, 0, 0); // Negro
+            doc.setFont("helvetica", "bold");
+            doc.text(`${h.fecha} - ${h.tipo}`, 10, y);
+        }
+        
         y += 7;
         doc.setFont("helvetica", "normal");
+        doc.setTextColor(0, 0, 0);
         const lines = doc.splitTextToSize(h.texto, 180);
         doc.text(lines, 15, y);
         y += (lines.length * 6) + 10;
@@ -132,28 +156,24 @@ function eliminarNota(index) {
 
 function volver() { window.location.href = "pacientes.html"; }
 
-// FUNCIÓN CLAVE: Separa las vistas según el parámetro de la URL
 function gestionarVistaActual() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
     const pNombre = document.getElementById("pacienteNombre");
 
     if (modo === "nuevaNota") {
-        // MODO AGREGAR
         tituloPrincipal.textContent = "Nueva Nota Médica";
         pNombre.textContent = `Paciente: ${paciente.nombre}`;
-        seccionAgregar.style.display = "block"; // Muestra formulario
-        seccionVer.style.display = "none";      // Oculta historial
+        seccionAgregar.style.display = "block";
+        seccionVer.style.display = "none";
         setTimeout(() => notaInput.focus(), 300);
     } else {
-        // MODO MODIFICAR (DEFAULT)
         tituloPrincipal.textContent = "Gestión de Historial";
         pNombre.textContent = `Paciente: ${paciente.nombre}`;
-        seccionAgregar.style.display = "none";  // Oculta formulario
-        seccionVer.style.display = "block";     // Muestra historial
+        seccionAgregar.style.display = "none";
+        seccionVer.style.display = "block";
         render();
     }
 }
 
-// Inicializar
 gestionarVistaActual();
