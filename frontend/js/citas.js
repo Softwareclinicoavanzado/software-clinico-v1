@@ -6,7 +6,6 @@ if (!clinicaID) {
     window.location.href = "index.html";
 }
 
-// Elementos del DOM
 const listaCitas = document.getElementById("listaCitas");
 const selectPaciente = document.getElementById("pacienteSelect");
 const inputFecha = document.getElementById("fecha");
@@ -49,7 +48,6 @@ function render() {
     }
 
     const pacientes = getPacientes();
-
     const citasOrdenadas = [...citas].sort((a, b) => new Date(`${a.fecha} ${a.hora}`) - new Date(`${b.fecha} ${b.hora}`));
 
     citasOrdenadas.forEach((c) => {
@@ -96,11 +94,9 @@ function agregarCita() {
     guardar();
 
     alert("✅ Cita agendada con éxito.");
-    
     inputFecha.value = "";
     inputHora.value = "";
     selectPaciente.value = "";
-
     cambiarVista('ver');
 }
 
@@ -127,7 +123,7 @@ function volver() {
     window.location.href = "dashboard.html";
 }
 
-// NUEVA FUNCIÓN: Para manejar la llegada desde el Dashboard
+// DETECCIÓN DE MODO DESDE LA URL
 function inicializarVistaCitas() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
@@ -141,5 +137,4 @@ function inicializarVistaCitas() {
     }
 }
 
-// Inicializar ejecutando la detección de modo
 inicializarVistaCitas();
