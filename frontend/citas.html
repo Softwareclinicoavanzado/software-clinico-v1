@@ -9,36 +9,40 @@
 <body>
 
   <div class="container">
-    <h1>Gestión de Citas</h1>
+    <h1 id="tituloPagina">Gestión de Citas</h1>
 
-    <!-- FORMULARIO -->
-    <label>Paciente</label>
-    <select id="pacienteSelect">
-      <option value="">Seleccione un paciente</option>
-    </select>
+    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+        <button type="button" onclick="cambiarVista('ver')" style="background-color: #3498db; flex: 1;">📅 Ver Agenda</button>
+        <button type="button" onclick="cambiarVista('nuevo')" style="background-color: #2ecc71; flex: 1;">➕ Nueva Cita</button>
+    </div>
 
-    <label>Fecha</label>
-    <input type="date" id="fecha">
+    <div id="seccionFormulario" class="card" style="display: none;">
+        <h3 style="color: #2ecc71; margin-bottom: 15px;">📝 Agendar Nueva Cita</h3>
+        
+        <label><strong>Paciente</strong></label>
+        <select id="pacienteSelect" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white;">
+          <option value="">Seleccione un paciente</option>
+        </select>
 
-    <label>Hora</label>
-    <input type="time" id="hora">
+        <label><strong>Fecha</strong></label>
+        <input type="date" id="fecha" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
 
-    <button type="button" onclick="agregarCita()">Agregar Cita</button>
+        <label><strong>Hora</strong></label>
+        <input type="time" id="hora" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
 
-    <h2>Lista de Citas</h2>
-    <ul class="lista" id="listaCitas"></ul>
+        <button type="button" onclick="agregarCita()" style="background-color: #2ecc71; width: 100%; margin-top: 10px;">Confirmar y Agendar</button>
+    </div>
 
-    <button class="logout" type="button" onclick="volver()">Volver</button>
+    <div id="seccionLista" style="display: none;">
+        <h2 style="color: #3498db; margin-bottom: 15px;">📋 Citas Programadas</h2>
+        <ul class="lista" id="listaCitas" style="padding: 0;"></ul>
+    </div>
+
+    <button class="logout" type="button" onclick="volver()" style="margin-top: 20px; border: 1px solid #e74c3c; color: #e74c3c; background: transparent;">Volver al Inicio</button>
   </div>
 
-  <!-- SESIÓN -->
   <script src="js/session.js"></script>
-
-  <!-- STORAGE (OBLIGATORIO) -->
   <script src="js/storage.js"></script>
-
-  <!-- CITAS -->
   <script src="js/citas.js"></script>
-
 </body>
 </html>
