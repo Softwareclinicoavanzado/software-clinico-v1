@@ -50,7 +50,6 @@ function render() {
 
     const pacientes = getPacientes();
 
-    // Ordenar por fecha y hora
     const citasOrdenadas = [...citas].sort((a, b) => new Date(`${a.fecha} ${a.hora}`) - new Date(`${b.fecha} ${b.hora}`));
 
     citasOrdenadas.forEach((c) => {
@@ -81,13 +80,12 @@ function agregarCita() {
         return alert("Completa todos los campos para agendar.");
     }
 
-    // Evitar duplicados en el mismo horario
     if (citas.some(c => c.fecha === inputFecha.value && c.hora === inputHora.value)) {
         return alert("⚠️ Este horario ya está ocupado por otra cita.");
     }
 
     const nuevaCita = {
-        id: Date.now(), // ID único para cada cita
+        id: Date.now(),
         pacienteID: Number(selectPaciente.value),
         fecha: inputFecha.value,
         hora: inputHora.value,
@@ -99,12 +97,10 @@ function agregarCita() {
 
     alert("✅ Cita agendada con éxito.");
     
-    // Limpiar campos
     inputFecha.value = "";
     inputHora.value = "";
     selectPaciente.value = "";
 
-    // Volver a la vista de lista
     cambiarVista('ver');
 }
 
@@ -116,13 +112,13 @@ function eliminarCita(id) {
 
 function cambiarVista(modo) {
     if (modo === 'nuevo') {
-        seccionForm.style.display = "block";
-        seccionVer.style.display = "none";
-        titulo.innerText = "Agendar Cita";
+        if(seccionForm) seccionForm.style.display = "block";
+        if(seccionVer) seccionVer.style.display = "none";
+        if(titulo) titulo.innerText = "Agendar Cita";
     } else {
-        seccionForm.style.display = "none";
-        seccionVer.style.display = "block";
-        titulo.innerText = "Agenda Médica";
+        if(seccionForm) seccionForm.style.display = "none";
+        if(seccionVer) seccionVer.style.display = "block";
+        if(titulo) titulo.innerText = "Agenda Médica";
         render();
     }
 }
@@ -131,6 +127,19 @@ function volver() {
     window.location.href = "dashboard.html";
 }
 
-// Inicializar
-cargarPacientes();
-cambiarVista('ver'); // Por defecto ver la lista
+// NUEVA FUNCIÓN: Para manejar la llegada desde el Dashboard
+function inicializarVistaCitas() {
+    const params = new URLSearchParams(window.location.search);
+    const modo = params.get("mode");
+
+    cargarPacientes();
+    
+    if (modo === 'nuevo') {
+        cambiarVista('nuevo');
+    } else {
+        cambiarVista('ver');
+    }
+}
+
+// Inicializar ejecutando la detección de modo
+inicializarVistaCitas();
