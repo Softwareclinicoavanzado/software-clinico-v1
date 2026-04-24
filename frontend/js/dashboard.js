@@ -12,6 +12,30 @@ window.logout = function() {
     window.location.replace("index.html");
 };
 
+// MODIFICADO: Función asíncrona para obtener contadores reales
+async function actualizarContadores(clinicaID) {
+    const totalPacientesElem = document.getElementById("totalPacientes");
+    const totalCitasElem = document.getElementById("totalCitas");
+
+    try {
+        // Llamamos a las funciones de storage.js que ahora consultan la nube
+        const pacientes = await getPacientes();
+        const citas = await getCitas();
+
+        if(totalPacientesElem) totalPacientesElem.innerText = pacientes.length;
+        if(totalCitasElem) totalCitasElem.innerText = citas.length;
+        
+        console.log("📊 Contadores sincronizados con la nube");
+    } catch (error) {
+        console.error("Error al actualizar contadores:", error);
+        // Fallback: mostrar lo que haya en local si la nube falla
+        const pacLocal = JSON.parse(localStorage.getItem(`pacientes_${clinicaID}`)) || [];
+        const citLocal = JSON.parse(localStorage.getItem(`citas_${clinicaID}`)) || [];
+        if(totalPacientesElem) totalPacientesElem.innerText = pacLocal.length;
+        if(totalCitasElem) totalCitasElem.innerText = citLocal.length;
+    }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const clinicaID = localStorage.getItem("clinicaID");
     const clinicaNombre = localStorage.getItem("clinicaNombre");
@@ -28,14 +52,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if(clinicaElem) clinicaElem.innerText = `Bienvenido a ${clinicaNombre}`;
     if(usuarioElem) usuarioElem.innerText = `Rol: ${rol.toUpperCase()}`;
 
-    // --- LÓGICA DE CONTADORES ---
-    const pacientesKey = `pacientes_${clinicaID}`;
-    const pacientes = JSON.parse(localStorage.getItem(pacientesKey)) || [];
-    const totalPacientesElem = document.getElementById("totalPacientes");
-    if(totalPacientesElem) totalPacientesElem.innerText = pacientes.length;
-
-    const citasKey = `citas_${clinicaID}`;
-    const citas = JSON.parse(localStorage.getItem(citasKey)) || [];
-    const totalCitasElem = document.getElementById("totalCitas");
-    if(totalCitasElem) totalCitasElem.innerText = citas.length;
+    // Ejecutar la actualización de contadores
+    actualizarContadores(clinicaID);
 });
