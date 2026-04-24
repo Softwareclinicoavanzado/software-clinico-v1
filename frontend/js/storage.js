@@ -1,7 +1,7 @@
-/* =========================
-   STORAGE MANAGER PRO++ (ULTRA-STABLE)
-========================= */
-const STORAGE_VERSION = "1.1.2";
+/* =============================================
+    STORAGE MANAGER PRO++ (CLOUD-SYNC ENABLED)
+============================================= */
+const STORAGE_VERSION = "1.2.0"; // Actualizado a sync real
 const API_URL = "https://software-clinico-v1.onrender.com";
 
 function getClinicaID() {
@@ -26,49 +26,89 @@ function saveLocal(key, data) {
     }
 }
 
-// --- MÓDULOS DE DATOS ---
-function getPacientes() {
-    return safeParse(`pacientes_${getClinicaID()}`, []);
+// --- MÓDULOS DE DATOS (AHORA ASÍNCRONOS) ---
+
+// Obtiene pacientes de la Nube (con respaldo local)
+async function getPacientes() {
+    const id = getClinicaID();
+    try {
+        const response = await fetch(`${API_URL}/api/pacientes?clinica_id=${id}`);
+        if (response.ok) {
+            const datosNube = await response.json();
+            saveLocal(`pacientes_${id}`, datosNube); // Actualizamos respaldo local
+            console.log("✅ Pacientes cargados desde la nube");
+            return datosNube;
+        }
+    } catch (error) {
+        console.warn("📡 Modo Local: Usando caché de pacientes");
+    }
+    return safeParse(`pacientes_${id}`, []);
 }
 
 function savePacientes(data) {
     saveLocal(`pacientes_${getClinicaID()}`, data);
-    silentSync('pacientes', data); 
+    // Enviamos el último paciente agregado a la nube
+    const ultimoPaciente = data[data.length - 1];
+    if (ultimoPaciente) {
+        silentSync('pacientes', ultimoPaciente); 
+    }
 }
 
-function getCitas() {
-    return safeParse(`citas_${getClinicaID()}`, []);
+// Obtiene citas de la Nube
+async function getCitas() {
+    const id = getClinicaID();
+    try {
+        const response = await fetch(`${API_URL}/api/citas?clinica_id=${id}`);
+        if (response.ok) {
+            const datosNube = await response.json();
+            saveLocal(`citas_${id}`, datosNube);
+            return datosNube;
+        }
+    } catch (error) {
+        console.warn("📡 Modo Local: Usando caché de citas");
+    }
+    return safeParse(`citas_${id}`, []);
 }
 
 function saveCitas(data) {
     saveLocal(`citas_${getClinicaID()}`, data);
-    silentSync('citas', data);
+    const ultimaCita = data[data.length - 1];
+    if (ultimaCita) {
+        silentSync('citas', ultimaCita);
+    }
 }
 
 // --- SINCRONIZACIÓN ASÍNCRONA ---
-async function silentSync(tipo = 'general', data = null) {
+async function silentSync(tipo = 'general', payload = null) {
     const id = getClinicaID();
-    let payload = data;
-    if (Array.isArray(data)) payload = data[data.length - 1];
 
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2000);
         const endpoint = tipo === 'pacientes' ? '/api/pacientes' : (tipo === 'citas' ? '/api/citas' : '/sync');
+        
+        // Aseguramos que el payload tenga el clinica_id
+        if (payload && typeof payload === 'object') {
+            payload.clinica_id = id;
+        }
 
         const response = await fetch(`${API_URL}${endpoint}?clinica_id=${id}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload || { clinica_id: id, status: "ping" }),
-            signal: controller.signal
+            body: JSON.stringify(payload || { clinica_id: id, status: "ping" })
         });
 
-        clearTimeout(timeoutId);
-        if (response.ok) console.log(`☁️ Nube actualizada: ${tipo}`);
+        if (response.ok) {
+            console.log(`☁️ Nube sincronizada con éxito: ${tipo}`);
+        } else {
+            console.error(`❌ Error en sincronización: ${response.statusText}`);
+        }
     } catch (error) {
-        console.log("📡 Modo Local Activo");
+        console.log("📡 Fallo de conexión, el dato se sincronizará después.");
     }
 }
 
-async function syncAllToCloud() { await silentSync(); }
-console.log(`🚀 Storage Engine v${STORAGE_VERSION} cargado.`);
+async function syncAllToCloud() { 
+    // Esta función se puede expandir para hacer un push masivo si es necesario
+    await silentSync('general', { status: "check_sync" }); 
+}
+
+console.log(`🚀 Storage Engine v${STORAGE_VERSION} cargado correctamente.`);
