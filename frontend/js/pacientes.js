@@ -58,7 +58,7 @@ function render(data = pacientes) {
             </div>
             <div class="paciente-info">
                 <small>Edad: ${p.edad || "-"} | Sexo: ${p.sexo || "-"} | Tel: ${p.telefono || "-"}</small><br>
-                <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza || "-"} | Sucursal: ${p.sede || "-"}</small>
+                <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza_seguro || p.poliza || "-"} | Sucursal: ${p.sede || "-"}</small>
             </div>
             <div class="actions" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <button type="button" onclick="verHistorial(${p.id})">⚙️ Modificar Historial</button>
@@ -85,7 +85,7 @@ function editarPaciente(id) {
     inputs.sexo.value = p.sexo || "";
     inputs.contactoEmergencia.value = p.contactoEmergencia || "";
     inputs.aseguradora.value = p.aseguradora || "";
-    inputs.poliza.value = p.poliza || "";
+    inputs.poliza.value = p.poliza_seguro || p.poliza || ""; // Compatibilidad con ambos nombres
     inputs.medicoAsignado.value = p.medicoAsignado || "";
     inputs.sede.value = p.sede || "";
 
@@ -97,7 +97,6 @@ function editarPaciente(id) {
     if (btnSubmit) btnSubmit.innerText = "💾 Guardar Cambios";
 }
 
-// MODIFICADO: Ahora es una función asíncrona para asegurar el guardado
 async function agregarPaciente() {
     const nombre = inputs.nombre.value.trim();
     if (!nombre) return alert("El nombre es obligatorio");
@@ -111,12 +110,12 @@ async function agregarPaciente() {
                 dpi: inputs.dpi.value.trim(),
                 edad: inputs.edad.value,
                 telefono: inputs.telefono.value,
-                fechaNacimiento: inputs.fechaNacimiento.value,
+                fecha_nacimiento: inputs.fechaNacimiento.value, // Cambiado a snake_case para DB
                 sexo: inputs.sexo.value,
-                contactoEmergencia: inputs.contactoEmergencia.value,
+                contacto_emergencia: inputs.contactoEmergencia.value, // Cambiado a snake_case para DB
                 aseguradora: inputs.aseguradora.value,
-                poliza: inputs.poliza.value,
-                medicoAsignado: inputs.medicoAsignado.value,
+                poliza_seguro: inputs.poliza.value.trim(), // Nombre exacto de la DB
+                medico_asignado: inputs.medicoAsignado.value, // Cambiado a snake_case para DB
                 sede: inputs.sede.value
             };
             alert("¡Perfil actualizado!");
@@ -129,14 +128,14 @@ async function agregarPaciente() {
             dpi: inputs.dpi.value.trim(),
             edad: inputs.edad.value,
             telefono: inputs.telefono.value,
-            fechaNacimiento: inputs.fechaNacimiento.value,
+            fecha_nacimiento: inputs.fechaNacimiento.value,
             sexo: inputs.sexo.value,
-            contactoEmergencia: inputs.contactoEmergencia.value,
+            contacto_emergencia: inputs.contactoEmergencia.value,
             aseguradora: inputs.aseguradora.value,
-            poliza: inputs.poliza.value,
-            medicoAsignado: inputs.medicoAsignado.value,
+            poliza_seguro: inputs.poliza.value.trim(), // Nombre exacto de la DB
+            medico_asignado: inputs.medicoAsignado.value,
             sede: inputs.sede.value,
-            creado: new Date().toISOString(), // Formato ISO mejor para DB
+            creado: new Date().toISOString(), 
             clinica_id: clinicaID
         };
         pacientes.push(nuevoPaciente);
@@ -145,7 +144,6 @@ async function agregarPaciente() {
 
     Object.values(inputs).forEach(input => { if(input) input.value = ""; });
     
-    // Guardamos y sincronizamos
     await guardar();
     
     document.getElementById("tituloPagina").innerText = "Gestión de Pacientes";
@@ -165,12 +163,9 @@ async function eliminarPaciente(id) {
         pacientes = pacientes.filter(pac => Number(pac.id) !== Number(id));
         savePacientes(pacientes);
         render();
-        // Nota: Deberías implementar una ruta DELETE en el backend para borrar en Supabase
         if (typeof syncAllToCloud === "function") await syncAllToCloud();
     }
 }
-
-// ... Resto de funciones (descargarPDFHistorial, filtrarPacientes, etc.) se mantienen igual ...
 
 function filtrarPacientes() {
     const texto = document.getElementById("busqueda").value.toLowerCase();
