@@ -26,18 +26,31 @@ const errorDisplay = document.getElementById("error");
 const loginBtn = document.getElementById("loginBtn");
 
 /* =========================
-   GESTIÓN DE CLÍNICA ID
+   GESTIÓN DE CLÍNICA ID Y LENGUAJE
 ========================= */
 const params = new URLSearchParams(window.location.search);
 let clinicaID = params.get("clinica") || localStorage.getItem("clinicaID") || "clinica1";
+// Obtenemos el idioma actual (por defecto español)
+const currentLang = localStorage.getItem("lang") || "es";
 
 // Mostrar nombre de la clínica en el login
 if (mensaje) {
     if (!clinicas[clinicaID]) {
-        mensaje.innerText = "Clínica no válida";
+        // Traducción dinámica para clínica no válida
+        const msgErrorClinica = {
+            es: "Clínica no válida",
+            en: "Invalid Clinic",
+            fr: "Clinique non valide"
+        };
+        mensaje.innerText = msgErrorClinica[currentLang];
         if (loginBtn) loginBtn.disabled = true;
     } else {
-        mensaje.innerText = "Acceso a " + clinicas[clinicaID].nombre;
+        const accesoTxt = {
+            es: "Acceso a ",
+            en: "Access to ",
+            fr: "Accès à "
+        };
+        mensaje.innerText = accesoTxt[currentLang] + clinicas[clinicaID].nombre;
     }
 }
 
@@ -56,22 +69,37 @@ if (loginBtn) {
         const usuario = usuarioInput.value.trim();
         const password = passwordInput.value.trim();
 
-        // 1. Validaciones básicas
+        // 1. Validaciones básicas con traducción
         if (!usuario || !password) {
-            showError("Completa todos los campos");
+            const msgIncompleto = {
+                es: "Completa todos los campos",
+                en: "Please fill all fields",
+                fr: "Veuillez remplir tous los champs"
+            };
+            showError(msgIncompleto[currentLang]);
             return;
         }
 
         const clinica = clinicas[clinicaID];
         if (!clinica || !clinica.usuarios[usuario]) {
-            showError("Usuario no válido");
+            const msgUserInvalid = {
+                es: "Usuario no válido",
+                en: "Invalid user",
+                fr: "Utilisateur non valide"
+            };
+            showError(msgUserInvalid[currentLang]);
             return;
         }
 
         const data = clinica.usuarios[usuario];
 
         if (data.password !== password) {
-            showError("Contraseña incorrecta");
+            const msgPassInvalid = {
+                es: "Contraseña incorrecta",
+                en: "Incorrect password",
+                fr: "Mot de passe incorrect"
+            };
+            showError(msgPassInvalid[currentLang]);
             return;
         }
 
@@ -82,13 +110,15 @@ if (loginBtn) {
         localStorage.setItem("usuario", usuario);
         localStorage.setItem("loginTime", new Date().toISOString());
 
-        // 3. Sincronización Inteligente (No bloqueante)
-        // Si la función existe, la lanzamos pero NO esperamos 5 minutos
+        // 3. Sincronización Inteligente
         if (typeof syncAllToCloud === "function") {
-            console.log("Sincronizando en segundo plano...");
-            showError("Sincronizando...", "info"); // Usamos el color azul info del CSS
+            const msgSync = {
+                es: "Sincronizando...",
+                en: "Syncing...",
+                fr: "Synchronisation..."
+            };
+            showError(msgSync[currentLang], "info"); 
             
-            // Intentamos sincronizar con un timeout de 3 segundos máximo
             try {
                 await Promise.race([
                     syncAllToCloud(),
@@ -99,7 +129,6 @@ if (loginBtn) {
             }
         }
 
-        // ¡Vámonos al dashboard!
         window.location.href = "dashboard.html";
     };
 }
