@@ -9,40 +9,54 @@
 <body>
 
   <div class="container">
-    <h1 id="tituloPagina">Gestión de Citas</h1>
+    <h1 id="tituloPagina" data-i18n="gestion_citas">Gestión de Citas</h1>
 
     <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button type="button" onclick="cambiarVista('ver')" style="background-color: #3498db; flex: 1;">📅 Ver Agenda</button>
-        <button type="button" onclick="cambiarVista('nuevo')" style="background-color: #2ecc71; flex: 1;">➕ Nueva Cita</button>
+        <button type="button" onclick="cambiarVista('ver')" style="background-color: #3498db; flex: 1;">
+            <span data-i18n="ver_agenda">📅 Ver Agenda</span>
+        </button>
+        <button type="button" onclick="cambiarVista('nuevo')" style="background-color: #2ecc71; flex: 1;">
+            <span data-i18n="nueva_cita">➕ Nueva Cita</span>
+        </button>
     </div>
 
     <div id="seccionFormulario" class="card" style="display: none;">
-        <h3 style="color: #2ecc71; margin-bottom: 15px;">📝 Agendar Nueva Cita</h3>
+        <h3 style="color: #2ecc71; margin-bottom: 15px;" data-i18n="agendar_nueva_cita">📝 Agendar Nueva Cita</h3>
         
-        <label><strong>Paciente</strong></label>
+        <label><strong data-i18n="paciente_label">Paciente</strong></label>
         <select id="pacienteSelect" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white;">
-          <option value="">Seleccione un paciente</option>
+          <option value="" data-i18n="seleccione_paciente">Seleccione un paciente</option>
         </select>
 
-        <label><strong>Fecha</strong></label>
+        <label><strong data-i18n="fecha_label">Fecha</strong></label>
         <input type="date" id="fecha" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
 
-        <label><strong>Hora</strong></label>
+        <label><strong data-i18n="hora_label">Hora</strong></label>
         <input type="time" id="hora" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
 
-        <button type="button" onclick="agregarCita()" style="background-color: #2ecc71; width: 100%; margin-top: 10px;">Confirmar y Agendar</button>
+        <button type="button" onclick="agregarCita()" style="background-color: #2ecc71; width: 100%; margin-top: 10px;" data-i18n="confirmar_agendar">Confirmar y Agendar</button>
     </div>
 
     <div id="seccionLista" style="display: none;">
-        <h2 style="color: #3498db; margin-bottom: 15px;">📋 Citas Programadas</h2>
+        <h2 style="color: #3498db; margin-bottom: 15px;" data-i18n="citas_programadas">📋 Citas Programadas</h2>
         <ul class="lista" id="listaCitas" style="padding: 0;"></ul>
     </div>
 
-    <button class="logout" type="button" onclick="volver()" style="margin-top: 20px; border: 1px solid #e74c3c; color: #e74c3c; background: transparent;">Volver al Inicio</button>
+    <button class="logout" type="button" onclick="volver()" style="margin-top: 20px; border: 1px solid #e74c3c; color: #e74c3c; background: transparent;" data-i18n="volver_inicio">Volver al Inicio</button>
   </div>
 
+  <script src="js/translations.js"></script>
   <script src="js/session.js"></script>
   <script src="js/storage.js"></script>
   <script src="js/citas.js"></script>
+
+  <script>
+    window.addEventListener('load', () => {
+        const savedLang = localStorage.getItem("lang") || "es";
+        if(typeof changeLanguage === 'function') {
+            changeLanguage(savedLang);
+        }
+    });
+  </script>
 </body>
 </html>
