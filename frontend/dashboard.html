@@ -16,29 +16,48 @@
       <div class="stats" id="statsContainer" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
         <div class="stat-card">
           <h2 id="totalPacientes">0</h2>
-          <p>Pacientes Registrados</p>
+          <p data-i18n="pacientes_registrados">Pacientes Registrados</p>
         </div>
 
         <div class="stat-card">
           <h2 id="totalCitas">0</h2>
-          <p>Citas Agendadas</p>
+          <p data-i18n="citas_agendadas">Citas Agendadas</p>
         </div>
       </div>
 
       <div class="menu">
-        <button class="btn-primary" onclick="irPacientes('ver')">👥 Ver Pacientes</button>
-        <button class="btn-primary" onclick="irPacientes('nuevo')" style="background-color: #2ecc71;">➕ Agregar Paciente</button>
+        <button class="btn-primary" onclick="irPacientes('ver')">
+            <span data-i18n="ver_pacientes">👥 Ver Pacientes</span>
+        </button>
+        <button class="btn-primary" onclick="irPacientes('nuevo')" style="background-color: #2ecc71;">
+            <span data-i18n="agregar_paciente">➕ Agregar Paciente</span>
+        </button>
         
-        <button class="btn-primary" onclick="irCitas('ver')" style="background-color: #3498db;">📅 Ver Agenda</button>
-        <button class="btn-primary" onclick="irCitas('nuevo')" style="background-color: #f39c12;">⏰ Agendar Cita</button>
+        <button class="btn-primary" onclick="irCitas('ver')" style="background-color: #3498db;">
+            <span data-i18n="ver_agenda">📅 Ver Agenda</span>
+        </button>
+        <button class="btn-primary" onclick="irCitas('nuevo')" style="background-color: #f39c12;">
+            <span data-i18n="agendar_cita">⏰ Agendar Cita</span>
+        </button>
       </div>
 
-      <button class="logout" id="btnLogout" onclick="logout()">Cerrar sesión</button>
+      <button class="logout" id="btnLogout" onclick="logout()" data-i18n="cerrar_sesion">Cerrar sesión</button>
     </div>
   </div>
 
+  <script src="./js/translations.js"></script>
   <script src="./js/storage.js"></script>
   <script src="./js/session.js"></script>
   <script src="./js/dashboard.js"></script>
+
+  <script>
+    // Al cargar la página, aplicamos el idioma guardado
+    window.addEventListener('load', () => {
+        const savedLang = localStorage.getItem("lang") || "es";
+        if(typeof changeLanguage === 'function') {
+            changeLanguage(savedLang);
+        }
+    });
+  </script>
 </body>
 </html>
