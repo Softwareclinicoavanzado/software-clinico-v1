@@ -10,9 +10,20 @@ const UI = (() => {
 
   function toast(message, type = "info", time = 3000) {
     init();
+    
+    // Obtenemos el idioma actual
+    const currentLang = localStorage.getItem("lang") || "es";
+    
+    // Si el mensaje es una "llave" del diccionario, lo traducimos. 
+    // Si no, mostramos el mensaje tal cual.
+    let finalMessage = message;
+    if (typeof translations !== 'undefined' && translations[currentLang] && translations[currentLang][message]) {
+        finalMessage = translations[currentLang][message];
+    }
+
     const t = document.createElement("div");
     t.className = `toast ${type}`;
-    t.textContent = message;
+    t.textContent = finalMessage;
     container.appendChild(t);
 
     setTimeout(() => {
