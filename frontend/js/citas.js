@@ -16,15 +16,22 @@ const titulo = document.getElementById("tituloPagina");
 
 let citas = [];
 
-// MODIFICADO: Ahora carga pacientes de forma asíncrona para el select
+/**
+ * CARGAR PACIENTES: Directo desde Supabase
+ */
 async function cargarPacientes() {
-    const pacientes = await getPacientes(); 
-    selectPaciente.innerHTML = '<option value="">Seleccione un paciente</option>';
+    // Usamos directamente la tabla de pacientes de Supabase
+    const { data: pacientes, error } = await supabase
+        .from('pacientes')
+        .select('id, nombre')
+        .eq('clinica_id', clinicaID);
 
-    if (!pacientes || !pacientes.length) {
-        selectPaciente.innerHTML += '<option disabled>No hay pacientes registrados</option>';
+    if (error) {
+        console.error("Error al cargar pacientes:", error);
         return;
     }
+
+    selectPaciente.innerHTML = '<option value="" data-i18n="seleccione_paciente">Seleccione un paciente</option>';
 
     pacientes.forEach(p => {
         const option = document.createElement("option");
@@ -34,29 +41,39 @@ async function cargarPacientes() {
     });
 }
 
-async function guardar() {
-    saveCitas(citas);
-    render();
-    if (typeof syncAllToCloud === "function") await syncAllToCloud();
-}
-
-// MODIFICADO: Renderizado asíncrono para asegurar datos frescos
+/**
+ * RENDERIZAR: Dibuja las citas en pantalla
+ */
 async function render() {
     if (!listaCitas) return;
     listaCitas.innerHTML = "";
 
-    // Obtenemos pacientes para cruzar nombres en la vista de lista
-    const pacientes = await getPacientes();
-    
-    if (!citas || !citas.length) {
+    // Traemos las citas frescas de la Nube (Supabase)
+    const { data: citasCloud, error } = await supabase
+        .from('citas')
+        .select(`
+            id,
+            fecha,
+            hora,
+            paciente_id,
+            pacientes ( nombre )
+        `)
+        .eq('clinica_id', clinicaID)
+        .order('fecha', { ascending: true })
+        .order('hora', { ascending: true });
+
+    if (error) {
+        console.error("Error cargando citas:", error);
+        return;
+    }
+
+    if (!citasCloud || citasCloud.length === 0) {
         listaCitas.innerHTML = "<div class='card'><p style='text-align:center; opacity:0.6;'>No hay citas agendadas.</p></div>";
         return;
     }
 
-    const citasOrdenadas = [...citas].sort((a, b) => new Date(`${a.fecha} ${a.hora}`) - new Date(`${b.fecha} ${b.hora}`));
-
-    citasOrdenadas.forEach((c) => {
-        const paciente = pacientes.find(p => Number(p.id) === Number(c.paciente_id || c.pacienteID));
+    citasCloud.forEach((c) => {
+        const nombrePaciente = c.pacientes ? c.pacientes.nombre : "Paciente no identificado";
         const div = document.createElement("div");
         div.className = "card";
         div.style.marginBottom = "12px";
@@ -65,10 +82,10 @@ async function render() {
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <strong style="font-size: 1.1rem; color: #fff;">${paciente ? paciente.nombre : "Paciente no identificado"}</strong><br>
+                    <strong style="font-size: 1.1rem; color: #fff;">${nombrePaciente}</strong><br>
                     <span style="color: #3498db;">📅 ${c.fecha}</span> | <span style="color: #2ecc71;">⏰ ${c.hora}</span>
                 </div>
-                <button onclick="eliminarCita(${c.id})" 
+                <button onclick="eliminarCita('${c.id}')" 
                         style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
                     🗑️
                 </button>
@@ -78,40 +95,69 @@ async function render() {
     });
 }
 
+/**
+ * AGREGAR CITA: Envía directo a Supabase
+ */
 async function agregarCita() {
-    if (!selectPaciente.value || !inputFecha.value || !inputHora.value) {
+    const paciente_id = selectPaciente.value;
+    const fecha = inputFecha.value;
+    const hora = inputHora.value;
+
+    if (!paciente_id || !fecha || !hora) {
         return alert("Completa todos los campos para agendar.");
     }
 
-    if (citas.some(c => c.fecha === inputFecha.value && c.hora === inputHora.value)) {
-        return alert("⚠️ Este horario ya está ocupado por otra cita.");
-    }
-
     const nuevaCita = {
-        id: Date.now(),
-        paciente_id: Number(selectPaciente.value), // Nombre de columna estándar para DB
-        fecha: inputFecha.value,
-        hora: inputHora.value,
+        paciente_id: Number(paciente_id),
+        fecha: fecha,
+        hora: hora,
         clinica_id: clinicaID,
-        creado: new Date().toISOString()
+        estado: 'programada'
     };
 
-    citas.push(nuevaCita);
-    await guardar();
+    try {
+        const { error } = await supabase
+            .from('citas')
+            .insert([nuevaCita]);
 
-    alert("✅ Cita agendada con éxito.");
-    inputFecha.value = "";
-    inputHora.value = "";
-    selectPaciente.value = "";
-    cambiarVista('ver');
+        if (error) throw error;
+
+        alert("✅ Cita agendada con éxito en la nube.");
+        
+        // Reset campos
+        inputFecha.value = "";
+        inputHora.value = "";
+        selectPaciente.value = "";
+        
+        cambiarVista('ver');
+
+    } catch (error) {
+        console.error("Error al agendar:", error);
+        alert("Error al conectar con el servidor.");
+    }
 }
 
+/**
+ * ELIMINAR CITA: Borra de la nube
+ */
 async function eliminarCita(id) {
     if (!confirm("¿Deseas cancelar esta cita permanentemente?")) return;
-    citas = citas.filter(c => Number(c.id) !== Number(id));
-    await guardar();
+
+    const { error } = await supabase
+        .from('citas')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        alert("No se pudo eliminar la cita.");
+    } else {
+        render();
+    }
 }
 
+/**
+ * NAVEGACIÓN Y VISTAS
+ */
 function cambiarVista(modo) {
     if (modo === 'nuevo') {
         if(seccionForm) seccionForm.style.display = "block";
@@ -129,13 +175,14 @@ function volver() {
     window.location.href = "dashboard.html";
 }
 
-// MODIFICADO: Detección y carga inicial asíncrona
+/**
+ * INICIALIZACIÓN
+ */
 async function inicializarVistaCitas() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
 
     await cargarPacientes();
-    citas = await getCitas(); // Traemos las citas de la nube/local
     
     if (modo === 'nuevo') {
         cambiarVista('nuevo');
