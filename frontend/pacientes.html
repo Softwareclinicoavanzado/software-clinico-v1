@@ -11,35 +11,35 @@
 <body>
 
   <div class="container">
-    <h1 id="tituloPagina">Gestión de Pacientes</h1>
+    <h1 id="tituloPagina" data-i18n="gestion_pacientes">Gestión de Pacientes</h1>
 
     <div class="card" id="seccionFormulario">
       <div class="form-grid">
-        <input type="text" id="nombre" placeholder="Nombre completo">
-        <input type="text" id="dpi" placeholder="DPI (Documento de Identificación)">
-        <input type="number" id="edad" placeholder="Edad">
-        <input type="text" id="telefono" placeholder="Teléfono">
+        <input type="text" id="nombre" data-i18n-placeholder="nombre_completo" placeholder="Nombre completo">
+        <input type="text" id="dpi" data-i18n-placeholder="dpi_label" placeholder="DPI (Documento de Identificación)">
+        <input type="number" id="edad" data-i18n-placeholder="edad_label" placeholder="Edad">
+        <input type="text" id="telefono" data-i18n-placeholder="telefono_label" placeholder="Teléfono">
         
         <div class="input-group">
-            <label style="color: white; font-size: 0.8rem; display: block; margin-bottom: 5px;">Fecha de Nacimiento:</label>
+            <label style="color: white; font-size: 0.8rem; display: block; margin-bottom: 5px;" data-i18n="fecha_nacimiento">Fecha de Nacimiento:</label>
             <input type="date" id="fechaNacimiento">
         </div>
         
         <select id="sexo">
-          <option value="">Seleccionar Sexo</option>
-          <option value="Hombre">Hombre</option>
-          <option value="Mujer">Mujer</option>
-          <option value="Otro">Otro</option>
+          <option value="" data-i18n="seleccionar_sexo">Seleccionar Sexo</option>
+          <option value="Hombre" data-i18n="sexo_hombre">Hombre</option>
+          <option value="Mujer" data-i18n="sexo_mujer">Mujer</option>
+          <option value="Otro" data-i18n="sexo_otro">Otro</option>
         </select>
 
-        <input type="text" id="contactoEmergencia" placeholder="Contacto de emergencia (Nombre/Tel)">
-        <input type="text" id="aseguradora" placeholder="Nombre del Seguro">
-        <input type="text" id="poliza" placeholder="Número del Seguro">
-        <input type="text" id="medicoAsignado" placeholder="Médico Asignado">
-        <input type="text" id="sede" placeholder="Sede o Sucursal">
+        <input type="text" id="contactoEmergencia" data-i18n-placeholder="contacto_emergencia_label" placeholder="Contacto de emergencia (Nombre/Tel)">
+        <input type="text" id="aseguradora" data-i18n-placeholder="seguro_nombre" placeholder="Nombre del Seguro">
+        <input type="text" id="poliza" data-i18n-placeholder="seguro_numero" placeholder="Número del Seguro">
+        <input type="text" id="medicoAsignado" data-i18n-placeholder="medico_asignado_label" placeholder="Médico Asignado">
+        <input type="text" id="sede" data-i18n-placeholder="sede_label" placeholder="Sede o Sucursal">
 
         <button type="button" class="btn-primary" onclick="agregarPaciente()">
-          🚀 Añadir al Sistema
+          <span data-i18n="btn_añadir">🚀 Añadir al Sistema</span>
         </button>
       </div>
     </div>
@@ -49,6 +49,7 @@
         <input
           type="text"
           id="busqueda"
+          data-i18n-placeholder="buscar_placeholder"
           placeholder="🔍 Buscar por nombre, DPI, tel o seguro..."
           oninput="filtrarPacientes()"
         >
@@ -56,12 +57,23 @@
     </div>
 
     <button class="secondary" type="button" onclick="volver()" style="margin-top: 20px; width: 100%;">
-      Volver al Dashboard
+      <span data-i18n="volver_dashboard">Volver al Dashboard</span>
     </button>
   </div>
 
+  <script src="./js/translations.js"></script>
   <script src="./js/session.js"></script>
   <script src="./js/storage.js"></script>
   <script src="./js/pacientes.js"></script>
+
+  <script>
+    // Aplicar el idioma al cargar la página
+    window.addEventListener('load', () => {
+        const savedLang = localStorage.getItem("lang") || "es";
+        if(typeof changeLanguage === 'function') {
+            changeLanguage(savedLang);
+        }
+    });
+  </script>
 </body>
 </html>
