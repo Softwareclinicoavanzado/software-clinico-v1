@@ -1,5 +1,5 @@
 /* =============================================
-    DICCIONARIO DE IDIOMAS | ClinicOS
+    DICCIONARIO DE IDIOMAS GLOBAL | ClinicOS
 ============================================= */
 
 const translations = {
@@ -41,12 +41,24 @@ const translations = {
         buscar_placeholder: "🔍 Buscar por nombre, DPI...",
         volver_dashboard: "Volver al Dashboard",
 
+        // Gestión de Citas
+        gestion_citas: "Gestión de Citas",
+        nueva_cita: "➕ Nueva Cita",
+        agendar_nueva_cita: "📝 Agendar Nueva Cita",
+        paciente_label: "Paciente",
+        seleccione_paciente: "Seleccione un paciente",
+        fecha_label: "Fecha",
+        hora_label: "Hora",
+        confirmar_agendar: "Confirmar y Agendar",
+        citas_programadas: "📋 Citas Programadas",
+
         // Gestión General (Botones comunes)
         btn_nuevo: "Nuevo Registro",
         buscar: "Buscar...",
         guardar: "Guardar Cambios",
         cancelar: "Cancelar",
-        volver: "Volver al Inicio"
+        volver: "Volver al Inicio",
+        volver_inicio: "Volver al Inicio"
     },
     en: {
         // Login & Carga
@@ -86,12 +98,24 @@ const translations = {
         buscar_placeholder: "🔍 Search by name, ID...",
         volver_dashboard: "Back to Dashboard",
 
+        // Gestión de Citas
+        gestion_citas: "Appointment Management",
+        nueva_cita: "➕ New Appointment",
+        agendar_nueva_cita: "📝 Schedule New Appointment",
+        paciente_label: "Patient",
+        seleccione_paciente: "Select a patient",
+        fecha_label: "Date",
+        hora_label: "Time",
+        confirmar_agendar: "Confirm and Schedule",
+        citas_programadas: "📋 Scheduled Appointments",
+
         // Gestión General
         btn_nuevo: "Add New",
         buscar: "Search...",
         guardar: "Save Changes",
         cancelar: "Cancel",
-        volver: "Back to Home"
+        volver: "Back to Home",
+        volver_inicio: "Back to Home"
     },
     fr: {
         // Login & Carga
@@ -131,12 +155,24 @@ const translations = {
         buscar_placeholder: "🔍 Rechercher par nom, ID...",
         volver_dashboard: "Retour au tableau de bord",
 
+        // Gestión de Citas
+        gestion_citas: "Gestion des Rendez-vous",
+        nueva_cita: "➕ Nouveau Rendez-vous",
+        agendar_nueva_cita: "📝 Prendre un nouveau rendez-vous",
+        paciente_label: "Patient",
+        seleccione_paciente: "Sélectionner un patient",
+        fecha_label: "Date",
+        hora_label: "Heure",
+        confirmar_agendar: "Confirmer et agender",
+        citas_programadas: "📋 Rendez-vous programmés",
+
         // Gestión General
         btn_nuevo: "Ajouter nouveau",
         buscar: "Chercher...",
         guardar: "Sauvegarder",
         cancelar: "Annuler",
-        volver: "Retour à l'accueil"
+        volver: "Retour à l'accueil",
+        volver_inicio: "Retour à l'accueil"
     }
 };
 
