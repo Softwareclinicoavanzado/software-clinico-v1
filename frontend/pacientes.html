@@ -5,8 +5,10 @@
   <title>ClinicOS | Pacientes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./css/styles.css">
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -61,17 +63,17 @@
     </button>
   </div>
 
-  <script src="./js/translations.js"></script>
-  <script src="./js/session.js"></script>
-  <script src="./js/storage.js"></script>
-  <script src="./js/pacientes.js"></script>
-
-  <script>
-    // Aplicar el idioma al cargar la página
+  <script src="./js/session.js"></script> <script src="./js/translations.js"></script> <script src="./js/storage.js"></script> <script src="./js/pdf.js"></script> <script src="./js/pacientes.js"></script> <script>
+    // Aplicar el idioma y gestionar la vista inicial
     window.addEventListener('load', () => {
         const savedLang = localStorage.getItem("lang") || "es";
         if(typeof changeLanguage === 'function') {
             changeLanguage(savedLang);
+        }
+        
+        // Llamamos a gestionarVistas para ocultar/mostrar según el modo (ver/nuevo)
+        if(typeof gestionarVistas === 'function') {
+            gestionarVistas();
         }
     });
   </script>
