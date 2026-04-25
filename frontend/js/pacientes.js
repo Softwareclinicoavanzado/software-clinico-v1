@@ -1,5 +1,5 @@
 /* =============================================
-    PACIENTES | ClinicOS (Cloud Edition)
+    PACIENTES | ClinicOS (Cloud Edition - Direct Sync)
 ============================================= */
 const clinicaID = typeof getClinicaID === "function" ? getClinicaID() : localStorage.getItem("clinicaID");
 
@@ -26,18 +26,28 @@ const inputs = {
     sede: document.getElementById("sede")
 };
 
-// MODIFICADO: Ahora espera a que los datos lleguen de la nube
+/**
+ * CARGAR DATOS: Trae la lista directo de la nube
+ */
 async function cargarDatos() {
-    pacientes = await getPacientes(); 
+    const { data, error } = await supabase
+        .from('pacientes')
+        .select('*')
+        .eq('clinica_id', clinicaID)
+        .order('nombre', { ascending: true });
+
+    if (error) {
+        console.error("Error cargando pacientes:", error);
+        return;
+    }
+
+    pacientes = data;
     render();
 }
 
-async function guardar() {
-    savePacientes(pacientes);
-    render();
-    if (typeof syncAllToCloud === "function") await syncAllToCloud();
-}
-
+/**
+ * RENDER: Dibuja los pacientes en el HTML
+ */
 function render(data = pacientes) {
     const lista = document.getElementById("listaPacientes");
     if (!lista) return;
@@ -58,7 +68,7 @@ function render(data = pacientes) {
             </div>
             <div class="paciente-info">
                 <small>Edad: ${p.edad || "-"} | Sexo: ${p.sexo || "-"} | Tel: ${p.telefono || "-"}</small><br>
-                <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza_seguro || p.poliza || "-"} | Sucursal: ${p.sede || "-"}</small>
+                <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza_seguro || "-"} | Sucursal: ${p.sede || "-"}</small>
             </div>
             <div class="actions" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                 <button type="button" onclick="verHistorial(${p.id})">⚙️ Modificar Historial</button>
@@ -71,6 +81,9 @@ function render(data = pacientes) {
     });
 }
 
+/**
+ * EDITAR: Prepara el formulario con los datos del paciente
+ */
 function editarPaciente(id) {
     const p = pacientes.find(pac => Number(pac.id) === Number(id));
     if (!p) return;
@@ -81,12 +94,12 @@ function editarPaciente(id) {
     inputs.dpi.value = p.dpi || "";
     inputs.edad.value = p.edad || "";
     inputs.telefono.value = p.telefono || "";
-    inputs.fechaNacimiento.value = p.fechaNacimiento || "";
+    inputs.fechaNacimiento.value = p.fecha_nacimiento || ""; // Usar nombre de DB
     inputs.sexo.value = p.sexo || "";
-    inputs.contactoEmergencia.value = p.contactoEmergencia || "";
+    inputs.contactoEmergencia.value = p.contacto_emergencia || ""; // Usar nombre de DB
     inputs.aseguradora.value = p.aseguradora || "";
-    inputs.poliza.value = p.poliza_seguro || p.poliza || ""; // Compatibilidad con ambos nombres
-    inputs.medicoAsignado.value = p.medicoAsignado || "";
+    inputs.poliza.value = p.poliza_seguro || ""; 
+    inputs.medicoAsignado.value = p.medico_asignado || ""; // Usar nombre de DB
     inputs.sede.value = p.sede || "";
 
     document.getElementById("seccionFormulario").style.display = "block";
@@ -97,76 +110,83 @@ function editarPaciente(id) {
     if (btnSubmit) btnSubmit.innerText = "💾 Guardar Cambios";
 }
 
+/**
+ * GUARDAR / ACTUALIZAR: Directo a Supabase
+ */
 async function agregarPaciente() {
     const nombre = inputs.nombre.value.trim();
     if (!nombre) return alert("El nombre es obligatorio");
 
-    if (editandoID) {
-        const index = pacientes.findIndex(p => Number(p.id) === Number(editandoID));
-        if (index !== -1) {
-            pacientes[index] = {
-                ...pacientes[index],
-                nombre: nombre,
-                dpi: inputs.dpi.value.trim(),
-                edad: inputs.edad.value,
-                telefono: inputs.telefono.value,
-                fecha_nacimiento: inputs.fechaNacimiento.value, // Cambiado a snake_case para DB
-                sexo: inputs.sexo.value,
-                contacto_emergencia: inputs.contactoEmergencia.value, // Cambiado a snake_case para DB
-                aseguradora: inputs.aseguradora.value,
-                poliza_seguro: inputs.poliza.value.trim(), // Nombre exacto de la DB
-                medico_asignado: inputs.medicoAsignado.value, // Cambiado a snake_case para DB
-                sede: inputs.sede.value
-            };
-            alert("¡Perfil actualizado!");
-        }
-        editandoID = null;
-    } else {
-        const nuevoPaciente = {
-            id: Date.now(),
-            nombre: nombre,
-            dpi: inputs.dpi.value.trim(),
-            edad: inputs.edad.value,
-            telefono: inputs.telefono.value,
-            fecha_nacimiento: inputs.fechaNacimiento.value,
-            sexo: inputs.sexo.value,
-            contacto_emergencia: inputs.contactoEmergencia.value,
-            aseguradora: inputs.aseguradora.value,
-            poliza_seguro: inputs.poliza.value.trim(), // Nombre exacto de la DB
-            medico_asignado: inputs.medicoAsignado.value,
-            sede: inputs.sede.value,
-            creado: new Date().toISOString(), 
-            clinica_id: clinicaID
-        };
-        pacientes.push(nuevoPaciente);
-        alert("¡Paciente registrado!");
-    }
+    const datosPaciente = {
+        nombre: nombre,
+        dpi: inputs.dpi.value.trim(),
+        edad: inputs.edad.value,
+        telefono: inputs.telefono.value,
+        fecha_nacimiento: inputs.fechaNacimiento.value,
+        sexo: inputs.sexo.value,
+        contacto_emergencia: inputs.contactoEmergencia.value,
+        aseguradora: inputs.aseguradora.value,
+        poliza_seguro: inputs.poliza.value.trim(),
+        medico_asignado: inputs.medicoAsignado.value,
+        sede: inputs.sede.value,
+        clinica_id: clinicaID
+    };
 
-    Object.values(inputs).forEach(input => { if(input) input.value = ""; });
-    
-    await guardar();
-    
-    document.getElementById("tituloPagina").innerText = "Gestión de Pacientes";
-    const btnSubmit = document.querySelector(".btn-primary");
-    if (btnSubmit) btnSubmit.innerText = "🚀 Añadir al Sistema";
-    
-    window.location.href = "pacientes.html?mode=ver";
+    try {
+        if (editandoID) {
+            // ACTUALIZAR EN LA NUBE
+            const { error } = await supabase
+                .from('pacientes')
+                .update(datosPaciente)
+                .eq('id', editandoID);
+
+            if (error) throw error;
+            alert("¡Perfil actualizado globalmente!");
+            editandoID = null;
+        } else {
+            // INSERTAR EN LA NUBE
+            const { error } = await supabase
+                .from('pacientes')
+                .insert([datosPaciente]);
+
+            if (error) throw error;
+            alert("¡Paciente registrado con éxito!");
+        }
+
+        // Limpiar y volver
+        Object.values(inputs).forEach(input => { if(input) input.value = ""; });
+        window.location.href = "pacientes.html?mode=ver";
+
+    } catch (err) {
+        console.error("Error en operación:", err);
+        alert("Error al sincronizar con la nube.");
+    }
 }
 
+/**
+ * ELIMINAR: Borra de la nube
+ */
 async function eliminarPaciente(id) {
     const p = pacientes.find(pac => Number(pac.id) === Number(id));
     if (!p) return;
 
-    const confirmacion = confirm(`⚠️ ¿ELIMINAR PACIENTE?\n\nNombre: ${p.nombre}`);
+    if (confirm(`⚠️ ¿ELIMINAR PACIENTE DEFINITIVAMENTE?\n\nNombre: ${p.nombre}`)) {
+        const { error } = await supabase
+            .from('pacientes')
+            .delete()
+            .eq('id', id);
 
-    if (confirmacion) {
-        pacientes = pacientes.filter(pac => Number(pac.id) !== Number(id));
-        savePacientes(pacientes);
-        render();
-        if (typeof syncAllToCloud === "function") await syncAllToCloud();
+        if (error) {
+            alert("Error al eliminar.");
+        } else {
+            cargarDatos(); // Recargar lista
+        }
     }
 }
 
+/**
+ * BUSQUEDA Y OTROS
+ */
 function filtrarPacientes() {
     const texto = document.getElementById("busqueda").value.toLowerCase();
     const filtrados = pacientes.filter(p => 
@@ -204,9 +224,9 @@ function gestionarVistas() {
         if(form) form.style.display = "none";
         if(lista) lista.style.display = "block";
         if(titulo) titulo.innerText = "Listado de Pacientes";
+        cargarDatos(); // Cargamos datos solo al ver la lista
     }
 }
 
 // Inicialización
-cargarDatos();
 gestionarVistas();
