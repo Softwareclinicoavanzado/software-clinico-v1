@@ -5,8 +5,11 @@
     <title>ClinicOS | Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/styles.css">
+    
+    <!-- ✅ Supabase CDN PRIMERO -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
-        /* Estilos rápidos para el selector de idiomas */
         .lang-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(18, 18, 18, 0.95);
@@ -24,7 +27,6 @@
     </style>
 </head>
 <body>
-
     <div id="languageSelector" class="lang-overlay">
         <h1 style="color: white; margin-bottom: 10px;">ClinicOS</h1>
         <p style="color: #aaa;">Select your language / Selecciona tu idioma / Choisissez votre langue</p>
@@ -38,23 +40,19 @@
     <div class="login-card" style="display: none;" id="loginSection">
         <h1>ClinicOS</h1>
         <p id="mensaje" class="subtitulo" data-i18n="cargando">Cargando clínica...</p>
-
         <div class="form-group">
             <input id="usuario" type="text" placeholder="Usuario" data-i18n-placeholder="usuario" autocomplete="username">
             <input id="password" type="password" placeholder="Contraseña" data-i18n-placeholder="password" autocomplete="current-password">
         </div>
-
         <button id="loginBtn" type="button" data-i18n="ingresar">Ingresar</button>
-        
         <p id="error"></p>
-        
         <button onclick="showLangSelector()" style="background:none; border:none; color:#555; cursor:pointer; margin-top:15px; font-size:0.8rem;">🌐 Change Language</button>
     </div>
 
+    <!-- ✅ Orden correcto -->
     <script src="./js/translations.js"></script>
     <script src="./js/storage.js"></script>
     <script src="./js/auth.js"></script>
-
     <script>
         function selectLanguage(lang) {
             localStorage.setItem("lang", lang);
@@ -65,19 +63,14 @@
                 if(typeof changeLanguage === 'function') changeLanguage(lang);
             }, 500);
         }
-
         function showLangSelector() {
             document.getElementById("languageSelector").style.display = "flex";
             document.getElementById("languageSelector").style.opacity = "1";
             document.getElementById("loginSection").style.display = "none";
         }
-
-        // Si ya eligió idioma antes, saltar el selector (opcional)
         window.onload = () => {
             const savedLang = localStorage.getItem("lang");
-            if (savedLang) {
-                selectLanguage(savedLang);
-            }
+            if (savedLang) selectLanguage(savedLang);
         };
     </script>
 </body>
