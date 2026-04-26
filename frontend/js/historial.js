@@ -1,16 +1,14 @@
 /* =============================================
-    HISTORIAL CLÍNICO PRO (CLOUD-SYNC)
+    HISTORIAL CLÍNICO PRO (SUPABASE DIRECTO)
 ============================================= */
 const rol = localStorage.getItem("rol");
 const clinicaID = localStorage.getItem("clinicaID");
 const pacienteID = localStorage.getItem("pacienteActual");
-const API_URL = "https://software-clinico-v1.onrender.com";
 
 // Protección de ruta
 if (!clinicaID || !pacienteID) {
     window.location.href = "pacientes.html";
 }
-
 if (rol === "recepcion") {
     alert("Acceso denegado: Solo médicos.");
     window.location.href = "pacientes.html";
@@ -28,30 +26,39 @@ const pNombre = document.getElementById("pacienteNombre");
 let paciente = null;
 let historial = [];
 
-// MODIFICADO: Carga inicial desde la nube
+// ✅ CORREGIDO: Carga desde Supabase directamente
 async function inicializarHistorial() {
-    // 1. Obtener datos del paciente para el título
-    const pacientesLocales = JSON.parse(localStorage.getItem(`pacientes_${clinicaID}`)) || [];
-    paciente = pacientesLocales.find(p => String(p.id) === String(pacienteID));
-
-    if (!paciente) {
-        alert("Paciente no encontrado.");
-        window.location.href = "pacientes.html";
-        return;
-    }
-
-    if (pNombre) pNombre.textContent = `Paciente: ${paciente.nombre}`;
-
-    // 2. Cargar historial desde la nube
     try {
-        const response = await fetch(`${API_URL}/api/historial?paciente_id=${pacienteID}`);
-        if (response.ok) {
-            historial = await response.json();
-            localStorage.setItem(`historial_${pacienteID}`, JSON.stringify(historial));
-            console.log("✅ Historial sincronizado desde la nube");
+        // 1. Obtener datos del paciente desde Supabase
+        const { data: pacientes, error: errorPac } = await supabase
+            .from('pacientes')
+            .select('*')
+            .eq('id', pacienteID)
+            .single();
+
+        if (errorPac || !pacientes) {
+            alert("Paciente no encontrado.");
+            window.location.href = "pacientes.html";
+            return;
         }
+
+        paciente = pacientes;
+        if (pNombre) pNombre.textContent = `Paciente: ${paciente.nombre}`;
+
+        // 2. Cargar historial desde Supabase
+        const { data: historialCloud, error: errorHist } = await supabase
+            .from('historial')
+            .select('*')
+            .eq('paciente_id', pacienteID)
+            .order('created_at', { ascending: false });
+
+        if (errorHist) throw errorHist;
+
+        historial = historialCloud || [];
+        console.log("✅ Historial sincronizado desde Supabase");
+
     } catch (e) {
-        console.warn("📡 Modo local: Cargando historial desde caché");
+        console.warn("📡 Modo local: Cargando historial desde caché", e);
         historial = JSON.parse(localStorage.getItem(`historial_${pacienteID}`)) || [];
     }
 
@@ -71,11 +78,10 @@ function render() {
         const div = document.createElement("div");
         div.className = "card";
         div.style.marginBottom = "15px";
-        
-        // Colores según tipo
-        let colorBorde = "#3498db"; 
+
+        let colorBorde = "#3498db";
         let colorTitulo = "#93c5fd";
-        
+
         if (h.tipo === "Alergia") {
             colorBorde = "#e74c3c";
             colorTitulo = "#e74c3c";
@@ -85,7 +91,6 @@ function render() {
         }
 
         div.style.borderLeft = `4px solid ${colorBorde}`;
-
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
@@ -94,7 +99,7 @@ function render() {
                     </strong><br>
                     <small style="color: #64748b;">${h.fecha}</small>
                 </div>
-                <button onclick="eliminarNota(${index})" 
+                <button onclick="eliminarNota('${h.id}', ${index})" 
                         style="background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;">
                     Eliminar
                 </button>
@@ -105,55 +110,70 @@ function render() {
     });
 }
 
+// ✅ CORREGIDO: Guarda directo en Supabase
 async function agregarNota() {
     const texto = notaInput.value.trim();
     if (!texto) return alert("Por favor, escribe el detalle de la nota.");
 
     const nuevaNota = {
-        paciente_id: pacienteID, // Importante para la base de datos
+        paciente_id: pacienteID,
+        clinica_id: clinicaID,
         tipo: tipoNotaInput.value,
         texto: texto,
         fecha: new Date().toLocaleString("es-GT")
     };
 
-    // Actualización visual inmediata
-    historial.unshift(nuevaNota);
-    localStorage.setItem(`historial_${pacienteID}`, JSON.stringify(historial));
-    render();
-    
-    // Sincronización con el Backend
     try {
-        const response = await fetch(`${API_URL}/api/historial`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(nuevaNota)
-        });
-        
-        if (response.ok) {
-            alert("✅ Guardado en la nube correctamente.");
-        }
-    } catch (e) { 
-        console.error("Error de red, el dato quedó guardado solo localmente."); 
-    }
+        const { error } = await supabase
+            .from('historial')
+            .insert([nuevaNota]);
 
-    notaInput.value = "";
-    window.location.href = "historial.html?mode=modificar";
+        if (error) throw error;
+
+        alert("✅ Nota guardada en la nube correctamente.");
+        notaInput.value = "";
+        window.location.href = "historial.html?mode=modificar";
+
+    } catch (e) {
+        console.error("Error al guardar nota:", e);
+        alert("Error al guardar: " + e.message);
+    }
+}
+
+// ✅ CORREGIDO: Elimina de Supabase también
+async function eliminarNota(id, index) {
+    if (!confirm("¿Estás seguro de eliminar este registro?")) return;
+
+    try {
+        const { error } = await supabase
+            .from('historial')
+            .delete()
+            .eq('id', id);
+
+        if (error) throw error;
+
+        historial.splice(index, 1);
+        render();
+
+    } catch (e) {
+        alert("Error al eliminar: " + e.message);
+    }
 }
 
 function exportarPDF() {
     if (!window.jspdf || !paciente) return alert("Error con los datos o la librería PDF");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    
+
     doc.setFontSize(16);
     doc.text(`HISTORIAL CLÍNICO: ${paciente.nombre}`, 10, 20);
     doc.setFontSize(10);
     doc.text(`Generado el: ${new Date().toLocaleString()}`, 10, 28);
-    
+
     let y = 40;
     historial.forEach(h => {
         if (y > 270) { doc.addPage(); y = 20; }
-        
+
         if (h.tipo === "Alergia") {
             doc.setTextColor(231, 76, 60);
             doc.setFont("helvetica", "bold");
@@ -163,7 +183,7 @@ function exportarPDF() {
             doc.setFont("helvetica", "bold");
             doc.text(`${h.fecha} - ${h.tipo}`, 10, y);
         }
-        
+
         y += 7;
         doc.setFont("helvetica", "normal");
         doc.setTextColor(0, 0, 0);
@@ -174,15 +194,6 @@ function exportarPDF() {
     doc.save(`Historial_${paciente.nombre.replace(/\s+/g, '_')}.pdf`);
 }
 
-function eliminarNota(index) {
-    if(confirm("¿Estás seguro de eliminar este registro?")) {
-        historial.splice(index, 1);
-        localStorage.setItem(`historial_${pacienteID}`, JSON.stringify(historial));
-        render();
-        // Nota: Faltaría implementar el DELETE en el servidor para borrar de Supabase
-    }
-}
-
 function volver() { window.location.href = "pacientes.html"; }
 
 function gestionarVistaActual() {
@@ -190,17 +201,16 @@ function gestionarVistaActual() {
     const modo = params.get("mode");
 
     if (modo === "nuevaNota") {
-        tituloPrincipal.textContent = "Nueva Nota Médica";
-        seccionAgregar.style.display = "block";
-        seccionVer.style.display = "none";
-        setTimeout(() => notaInput.focus(), 300);
+        if(tituloPrincipal) tituloPrincipal.textContent = "Nueva Nota Médica";
+        if(seccionAgregar) seccionAgregar.style.display = "block";
+        if(seccionVer) seccionVer.style.display = "none";
+        setTimeout(() => { if(notaInput) notaInput.focus(); }, 300);
     } else {
-        tituloPrincipal.textContent = "Gestión de Historial";
-        seccionAgregar.style.display = "none";
-        seccionVer.style.display = "block";
+        if(tituloPrincipal) tituloPrincipal.textContent = "Gestión de Historial";
+        if(seccionAgregar) seccionAgregar.style.display = "none";
+        if(seccionVer) seccionVer.style.display = "block";
         render();
     }
 }
 
-// Arrancar el sistema
 inicializarHistorial();
