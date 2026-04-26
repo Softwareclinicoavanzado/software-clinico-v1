@@ -5,13 +5,14 @@
   <title>ClinicOS | Historial Clínico</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/styles.css">
+
+  <!-- ✅ Supabase CDN PRIMERO -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-
   <div class="container">
     <h1 id="tituloPrincipal">Historial clínico</h1>
     <p class="subtitulo" id="pacienteNombre">Paciente</p>
-
     <div class="card" id="seccionAgregarNota" style="display: none;">
       <h3 style="color: #2ecc71; margin-bottom: 15px;">📝 Redactar Nota Médica</h3>
       <label><strong>Tipo de nota</strong></label>
@@ -22,19 +23,16 @@
         <option value="Receta">Receta</option>
         <option value="Alergia" style="color: #e74c3c; font-weight: bold;">⚠️ Alergia</option>
       </select>
-
       <label><strong>Detalle de la nota</strong></label>
       <textarea
         id="nota"
         placeholder="Escribir nota médica detallada o descripción de la alergia..."
         style="width:100%; height:150px; border-radius:8px; padding:10px; background: #1a1a1a; color: white; border: 1px solid #333;"
       ></textarea>
-
       <div style="margin-top:15px;">
         <button type="button" onclick="agregarNota()" style="background-color: #2ecc71; width: 100%;">Guardar Nota Médica</button>
       </div>
     </div>
-
     <div id="seccionVerHistorial" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
             <h3 style="color: #3498db;">📋 Registros del Historial</h3>
@@ -44,12 +42,12 @@
         </div>
         <ul class="lista" id="listaHistorial" style="padding: 0;"></ul>
     </div>
-
     <button class="logout" type="button" onclick="volver()" style="margin-top: 20px; border: 1px solid #e74c3c; color: #e74c3c; background: transparent;">Volver</button>
   </div>
 
-  <script src="js/session.js"></script>
+  <!-- ✅ Orden correcto de scripts -->
   <script src="js/storage.js"></script>
+  <script src="js/session.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="js/pdf.js"></script>
   <script src="js/historial.js"></script>
