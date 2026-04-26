@@ -12,7 +12,7 @@ const translations = {
         error_auth: "Usuario o contraseña incorrectos",
         bienvenida: "Bienvenido de nuevo",
 
-        // Dashboard (Estadísticas y Menú)
+        // Dashboard
         pacientes_registrados: "Pacientes Registrados",
         citas_agendadas: "Citas Agendadas",
         ver_pacientes: "👥 Ver Pacientes",
@@ -21,7 +21,7 @@ const translations = {
         agendar_cita: "⏰ Agendar Cita",
         cerrar_sesion: "Cerrar sesión",
 
-        // Gestión de Pacientes (Campos del Formulario)
+        // Gestión de Pacientes
         gestion_pacientes: "Gestión de Pacientes",
         nombre_completo: "Nombre completo",
         dpi_label: "DPI (Identificación)",
@@ -52,7 +52,27 @@ const translations = {
         confirmar_agendar: "Confirmar y Agendar",
         citas_programadas: "📋 Citas Programadas",
 
-        // Gestión General (Botones comunes)
+        // ✅ Historial Clínico
+        historial_titulo: "Historial Clínico",
+        historial_nueva_nota: "📝 Redactar Nota Médica",
+        historial_tipo_nota: "Tipo de nota",
+        historial_detalle: "Detalle de la nota",
+        historial_placeholder_nota: "Escribir nota médica detallada o descripción de la alergia...",
+        historial_guardar_nota: "Guardar Nota Médica",
+        historial_registros: "📋 Registros del Historial",
+        historial_exportar_pdf: "📄 PDF",
+        historial_sin_registros: "No hay registros médicos en este historial.",
+        historial_tipo_consulta: "Consulta",
+        historial_tipo_diagnostico: "Diagnóstico",
+        historial_tipo_seguimiento: "Seguimiento",
+        historial_tipo_receta: "Receta",
+        historial_tipo_alergia: "⚠️ Alergia",
+        historial_eliminar: "Eliminar",
+        historial_volver: "Volver",
+        historial_nueva_nota_titulo: "Nueva Nota Médica",
+        historial_gestion_titulo: "Gestión de Historial",
+
+        // General
         btn_nuevo: "Nuevo Registro",
         buscar: "Buscar...",
         guardar: "Guardar Cambios",
@@ -69,7 +89,7 @@ const translations = {
         error_auth: "Incorrect username or password",
         bienvenida: "Welcome back",
 
-        // Dashboard (Estadísticas y Menú)
+        // Dashboard
         pacientes_registrados: "Registered Patients",
         citas_agendadas: "Scheduled Appointments",
         ver_pacientes: "👥 View Patients",
@@ -78,7 +98,7 @@ const translations = {
         agendar_cita: "⏰ Schedule Appointment",
         cerrar_sesion: "Logout",
 
-        // Gestión de Pacientes (Campos del Formulario)
+        // Gestión de Pacientes
         gestion_pacientes: "Patient Management",
         nombre_completo: "Full Name",
         dpi_label: "ID Number",
@@ -109,7 +129,27 @@ const translations = {
         confirmar_agendar: "Confirm and Schedule",
         citas_programadas: "📋 Scheduled Appointments",
 
-        // Gestión General
+        // ✅ Historial Clínico
+        historial_titulo: "Clinical Record",
+        historial_nueva_nota: "📝 Write Medical Note",
+        historial_tipo_nota: "Note type",
+        historial_detalle: "Note detail",
+        historial_placeholder_nota: "Write detailed medical note or allergy description...",
+        historial_guardar_nota: "Save Medical Note",
+        historial_registros: "📋 Medical Records",
+        historial_exportar_pdf: "📄 PDF",
+        historial_sin_registros: "No medical records in this history.",
+        historial_tipo_consulta: "Consultation",
+        historial_tipo_diagnostico: "Diagnosis",
+        historial_tipo_seguimiento: "Follow-up",
+        historial_tipo_receta: "Prescription",
+        historial_tipo_alergia: "⚠️ Allergy",
+        historial_eliminar: "Delete",
+        historial_volver: "Go Back",
+        historial_nueva_nota_titulo: "New Medical Note",
+        historial_gestion_titulo: "Record Management",
+
+        // General
         btn_nuevo: "Add New",
         buscar: "Search...",
         guardar: "Save Changes",
@@ -126,7 +166,7 @@ const translations = {
         error_auth: "Identifiant ou mot de passe incorrect",
         bienvenida: "Bienvenue à nouveau",
 
-        // Dashboard (Estadísticas y Menú)
+        // Dashboard
         pacientes_registrados: "Patients enregistrés",
         citas_agendadas: "Rendez-vous prévus",
         ver_pacientes: "👥 Voir les patients",
@@ -135,7 +175,7 @@ const translations = {
         agendar_cita: "⏰ Prendre rendez-vous",
         cerrar_sesion: "Se déconnecter",
 
-        // Gestión de Pacientes (Campos del Formulario)
+        // Gestión de Pacientes
         gestion_pacientes: "Gestion des Patients",
         nombre_completo: "Nom complet",
         dpi_label: "Numéro d'identité",
@@ -163,10 +203,30 @@ const translations = {
         seleccione_paciente: "Sélectionner un patient",
         fecha_label: "Date",
         hora_label: "Heure",
-        confirmar_agendar: "Confirmer et agender",
+        confirmar_agendar: "Confirmer et planifier",
         citas_programadas: "📋 Rendez-vous programmés",
 
-        // Gestión General
+        // ✅ Historial Clínico
+        historial_titulo: "Dossier Médical",
+        historial_nueva_nota: "📝 Rédiger une Note Médicale",
+        historial_tipo_nota: "Type de note",
+        historial_detalle: "Détail de la note",
+        historial_placeholder_nota: "Écrire une note médicale détaillée ou description d'allergie...",
+        historial_guardar_nota: "Sauvegarder la Note",
+        historial_registros: "📋 Dossiers Médicaux",
+        historial_exportar_pdf: "📄 PDF",
+        historial_sin_registros: "Aucun dossier médical dans cet historique.",
+        historial_tipo_consulta: "Consultation",
+        historial_tipo_diagnostico: "Diagnostic",
+        historial_tipo_seguimiento: "Suivi",
+        historial_tipo_receta: "Ordonnance",
+        historial_tipo_alergia: "⚠️ Allergie",
+        historial_eliminar: "Supprimer",
+        historial_volver: "Retour",
+        historial_nueva_nota_titulo: "Nouvelle Note Médicale",
+        historial_gestion_titulo: "Gestion du Dossier",
+
+        // General
         btn_nuevo: "Ajouter nouveau",
         buscar: "Chercher...",
         guardar: "Sauvegarder",
@@ -183,16 +243,13 @@ function changeLanguage(lang) {
     const texts = translations[lang];
     if (!texts) return;
 
-    // Traducir elementos con atributo data-i18n
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (texts[key]) {
             const icon = el.querySelector('span, i');
             if (icon) {
-                // Preservar icono si existe
-                el.innerHTML = ''; 
+                el.innerHTML = '';
                 el.appendChild(icon);
-                // Limpiar el texto traducido de emojis iniciales para evitar duplicados
                 const cleanText = texts[key].replace(/^[^\w\sáéíóúÁÉÍÓÚñÑ]+/, '').trim();
                 el.innerHTML += ' ' + cleanText;
             } else {
@@ -201,7 +258,6 @@ function changeLanguage(lang) {
         }
     });
 
-    // Traducir Placeholders
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         if (texts[key]) el.placeholder = texts[key];
