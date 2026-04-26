@@ -11,7 +11,6 @@ const rol = localStorage.getItem("rol") || "admin";
 let pacientes = [];
 let editandoID = null;
 
-// Elementos del DOM
 const inputs = {
     nombre: document.getElementById("nombre"),
     dpi: document.getElementById("dpi"),
@@ -26,19 +25,15 @@ const inputs = {
     sede: document.getElementById("sede")
 };
 
-/**
- * CARGAR DATOS: Trae la lista directo de la nube
- */
 async function cargarDatos() {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('pacientes')
             .select('*')
             .eq('clinica_id', clinicaID)
             .order('nombre', { ascending: true });
 
         if (error) throw error;
-
         pacientes = data;
         render();
     } catch (err) {
@@ -46,9 +41,6 @@ async function cargarDatos() {
     }
 }
 
-/**
- * RENDER: Dibuja los pacientes en el HTML
- */
 function render(data = pacientes) {
     const lista = document.getElementById("listaPacientes");
     if (!lista) return;
@@ -82,15 +74,11 @@ function render(data = pacientes) {
     });
 }
 
-/**
- * EDITAR: Prepara el formulario con los datos del paciente
- */
 function editarPaciente(id) {
     const p = pacientes.find(pac => Number(pac.id) === Number(id));
     if (!p) return;
 
     editandoID = id;
-
     if (inputs.nombre) inputs.nombre.value = p.nombre || "";
     if (inputs.dpi) inputs.dpi.value = p.dpi || "";
     if (inputs.edad) inputs.edad.value = p.edad || "";
@@ -99,7 +87,7 @@ function editarPaciente(id) {
     if (inputs.sexo) inputs.sexo.value = p.sexo || "";
     if (inputs.contactoEmergencia) inputs.contactoEmergencia.value = p.contacto_emergencia || "";
     if (inputs.aseguradora) inputs.aseguradora.value = p.aseguradora || "";
-    if (inputs.poliza) inputs.poliza.value = p.poliza_seguro || ""; 
+    if (inputs.poliza) inputs.poliza.value = p.poliza_seguro || "";
     if (inputs.medicoAsignado) inputs.medicoAsignado.value = p.medico_asignado || "";
     if (inputs.sede) inputs.sede.value = p.sede || "";
 
@@ -111,9 +99,6 @@ function editarPaciente(id) {
     if (btnSubmit) btnSubmit.innerText = "💾 Guardar Cambios";
 }
 
-/**
- * GUARDAR / ACTUALIZAR: Directo a Supabase
- */
 async function agregarPaciente() {
     const nombre = inputs.nombre.value.trim();
     if (!nombre) return alert("El nombre es obligatorio");
@@ -135,7 +120,7 @@ async function agregarPaciente() {
 
     try {
         if (editandoID) {
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('pacientes')
                 .update(datosPaciente)
                 .eq('id', editandoID);
@@ -144,7 +129,7 @@ async function agregarPaciente() {
             alert("¡Perfil actualizado con éxito!");
             editandoID = null;
         } else {
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('pacientes')
                 .insert([datosPaciente]);
 
@@ -152,7 +137,6 @@ async function agregarPaciente() {
             alert("¡Paciente registrado con éxito!");
         }
 
-        // Limpiar y resetear vista
         Object.values(inputs).forEach(input => { if(input) input.value = ""; });
         window.location.href = "pacientes.html?mode=ver";
 
@@ -162,16 +146,13 @@ async function agregarPaciente() {
     }
 }
 
-/**
- * ELIMINAR: Borra de la nube
- */
 async function eliminarPaciente(id) {
     const p = pacientes.find(pac => Number(pac.id) === Number(id));
     if (!p) return;
 
     if (confirm(`⚠️ ¿ELIMINAR PACIENTE DEFINITIVAMENTE?\n\nNombre: ${p.nombre}`)) {
         try {
-            const { error } = await supabase
+            const { error } = await supabaseClient
                 .from('pacientes')
                 .delete()
                 .eq('id', id);
@@ -184,9 +165,6 @@ async function eliminarPaciente(id) {
     }
 }
 
-/**
- * BUSQUEDA Y OTROS
- */
 function filtrarPacientes() {
     const texto = document.getElementById("busqueda").value.toLowerCase();
     const filtrados = pacientes.filter(p => 
@@ -228,5 +206,4 @@ function gestionarVistas() {
     }
 }
 
-// Inicialización
 gestionarVistas();
