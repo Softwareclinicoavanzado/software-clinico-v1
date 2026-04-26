@@ -5,7 +5,6 @@ const rol = localStorage.getItem("rol");
 const clinicaID = localStorage.getItem("clinicaID");
 const pacienteID = localStorage.getItem("pacienteActual");
 
-// Protección de ruta
 if (!clinicaID || !pacienteID) {
     window.location.href = "pacientes.html";
 }
@@ -14,7 +13,6 @@ if (rol === "recepcion") {
     window.location.href = "pacientes.html";
 }
 
-// Referencias DOM
 const notaInput = document.getElementById("nota");
 const tipoNotaInput = document.getElementById("tipoNota");
 const listaHistorial = document.getElementById("listaHistorial");
@@ -26,27 +24,26 @@ const pNombre = document.getElementById("pacienteNombre");
 let paciente = null;
 let historial = [];
 
-// ✅ CORREGIDO: Carga desde Supabase directamente
 async function inicializarHistorial() {
     try {
-        // 1. Obtener datos del paciente desde Supabase
-        const { data: pacientes, error: errorPac } = await supabase
+        // ✅ supabaseClient en lugar de supabase
+        const { data: pacienteData, error: errorPac } = await supabaseClient
             .from('pacientes')
             .select('*')
             .eq('id', pacienteID)
             .single();
 
-        if (errorPac || !pacientes) {
+        if (errorPac || !pacienteData) {
             alert("Paciente no encontrado.");
             window.location.href = "pacientes.html";
             return;
         }
 
-        paciente = pacientes;
+        paciente = pacienteData;
         if (pNombre) pNombre.textContent = `Paciente: ${paciente.nombre}`;
 
-        // 2. Cargar historial desde Supabase
-        const { data: historialCloud, error: errorHist } = await supabase
+        // ✅ supabaseClient en lugar de supabase
+        const { data: historialCloud, error: errorHist } = await supabaseClient
             .from('historial')
             .select('*')
             .eq('paciente_id', pacienteID)
@@ -110,7 +107,6 @@ function render() {
     });
 }
 
-// ✅ CORREGIDO: Guarda directo en Supabase
 async function agregarNota() {
     const texto = notaInput.value.trim();
     if (!texto) return alert("Por favor, escribe el detalle de la nota.");
@@ -124,7 +120,8 @@ async function agregarNota() {
     };
 
     try {
-        const { error } = await supabase
+        // ✅ supabaseClient en lugar de supabase
+        const { error } = await supabaseClient
             .from('historial')
             .insert([nuevaNota]);
 
@@ -140,12 +137,12 @@ async function agregarNota() {
     }
 }
 
-// ✅ CORREGIDO: Elimina de Supabase también
 async function eliminarNota(id, index) {
     if (!confirm("¿Estás seguro de eliminar este registro?")) return;
 
     try {
-        const { error } = await supabase
+        // ✅ supabaseClient en lugar de supabase
+        const { error } = await supabaseClient
             .from('historial')
             .delete()
             .eq('id', id);
