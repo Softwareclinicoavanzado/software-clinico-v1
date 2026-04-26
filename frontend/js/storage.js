@@ -1,13 +1,26 @@
 /* =============================================
-    STORAGE MANAGER PRO++ (CLOUD-SYNC ENABLED)
+    STORAGE MANAGER PRO++ (SUPABASE SYNC ENABLED)
 ============================================= */
-const STORAGE_VERSION = "1.2.0"; // Actualizado a sync real
-const API_URL = "https://software-clinico-v1.onrender.com";
+const STORAGE_VERSION = "1.3.0";
 
+// --- CONFIGURACIÓN DE SUPABASE ---
+// Datos obtenidos de tus variables de entorno
+const supabaseUrl = 'https://klaygjvawybfksmahbhd.supabase.co';
+const supabaseKey = 'sb_publishable_ZoyBvw_JncKIEsGmjEpEuA_dSIZZV4Z';
+
+// Inicialización del cliente de Supabase
+const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+/**
+ * Obtiene el ID de la clínica actual
+ */
 function getClinicaID() {
     return localStorage.getItem("clinicaID") || "temp_clinic"; 
 }
 
+/**
+ * PARSE SEGURO: Evita errores si el localStorage está vacío
+ */
 function safeParse(key, fallback = []) {
     try {
         const data = localStorage.getItem(key);
@@ -17,6 +30,9 @@ function safeParse(key, fallback = []) {
     }
 }
 
+/**
+ * GUARDADO LOCAL: Respaldo por si falla el internet
+ */
 function saveLocal(key, data) {
     try {
         localStorage.setItem(key, JSON.stringify(data));
@@ -26,89 +42,50 @@ function saveLocal(key, data) {
     }
 }
 
-// --- MÓDULOS DE DATOS (AHORA ASÍNCRONOS) ---
+// --- FUNCIONES DE DATOS (MIGRADO A SUPABASE DIRECTO) ---
 
-// Obtiene pacientes de la Nube (con respaldo local)
+/**
+ * Obtiene pacientes desde Supabase
+ */
 async function getPacientes() {
     const id = getClinicaID();
     try {
-        const response = await fetch(`${API_URL}/api/pacientes?clinica_id=${id}`);
-        if (response.ok) {
-            const datosNube = await response.json();
-            saveLocal(`pacientes_${id}`, datosNube); // Actualizamos respaldo local
-            console.log("✅ Pacientes cargados desde la nube");
-            return datosNube;
-        }
-    } catch (error) {
-        console.warn("📡 Modo Local: Usando caché de pacientes");
-    }
-    return safeParse(`pacientes_${id}`, []);
-}
+        const { data, error } = await supabase
+            .from('pacientes')
+            .select('*')
+            .eq('clinica_id', id)
+            .order('nombre', { ascending: true });
 
-function savePacientes(data) {
-    saveLocal(`pacientes_${getClinicaID()}`, data);
-    // Enviamos el último paciente agregado a la nube
-    const ultimoPaciente = data[data.length - 1];
-    if (ultimoPaciente) {
-        silentSync('pacientes', ultimoPaciente); 
+        if (error) throw error;
+
+        saveLocal(`pacientes_${id}`, data);
+        console.log("✅ Pacientes sincronizados desde Supabase");
+        return data;
+    } catch (err) {
+        console.warn("📡 Modo Offline: Usando caché local");
+        return safeParse(`pacientes_${id}`, []);
     }
 }
 
-// Obtiene citas de la Nube
+/**
+ * Obtiene citas desde Supabase
+ */
 async function getCitas() {
     const id = getClinicaID();
     try {
-        const response = await fetch(`${API_URL}/api/citas?clinica_id=${id}`);
-        if (response.ok) {
-            const datosNube = await response.json();
-            saveLocal(`citas_${id}`, datosNube);
-            return datosNube;
-        }
-    } catch (error) {
-        console.warn("📡 Modo Local: Usando caché de citas");
-    }
-    return safeParse(`citas_${id}`, []);
-}
+        const { data, error } = await supabase
+            .from('citas')
+            .select('*')
+            .eq('clinica_id', id);
 
-function saveCitas(data) {
-    saveLocal(`citas_${getClinicaID()}`, data);
-    const ultimaCita = data[data.length - 1];
-    if (ultimaCita) {
-        silentSync('citas', ultimaCita);
+        if (error) throw error;
+
+        saveLocal(`citas_${id}`, data);
+        return data;
+    } catch (err) {
+        console.warn("📡 Modo Offline: Usando caché de citas");
+        return safeParse(`citas_${id}`, []);
     }
 }
 
-// --- SINCRONIZACIÓN ASÍNCRONA ---
-async function silentSync(tipo = 'general', payload = null) {
-    const id = getClinicaID();
-
-    try {
-        const endpoint = tipo === 'pacientes' ? '/api/pacientes' : (tipo === 'citas' ? '/api/citas' : '/sync');
-        
-        // Aseguramos que el payload tenga el clinica_id
-        if (payload && typeof payload === 'object') {
-            payload.clinica_id = id;
-        }
-
-        const response = await fetch(`${API_URL}${endpoint}?clinica_id=${id}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload || { clinica_id: id, status: "ping" })
-        });
-
-        if (response.ok) {
-            console.log(`☁️ Nube sincronizada con éxito: ${tipo}`);
-        } else {
-            console.error(`❌ Error en sincronización: ${response.statusText}`);
-        }
-    } catch (error) {
-        console.log("📡 Fallo de conexión, el dato se sincronizará después.");
-    }
-}
-
-async function syncAllToCloud() { 
-    // Esta función se puede expandir para hacer un push masivo si es necesario
-    await silentSync('general', { status: "check_sync" }); 
-}
-
-console.log(`🚀 Storage Engine v${STORAGE_VERSION} cargado correctamente.`);
+console.log(`🚀 Storage Engine v${STORAGE_VERSION} (Direct Sync) cargado.`);
