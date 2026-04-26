@@ -16,12 +16,8 @@ const titulo = document.getElementById("tituloPagina");
 
 let citas = [];
 
-/**
- * CARGAR PACIENTES: Directo desde Supabase
- */
 async function cargarPacientes() {
-    // Usamos directamente la tabla de pacientes de Supabase
-    const { data: pacientes, error } = await supabase
+    const { data: pacientes, error } = await supabaseClient
         .from('pacientes')
         .select('id, nombre')
         .eq('clinica_id', clinicaID);
@@ -31,8 +27,7 @@ async function cargarPacientes() {
         return;
     }
 
-    selectPaciente.innerHTML = '<option value="" data-i18n="seleccione_paciente">Seleccione un paciente</option>';
-
+    selectPaciente.innerHTML = '<option value="">Seleccione un paciente</option>';
     pacientes.forEach(p => {
         const option = document.createElement("option");
         option.value = p.id;
@@ -41,23 +36,13 @@ async function cargarPacientes() {
     });
 }
 
-/**
- * RENDERIZAR: Dibuja las citas en pantalla
- */
 async function render() {
     if (!listaCitas) return;
     listaCitas.innerHTML = "";
 
-    // Traemos las citas frescas de la Nube (Supabase)
-    const { data: citasCloud, error } = await supabase
+    const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select(`
-            id,
-            fecha,
-            hora,
-            paciente_id,
-            pacientes ( nombre )
-        `)
+        .select(`id, fecha, hora, paciente_id, pacientes ( nombre )`)
         .eq('clinica_id', clinicaID)
         .order('fecha', { ascending: true })
         .order('hora', { ascending: true });
@@ -78,7 +63,6 @@ async function render() {
         div.className = "card";
         div.style.marginBottom = "12px";
         div.style.borderLeft = "4px solid #3498db";
-        
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
@@ -95,9 +79,6 @@ async function render() {
     });
 }
 
-/**
- * AGREGAR CITA: Envía directo a Supabase
- */
 async function agregarCita() {
     const paciente_id = selectPaciente.value;
     const fecha = inputFecha.value;
@@ -116,19 +97,16 @@ async function agregarCita() {
     };
 
     try {
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('citas')
             .insert([nuevaCita]);
 
         if (error) throw error;
 
         alert("✅ Cita agendada con éxito en la nube.");
-        
-        // Reset campos
         inputFecha.value = "";
         inputHora.value = "";
         selectPaciente.value = "";
-        
         cambiarVista('ver');
 
     } catch (error) {
@@ -137,13 +115,10 @@ async function agregarCita() {
     }
 }
 
-/**
- * ELIMINAR CITA: Borra de la nube
- */
 async function eliminarCita(id) {
     if (!confirm("¿Deseas cancelar esta cita permanentemente?")) return;
 
-    const { error } = await supabase
+    const { error } = await supabaseClient
         .from('citas')
         .delete()
         .eq('id', id);
@@ -155,9 +130,6 @@ async function eliminarCita(id) {
     }
 }
 
-/**
- * NAVEGACIÓN Y VISTAS
- */
 function cambiarVista(modo) {
     if (modo === 'nuevo') {
         if(seccionForm) seccionForm.style.display = "block";
@@ -175,15 +147,10 @@ function volver() {
     window.location.href = "dashboard.html";
 }
 
-/**
- * INICIALIZACIÓN
- */
 async function inicializarVistaCitas() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
-
     await cargarPacientes();
-    
     if (modo === 'nuevo') {
         cambiarVista('nuevo');
     } else {
