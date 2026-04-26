@@ -4,19 +4,17 @@
 const STORAGE_VERSION = "1.3.1";
 
 // --- CONFIGURACIÓN DE SUPABASE ---
-// URL y Key proporcionadas por el usuario
 const supabaseUrl = 'https://klaygjvawybfksmahbhd.supabase.co';
-const supabaseKey = 'sb_publishable_ZoyBvw_JncKIesGmjEpEuA_dSIZZV4Z';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsYXlnanZhd3liZmtzbWFoYmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTcyNDUsImV4cCI6MjA5MTMzMzI0NX0.YKwGPFw29rsxe-mfyga5jTGIQYM7SNFDXvogE2WAx1Y';
 
-// Inicialización del cliente de Supabase usando el SDK cargado en el HTML
-// Nota: Usamos 'supabase.createClient' porque la librería v2 se registra globalmente así
-const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+// ✅ CORRECCIÓN CRÍTICA: window.supabase para acceder al SDK global
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 /**
  * Obtiene el ID de la clínica actual desde el localStorage
  */
 function getClinicaID() {
-    return localStorage.getItem("clinicaID") || "temp_clinic"; 
+    return localStorage.getItem("clinicaID") || "temp_clinic";
 }
 
 /**
@@ -43,8 +41,6 @@ function saveLocal(key, data) {
     }
 }
 
-// --- FUNCIONES DE DATOS (ACCESO DIRECTO A SUPABASE) ---
-
 /**
  * Obtiene la lista de pacientes desde la tabla 'pacientes'
  */
@@ -56,9 +52,7 @@ async function getPacientes() {
             .select('*')
             .eq('clinica_id', id)
             .order('nombre', { ascending: true });
-
         if (error) throw error;
-
         saveLocal(`pacientes_${id}`, data);
         console.log("✅ Pacientes sincronizados con éxito desde la nube");
         return data;
@@ -78,9 +72,7 @@ async function getCitas() {
             .from('citas')
             .select('*')
             .eq('clinica_id', id);
-
         if (error) throw error;
-
         saveLocal(`citas_${id}`, data);
         return data;
     } catch (err) {
