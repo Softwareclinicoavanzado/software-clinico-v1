@@ -30,19 +30,20 @@ const inputs = {
  * CARGAR DATOS: Trae la lista directo de la nube
  */
 async function cargarDatos() {
-    const { data, error } = await supabase
-        .from('pacientes')
-        .select('*')
-        .eq('clinica_id', clinicaID)
-        .order('nombre', { ascending: true });
+    try {
+        const { data, error } = await supabase
+            .from('pacientes')
+            .select('*')
+            .eq('clinica_id', clinicaID)
+            .order('nombre', { ascending: true });
 
-    if (error) {
-        console.error("Error cargando pacientes:", error);
-        return;
+        if (error) throw error;
+
+        pacientes = data;
+        render();
+    } catch (err) {
+        console.error("Error cargando pacientes:", err.message);
     }
-
-    pacientes = data;
-    render();
 }
 
 /**
@@ -90,17 +91,17 @@ function editarPaciente(id) {
 
     editandoID = id;
 
-    inputs.nombre.value = p.nombre || "";
-    inputs.dpi.value = p.dpi || "";
-    inputs.edad.value = p.edad || "";
-    inputs.telefono.value = p.telefono || "";
-    inputs.fechaNacimiento.value = p.fecha_nacimiento || ""; // Usar nombre de DB
-    inputs.sexo.value = p.sexo || "";
-    inputs.contactoEmergencia.value = p.contacto_emergencia || ""; // Usar nombre de DB
-    inputs.aseguradora.value = p.aseguradora || "";
-    inputs.poliza.value = p.poliza_seguro || ""; 
-    inputs.medicoAsignado.value = p.medico_asignado || ""; // Usar nombre de DB
-    inputs.sede.value = p.sede || "";
+    if (inputs.nombre) inputs.nombre.value = p.nombre || "";
+    if (inputs.dpi) inputs.dpi.value = p.dpi || "";
+    if (inputs.edad) inputs.edad.value = p.edad || "";
+    if (inputs.telefono) inputs.telefono.value = p.telefono || "";
+    if (inputs.fechaNacimiento) inputs.fechaNacimiento.value = p.fecha_nacimiento || "";
+    if (inputs.sexo) inputs.sexo.value = p.sexo || "";
+    if (inputs.contactoEmergencia) inputs.contactoEmergencia.value = p.contacto_emergencia || "";
+    if (inputs.aseguradora) inputs.aseguradora.value = p.aseguradora || "";
+    if (inputs.poliza) inputs.poliza.value = p.poliza_seguro || ""; 
+    if (inputs.medicoAsignado) inputs.medicoAsignado.value = p.medico_asignado || "";
+    if (inputs.sede) inputs.sede.value = p.sede || "";
 
     document.getElementById("seccionFormulario").style.display = "block";
     document.getElementById("seccionLista").style.display = "none";
@@ -120,31 +121,29 @@ async function agregarPaciente() {
     const datosPaciente = {
         nombre: nombre,
         dpi: inputs.dpi.value.trim(),
-        edad: inputs.edad.value,
-        telefono: inputs.telefono.value,
-        fecha_nacimiento: inputs.fechaNacimiento.value,
+        edad: inputs.edad.value ? parseInt(inputs.edad.value) : null,
+        telefono: inputs.telefono.value.trim(),
+        fecha_nacimiento: inputs.fechaNacimiento.value || null,
         sexo: inputs.sexo.value,
-        contacto_emergencia: inputs.contactoEmergencia.value,
-        aseguradora: inputs.aseguradora.value,
+        contacto_emergencia: inputs.contactoEmergencia.value.trim(),
+        aseguradora: inputs.aseguradora.value.trim(),
         poliza_seguro: inputs.poliza.value.trim(),
-        medico_asignado: inputs.medicoAsignado.value,
-        sede: inputs.sede.value,
+        medico_asignado: inputs.medicoAsignado.value.trim(),
+        sede: inputs.sede.value.trim(),
         clinica_id: clinicaID
     };
 
     try {
         if (editandoID) {
-            // ACTUALIZAR EN LA NUBE
             const { error } = await supabase
                 .from('pacientes')
                 .update(datosPaciente)
                 .eq('id', editandoID);
 
             if (error) throw error;
-            alert("¡Perfil actualizado globalmente!");
+            alert("¡Perfil actualizado con éxito!");
             editandoID = null;
         } else {
-            // INSERTAR EN LA NUBE
             const { error } = await supabase
                 .from('pacientes')
                 .insert([datosPaciente]);
@@ -153,13 +152,13 @@ async function agregarPaciente() {
             alert("¡Paciente registrado con éxito!");
         }
 
-        // Limpiar y volver
+        // Limpiar y resetear vista
         Object.values(inputs).forEach(input => { if(input) input.value = ""; });
         window.location.href = "pacientes.html?mode=ver";
 
     } catch (err) {
-        console.error("Error en operación:", err);
-        alert("Error al sincronizar con la nube.");
+        console.error("Error detallado de Supabase:", err);
+        alert("Error al sincronizar: " + (err.message || "Verifica la consola"));
     }
 }
 
@@ -171,15 +170,16 @@ async function eliminarPaciente(id) {
     if (!p) return;
 
     if (confirm(`⚠️ ¿ELIMINAR PACIENTE DEFINITIVAMENTE?\n\nNombre: ${p.nombre}`)) {
-        const { error } = await supabase
-            .from('pacientes')
-            .delete()
-            .eq('id', id);
+        try {
+            const { error } = await supabase
+                .from('pacientes')
+                .delete()
+                .eq('id', id);
 
-        if (error) {
-            alert("Error al eliminar.");
-        } else {
-            cargarDatos(); // Recargar lista
+            if (error) throw error;
+            cargarDatos();
+        } catch (err) {
+            alert("Error al eliminar: " + err.message);
         }
     }
 }
@@ -190,7 +190,7 @@ async function eliminarPaciente(id) {
 function filtrarPacientes() {
     const texto = document.getElementById("busqueda").value.toLowerCase();
     const filtrados = pacientes.filter(p => 
-        p.nombre.toLowerCase().includes(texto) || 
+        (p.nombre && p.nombre.toLowerCase().includes(texto)) || 
         (p.dpi && p.dpi.includes(texto)) ||
         (p.telefono && p.telefono.includes(texto))
     );
@@ -224,7 +224,7 @@ function gestionarVistas() {
         if(form) form.style.display = "none";
         if(lista) lista.style.display = "block";
         if(titulo) titulo.innerText = "Listado de Pacientes";
-        cargarDatos(); // Cargamos datos solo al ver la lista
+        cargarDatos();
     }
 }
 
