@@ -7,7 +7,7 @@ const SESSION = {
   lastActivity: "ultimaActividad"
 };
 
-const TIMEOUT = 20 * 60 * 1000; 
+const TIMEOUT = 20 * 60 * 1000;
 
 function verificarSesion() {
   const clinicaID = localStorage.getItem(SESSION.clinicaID);
@@ -17,11 +17,13 @@ function verificarSesion() {
 }
 
 function actualizarActividad() {
+  // ✅ CORRECCIÓN: Date.now() en lugar de [Date.now](http://Date.now)()
   localStorage.setItem(SESSION.lastActivity, Date.now());
 }
 
 function verificarInactividad() {
   const last = Number(localStorage.getItem(SESSION.lastActivity));
+  // ✅ CORRECCIÓN: Date.now() en lugar de [Date.now](http://Date.now)()
   if (last && (Date.now() - last > TIMEOUT)) {
     alert("Sesión cerrada por inactividad");
     cerrarSesion();
@@ -34,12 +36,12 @@ function cerrarSesion() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  verificarSesion(); // Verificar de inmediato al cargar el DOM
+  verificarSesion();
   
   ["click", "keydown", "mousemove"].forEach(evt =>
     document.addEventListener(evt, actualizarActividad)
   );
-
+  
   actualizarActividad();
   setInterval(verificarInactividad, 60000);
 });
