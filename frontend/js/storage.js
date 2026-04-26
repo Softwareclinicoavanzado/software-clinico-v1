@@ -6,8 +6,8 @@ const STORAGE_VERSION = "1.3.1";
 const supabaseUrl = 'https://klaygjvawybfksmahbhd.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsYXlnanZhd3liZmtzbWFoYmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTcyNDUsImV4cCI6MjA5MTMzMzI0NX0.YKwGPFw29rsxe-mfyga5jTGIQYM7SNFDXvogE2WAx1Y';
 
-// ✅ CORRECCIÓN CRÍTICA
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+// ✅ Renombrado a supabaseClient para evitar conflicto con el SDK global
+const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 function getClinicaID() {
     return localStorage.getItem("clinicaID") || "temp_clinic";
@@ -34,7 +34,7 @@ function saveLocal(key, data) {
 async function getPacientes() {
     const id = getClinicaID();
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('pacientes')
             .select('*')
             .eq('clinica_id', id)
@@ -52,7 +52,7 @@ async function getPacientes() {
 async function getCitas() {
     const id = getClinicaID();
     try {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('citas')
             .select('*')
             .eq('clinica_id', id);
