@@ -36,13 +36,14 @@ async function cargarPacientes() {
     });
 }
 
+// ✅ CORREGIDO: Sin join, busca nombre por separado
 async function render() {
     if (!listaCitas) return;
     listaCitas.innerHTML = "";
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select(`id, fecha, hora, paciente_id, pacientes ( nombre )`)
+        .select('id, fecha, hora, paciente_id, estado')
         .eq('clinica_id', clinicaID)
         .order('fecha', { ascending: true })
         .order('hora', { ascending: true });
@@ -57,8 +58,18 @@ async function render() {
         return;
     }
 
+    // Traer nombres de pacientes por separado
+    const { data: pacientesData } = await supabaseClient
+        .from('pacientes')
+        .select('id, nombre')
+        .eq('clinica_id', clinicaID);
+
     citasCloud.forEach((c) => {
-        const nombrePaciente = c.pacientes ? c.pacientes.nombre : "Paciente no identificado";
+        const paciente = pacientesData 
+            ? pacientesData.find(p => Number(p.id) === Number(c.paciente_id)) 
+            : null;
+        const nombrePaciente = paciente ? paciente.nombre : "Paciente no identificado";
+
         const div = document.createElement("div");
         div.className = "card";
         div.style.marginBottom = "12px";
