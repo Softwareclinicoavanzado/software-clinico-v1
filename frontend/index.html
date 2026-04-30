@@ -8,7 +8,6 @@
     
     <!-- ✅ Supabase CDN PRIMERO -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <style>
         .lang-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -36,7 +35,6 @@
             <button class="lang-btn" onclick="selectLanguage('fr')"><span>🇫🇷</span> Français</button>
         </div>
     </div>
-
     <div class="login-card" style="display: none;" id="loginSection">
         <h1>ClinicOS</h1>
         <p id="mensaje" class="subtitulo" data-i18n="cargando">Cargando clínica...</p>
@@ -48,10 +46,10 @@
         <p id="error"></p>
         <button onclick="showLangSelector()" style="background:none; border:none; color:#555; cursor:pointer; margin-top:15px; font-size:0.8rem;">🌐 Change Language</button>
     </div>
-
     <!-- ✅ Orden correcto -->
     <script src="./js/translations.js"></script>
     <script src="./js/storage.js"></script>
+    <script src="./js/clinicas_config.js"></script>  <!-- ← LÍNEA NUEVA -->
     <script src="./js/auth.js"></script>
     <script>
         function selectLanguage(lang) {
