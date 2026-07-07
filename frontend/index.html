@@ -5,7 +5,7 @@
     <title>ClinicOS | Login</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="./css/styles.css">
-    
+
     <!-- ✅ Supabase CDN PRIMERO -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
@@ -37,19 +37,18 @@
     </div>
     <div class="login-card" style="display: none;" id="loginSection">
         <h1>ClinicOS</h1>
-        <p id="mensaje" class="subtitulo" data-i18n="cargando">Cargando clínica...</p>
+        <p id="mensaje" class="subtitulo" data-i18n="bienvenida">Bienvenido de nuevo</p>
         <div class="form-group">
-            <input id="usuario" type="text" placeholder="Usuario" data-i18n-placeholder="usuario" autocomplete="username">
+            <input id="usuario" type="email" placeholder="Correo electrónico" data-i18n-placeholder="usuario" autocomplete="username">
             <input id="password" type="password" placeholder="Contraseña" data-i18n-placeholder="password" autocomplete="current-password">
         </div>
         <button id="loginBtn" type="button" data-i18n="ingresar">Ingresar</button>
         <p id="error"></p>
         <button onclick="showLangSelector()" style="background:none; border:none; color:#555; cursor:pointer; margin-top:15px; font-size:0.8rem;">🌐 Change Language</button>
     </div>
-    <!-- ✅ Orden correcto -->
-    <script src="./js/translations.js"></script>
+    <!-- ✅ Orden correcto: storage.js primero (crea supabaseClient), luego traducciones, luego auth -->
     <script src="./js/storage.js"></script>
-    <script src="./js/clinicas_config.js"></script>  <!-- ← LÍNEA NUEVA -->
+    <script src="./js/translations.js"></script>
     <script src="./js/auth.js"></script>
     <script>
         function selectLanguage(lang) {
