@@ -26,7 +26,6 @@ let historial = [];
 
 async function inicializarHistorial() {
     try {
-        // ✅ supabaseClient en lugar de supabase
         const { data: pacienteData, error: errorPac } = await supabaseClient
             .from('pacientes')
             .select('*')
@@ -42,12 +41,12 @@ async function inicializarHistorial() {
         paciente = pacienteData;
         if (pNombre) pNombre.textContent = `Paciente: ${paciente.nombre}`;
 
-        // ✅ supabaseClient en lugar de supabase
+        // ✅ CORREGIDO: la columna real en Supabase se llama "creado", no "created_at"
         const { data: historialCloud, error: errorHist } = await supabaseClient
             .from('historial')
             .select('*')
             .eq('paciente_id', pacienteID)
-            .order('created_at', { ascending: false });
+            .order('creado', { ascending: false });
 
         if (errorHist) throw errorHist;
 
@@ -120,7 +119,6 @@ async function agregarNota() {
     };
 
     try {
-        // ✅ supabaseClient en lugar de supabase
         const { error } = await supabaseClient
             .from('historial')
             .insert([nuevaNota]);
@@ -141,7 +139,6 @@ async function eliminarNota(id, index) {
     if (!confirm("¿Estás seguro de eliminar este registro?")) return;
 
     try {
-        // ✅ supabaseClient en lugar de supabase
         const { error } = await supabaseClient
             .from('historial')
             .delete()
@@ -210,4 +207,4 @@ function gestionarVistaActual() {
     }
 }
 
-inicializarHistorial();
+inicializarHistorial();s
