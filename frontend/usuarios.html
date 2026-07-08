@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>ClinicOS | Usuarios</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <h1 id="tituloPagina">Gestión de Usuarios</h1>
+
+    <div class="card" id="seccionFormulario">
+      <h3 style="color: #2ecc71; margin-bottom: 15px;">➕ Agregar Personal</h3>
+      <div class="form-grid">
+        <input type="text" id="nombre" placeholder="Nombre completo">
+        <input type="email" id="email" placeholder="Correo electrónico" autocomplete="off">
+        <input type="password" id="password" placeholder="Contraseña temporal" autocomplete="new-password">
+        <select id="rol">
+          <option value="doctor">Doctor</option>
+          <option value="recepcion">Recepción</option>
+          <option value="admin">Administrador</option>
+        </select>
+        <button type="button" class="btn-primary" onclick="crearUsuario()">
+          🚀 Crear Cuenta
+        </button>
+      </div>
+    </div>
+
+    <div id="seccionLista">
+      <h2 style="color: #3498db; margin: 20px 0 15px;">📋 Personal de la Clínica</h2>
+      <ul class="lista" id="listaUsuarios" style="padding: 0;"></ul>
+    </div>
+
+    <button class="secondary" type="button" onclick="volver()" style="margin-top: 20px; width: 100%;">
+      Volver al Dashboard
+    </button>
+  </div>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/session.js"></script>
+  <script src="./js/usuarios.js"></script>
+</body>
+</html>
