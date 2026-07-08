@@ -5,6 +5,9 @@ window.irPacientes = function(modo) {
 window.irCitas = function(modo) {
     window.location.href = `citas.html?mode=${modo}`;
 };
+window.irUsuarios = function() {
+    window.location.href = `usuarios.html`;
+};
 window.logout = function() {
     // ✅ Ahora usa cerrarSesion() de session.js, que también cierra sesión en Supabase Auth
     if (typeof cerrarSesion === "function") {
@@ -37,7 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const clinicaID = localStorage.getItem("clinicaID");
     const rol = localStorage.getItem("rol");
 
-    // ✅ CORREGIDO: ya no exigimos "clinicaNombre" porque el login nuevo no lo guarda todavía
     if (!clinicaID || !rol) {
         window.location.replace("index.html");
         return;
@@ -49,6 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if(clinicaElem) clinicaElem.innerText = "ClinicOS";
     if(usuarioElem) usuarioElem.innerText = `${usuario || ""} · Rol: ${rol.toUpperCase()}`;
+
+    // ✅ Mostrar botón de "Gestionar Usuarios" solo si el rol es admin
+    if (rol === "admin") {
+        const btnUsuarios = document.getElementById("btnUsuarios");
+        if (btnUsuarios) btnUsuarios.style.display = "block";
+    }
 
     actualizarContadores(clinicaID);
 });
