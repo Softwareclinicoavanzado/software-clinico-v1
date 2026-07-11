@@ -15,6 +15,20 @@ if (rolActual !== "admin") {
 let miUserId = null;
 let usuariosCache = [];
 
+// ✅ Helper para sacar el mensaje real de un error de Edge Function
+async function extraerError(error, fallback = "Ocurrió un error inesperado") {
+    let mensaje = error?.message || fallback;
+    try {
+        if (error?.context && typeof error.context.json === "function") {
+            const cuerpo = await error.context.json();
+            if (cuerpo?.error) mensaje = cuerpo.error;
+        }
+    } catch (e2) {
+        console.warn("No se pudo leer el detalle del error:", e2);
+    }
+    return mensaje;
+}
+
 async function obtenerMiID() {
     const { data } = await supabaseClient.auth.getUser();
     miUserId = data?.user?.id || null;
@@ -32,11 +46,12 @@ async function cargarUsuarios() {
 
     if (error) {
         lista.innerHTML = "<li style='color:#f87171;'>Error al cargar usuarios</li>";
-        console.error(error);
+        console.error("Error al cargar usuarios:", error);
         return;
     }
 
     usuariosCache = data || [];
+    console.log("👥 Usuarios encontrados en esta clínica:", usuariosCache);
 
     if (usuariosCache.length === 0) {
         lista.innerHTML = "<li style='color:white;'>No hay usuarios registrados aún</li>";
@@ -104,7 +119,8 @@ async function crearUsuario() {
         const { data, error } = await supabaseClient.functions.invoke("crear-usuario", {
             body: { email, password, nombre, rol, clinica_id: clinicaID }
         });
-        if (error) throw error;
+
+        if (error) throw new Error(await extraerError(error));
         if (data?.error) throw new Error(data.error);
 
         alert("✅ Usuario creado con éxito.");
@@ -114,7 +130,7 @@ async function crearUsuario() {
         await cargarUsuarios();
     } catch (err) {
         console.error("Error al crear usuario:", err);
-        alert("Error: " + (err.message || "No se pudo crear el usuario."));
+        alert("Error real: " + (err.message || "No se pudo crear el usuario."));
     }
 }
 
@@ -128,11 +144,12 @@ async function cambiarEstado(usuario_id, accion) {
         const { data, error } = await supabaseClient.functions.invoke("gestionar-usuario", {
             body: { accion, usuario_id, clinica_id: clinicaID }
         });
-        if (error) throw error;
+        if (error) throw new Error(await extraerError(error));
         if (data?.error) throw new Error(data.error);
         await cargarUsuarios();
     } catch (err) {
-        alert("Error: " + (err.message || "No se pudo actualizar."));
+        console.error("Error al cambiar estado:", err);
+        alert("Error real: " + (err.message || "No se pudo actualizar."));
     }
 }
 
@@ -145,11 +162,12 @@ async function resetearPassword(usuario_id) {
         const { data, error } = await supabaseClient.functions.invoke("gestionar-usuario", {
             body: { accion: "restablecer_password", usuario_id, clinica_id: clinicaID, nueva_password: nueva }
         });
-        if (error) throw error;
+        if (error) throw new Error(await extraerError(error));
         if (data?.error) throw new Error(data.error);
         alert("✅ Contraseña actualizada. Comunícasela al usuario de forma segura.");
     } catch (err) {
-        alert("Error: " + (err.message || "No se pudo restablecer la contraseña."));
+        console.error("Error al resetear contraseña:", err);
+        alert("Error real: " + (err.message || "No se pudo restablecer la contraseña."));
     }
 }
 
@@ -159,11 +177,12 @@ async function eliminarUsuarioPermanente(usuario_id) {
         const { data, error } = await supabaseClient.functions.invoke("gestionar-usuario", {
             body: { accion: "eliminar", usuario_id, clinica_id: clinicaID }
         });
-        if (error) throw error;
+        if (error) throw new Error(await extraerError(error));
         if (data?.error) throw new Error(data.error);
         await cargarUsuarios();
     } catch (err) {
-        alert("Error: " + (err.message || "No se pudo eliminar."));
+        console.error("Error al eliminar usuario:", err);
+        alert("Error real: " + (err.message || "No se pudo eliminar."));
     }
 }
 
