@@ -15,7 +15,6 @@ function showError(msg, type = "error") {
 if (loginBtn) {
     loginBtn.onclick = async () => {
         if (errorDisplay) errorDisplay.innerText = "";
-
         const usuarioInput = document.getElementById("usuario");
         const passwordInput = document.getElementById("password");
         if (!usuarioInput || !passwordInput) return;
@@ -56,10 +55,10 @@ if (loginBtn) {
             return;
         }
 
-        // 2. Buscar el perfil (clínica y rol) de este usuario
+        // 2. Buscar el perfil (clínica, rol y estado) de este usuario
         const { data: perfil, error: errorPerfil } = await supabaseClient
             .from("perfiles")
-            .select("clinica_id, rol, nombre")
+            .select("clinica_id, rol, nombre, activo")
             .eq("id", data.user.id)
             .single();
 
@@ -74,7 +73,19 @@ if (loginBtn) {
             return;
         }
 
-        // 3. Guardar sesión localmente (para que el resto de tu app siga funcionando igual)
+        // ✅ 3. Bloquear el acceso si la cuenta fue desactivada por el admin
+        if (perfil.activo === false) {
+            const msgDesactivado = {
+                es: "Tu cuenta ha sido desactivada. Contacta al administrador.",
+                en: "Your account has been deactivated. Contact the administrator.",
+                fr: "Votre compte a été désactivé. Contactez l'administrateur."
+            };
+            showError(msgDesactivado[currentLang]);
+            await supabaseClient.auth.signOut();
+            return;
+        }
+
+        // 4. Guardar sesión localmente
         localStorage.setItem("clinicaID", perfil.clinica_id);
         localStorage.setItem("rol", perfil.rol);
         localStorage.setItem("usuario", perfil.nombre || data.user.email);
