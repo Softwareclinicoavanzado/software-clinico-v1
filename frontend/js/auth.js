@@ -73,7 +73,7 @@ if (loginBtn) {
             return;
         }
 
-        // ✅ 3. Bloquear el acceso si la cuenta fue desactivada por el admin
+        // 3. Bloquear el acceso si la cuenta fue desactivada por el admin
         if (perfil.activo === false) {
             const msgDesactivado = {
                 es: "Tu cuenta ha sido desactivada. Contacta al administrador.",
@@ -85,8 +85,16 @@ if (loginBtn) {
             return;
         }
 
-        // 4. Guardar sesión localmente
+        // ✅ 4. Nuevo: obtenemos el nombre bonito de la clínica
+        const { data: clinica } = await supabaseClient
+            .from("clinicas")
+            .select("nombre")
+            .eq("id", perfil.clinica_id)
+            .single();
+
+        // 5. Guardar sesión localmente
         localStorage.setItem("clinicaID", perfil.clinica_id);
+        localStorage.setItem("clinicaNombre", clinica?.nombre || "ClinicOS");
         localStorage.setItem("rol", perfil.rol);
         localStorage.setItem("usuario", perfil.nombre || data.user.email);
         localStorage.setItem("loginTime", new Date().toISOString());
