@@ -48,11 +48,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const clinicaElem = document.getElementById("clinica");
     const usuarioElem = document.getElementById("usuarioInfo");
     const usuario = localStorage.getItem("usuario");
+    // ✅ Nuevo: recuperamos el nombre bonito de la clínica
+    const clinicaNombre = localStorage.getItem("clinicaNombre");
 
-    if(clinicaElem) clinicaElem.innerText = "ClinicOS";
+    if(clinicaElem) clinicaElem.innerText = clinicaNombre ? `Bienvenido a ${clinicaNombre}` : "ClinicOS";
     if(usuarioElem) usuarioElem.innerText = `${usuario || ""} · Rol: ${rol.toUpperCase()}`;
 
-    // ✅ Mostrar botón de "Gestionar Usuarios" solo si el rol es admin
+    // Mostrar botón de "Gestionar Usuarios" solo si el rol es admin
     if (rol === "admin") {
         const btnUsuarios = document.getElementById("btnUsuarios");
         if (btnUsuarios) btnUsuarios.style.display = "block";
