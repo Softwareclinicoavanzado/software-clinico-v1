@@ -4,7 +4,6 @@
 
 const translations = {
     es: {
-        // Login & Carga
         cargando: "Cargando clínica...",
         usuario: "Usuario",
         password: "Contraseña",
@@ -12,7 +11,6 @@ const translations = {
         error_auth: "Usuario o contraseña incorrectos",
         bienvenida: "Bienvenido de nuevo",
 
-        // Dashboard
         pacientes_registrados: "Pacientes Registrados",
         citas_agendadas: "Citas Agendadas",
         ver_pacientes: "👥 Ver Pacientes",
@@ -20,8 +18,10 @@ const translations = {
         ver_agenda: "📅 Ver Agenda",
         agendar_cita: "⏰ Agendar Cita",
         cerrar_sesion: "Cerrar sesión",
+        gestionar_usuarios_btn: "👤 Gestionar Usuarios",
+        bienvenido_a: "Bienvenido a",
+        rol_prefix: "Rol",
 
-        // Gestión de Pacientes
         gestion_pacientes: "Gestión de Pacientes",
         nombre_completo: "Nombre completo",
         dpi_label: "DPI (Identificación)",
@@ -40,8 +40,14 @@ const translations = {
         btn_añadir: "Añadir al Sistema",
         buscar_placeholder: "🔍 Buscar por nombre, DPI...",
         volver_dashboard: "Volver al Dashboard",
+        listado_pacientes: "Listado de Pacientes",
+        no_hay_pacientes: "No hay pacientes registrados",
+        exportar_reporte: "📄 Exportar Reporte",
+        modificar_historial: "⚙️ Modificar Historial",
+        editar_perfil: "✏️ Editar Perfil",
+        nueva_nota_medica: "📝 Nueva Nota Médica",
+        eliminar_paciente: "🗑️ Eliminar Paciente",
 
-        // Gestión de Citas
         gestion_citas: "Gestión de Citas",
         nueva_cita: "➕ Nueva Cita",
         agendar_nueva_cita: "📝 Agendar Nueva Cita",
@@ -51,8 +57,10 @@ const translations = {
         hora_label: "Hora",
         confirmar_agendar: "Confirmar y Agendar",
         citas_programadas: "📋 Citas Programadas",
+        titulo_ver_agenda: "Agenda Médica",
+        titulo_agendar_cita: "Agendar Cita",
+        sin_citas: "No hay citas agendadas.",
 
-        // ✅ Historial Clínico
         historial_titulo: "Historial Clínico",
         historial_nueva_nota: "📝 Redactar Nota Médica",
         historial_tipo_nota: "Tipo de nota",
@@ -72,7 +80,25 @@ const translations = {
         historial_nueva_nota_titulo: "Nueva Nota Médica",
         historial_gestion_titulo: "Gestión de Historial",
 
-        // General
+        gestion_usuarios: "Gestión de Usuarios",
+        agregar_personal: "➕ Agregar Personal",
+        nombre_completo_ph: "Nombre completo",
+        correo_electronico: "Correo electrónico",
+        contrasena_temporal: "Contraseña temporal",
+        crear_cuenta: "🚀 Crear Cuenta",
+        personal_clinica: "📋 Personal de la Clínica",
+        rol_doctor: "Doctor",
+        rol_recepcion: "Recepción",
+        rol_admin: "Administrador",
+        ver_info: "ℹ️ Ver Info",
+        desactivar: "⏸️ Desactivar",
+        reactivar: "✅ Reactivar",
+        resetear_clave: "🔑 Resetear Clave",
+        eliminar_usuario: "🗑️ Eliminar",
+        esta_es_tu_cuenta: "Esta es tu cuenta",
+        no_hay_usuarios: "No hay usuarios registrados aún",
+        desactivado_tag: "(Desactivado)",
+
         btn_nuevo: "Nuevo Registro",
         buscar: "Buscar...",
         guardar: "Guardar Cambios",
@@ -81,7 +107,6 @@ const translations = {
         volver_inicio: "Volver al Inicio"
     },
     en: {
-        // Login & Carga
         cargando: "Loading clinic...",
         usuario: "Username",
         password: "Password",
@@ -89,7 +114,6 @@ const translations = {
         error_auth: "Incorrect username or password",
         bienvenida: "Welcome back",
 
-        // Dashboard
         pacientes_registrados: "Registered Patients",
         citas_agendadas: "Scheduled Appointments",
         ver_pacientes: "👥 View Patients",
@@ -97,8 +121,10 @@ const translations = {
         ver_agenda: "📅 View Agenda",
         agendar_cita: "⏰ Schedule Appointment",
         cerrar_sesion: "Logout",
+        gestionar_usuarios_btn: "👤 Manage Users",
+        bienvenido_a: "Welcome to",
+        rol_prefix: "Role",
 
-        // Gestión de Pacientes
         gestion_pacientes: "Patient Management",
         nombre_completo: "Full Name",
         dpi_label: "ID Number",
@@ -117,8 +143,14 @@ const translations = {
         btn_añadir: "Add to System",
         buscar_placeholder: "🔍 Search by name, ID...",
         volver_dashboard: "Back to Dashboard",
+        listado_pacientes: "Patient List",
+        no_hay_pacientes: "No patients registered",
+        exportar_reporte: "📄 Export Report",
+        modificar_historial: "⚙️ Edit History",
+        editar_perfil: "✏️ Edit Profile",
+        nueva_nota_medica: "📝 New Medical Note",
+        eliminar_paciente: "🗑️ Delete Patient",
 
-        // Gestión de Citas
         gestion_citas: "Appointment Management",
         nueva_cita: "➕ New Appointment",
         agendar_nueva_cita: "📝 Schedule New Appointment",
@@ -128,8 +160,10 @@ const translations = {
         hora_label: "Time",
         confirmar_agendar: "Confirm and Schedule",
         citas_programadas: "📋 Scheduled Appointments",
+        titulo_ver_agenda: "Medical Agenda",
+        titulo_agendar_cita: "Schedule Appointment",
+        sin_citas: "No appointments scheduled.",
 
-        // ✅ Historial Clínico
         historial_titulo: "Clinical Record",
         historial_nueva_nota: "📝 Write Medical Note",
         historial_tipo_nota: "Note type",
@@ -149,7 +183,25 @@ const translations = {
         historial_nueva_nota_titulo: "New Medical Note",
         historial_gestion_titulo: "Record Management",
 
-        // General
+        gestion_usuarios: "User Management",
+        agregar_personal: "➕ Add Staff",
+        nombre_completo_ph: "Full Name",
+        correo_electronico: "Email",
+        contrasena_temporal: "Temporary Password",
+        crear_cuenta: "🚀 Create Account",
+        personal_clinica: "📋 Clinic Staff",
+        rol_doctor: "Doctor",
+        rol_recepcion: "Reception",
+        rol_admin: "Administrator",
+        ver_info: "ℹ️ View Info",
+        desactivar: "⏸️ Deactivate",
+        reactivar: "✅ Reactivate",
+        resetear_clave: "🔑 Reset Password",
+        eliminar_usuario: "🗑️ Delete",
+        esta_es_tu_cuenta: "This is your account",
+        no_hay_usuarios: "No users registered yet",
+        desactivado_tag: "(Deactivated)",
+
         btn_nuevo: "Add New",
         buscar: "Search...",
         guardar: "Save Changes",
@@ -158,7 +210,6 @@ const translations = {
         volver_inicio: "Back to Home"
     },
     fr: {
-        // Login & Carga
         cargando: "Chargement de la clinique...",
         usuario: "Utilisateur",
         password: "Mot de passe",
@@ -166,7 +217,6 @@ const translations = {
         error_auth: "Identifiant ou mot de passe incorrect",
         bienvenida: "Bienvenue à nouveau",
 
-        // Dashboard
         pacientes_registrados: "Patients enregistrés",
         citas_agendadas: "Rendez-vous prévus",
         ver_pacientes: "👥 Voir les patients",
@@ -174,8 +224,10 @@ const translations = {
         ver_agenda: "📅 Voir l'agenda",
         agendar_cita: "⏰ Prendre rendez-vous",
         cerrar_sesion: "Se déconnecter",
+        gestionar_usuarios_btn: "👤 Gérer les Utilisateurs",
+        bienvenido_a: "Bienvenue à",
+        rol_prefix: "Rôle",
 
-        // Gestión de Pacientes
         gestion_pacientes: "Gestion des Patients",
         nombre_completo: "Nom complet",
         dpi_label: "Numéro d'identité",
@@ -194,8 +246,14 @@ const translations = {
         btn_añadir: "Ajouter au système",
         buscar_placeholder: "🔍 Rechercher par nom, ID...",
         volver_dashboard: "Retour au tableau de bord",
+        listado_pacientes: "Liste des Patients",
+        no_hay_pacientes: "Aucun patient enregistré",
+        exportar_reporte: "📄 Exporter le Rapport",
+        modificar_historial: "⚙️ Modifier l'Historique",
+        editar_perfil: "✏️ Modifier le Profil",
+        nueva_nota_medica: "📝 Nouvelle Note Médicale",
+        eliminar_paciente: "🗑️ Supprimer le Patient",
 
-        // Gestión de Citas
         gestion_citas: "Gestion des Rendez-vous",
         nueva_cita: "➕ Nouveau Rendez-vous",
         agendar_nueva_cita: "📝 Prendre un nouveau rendez-vous",
@@ -205,8 +263,10 @@ const translations = {
         hora_label: "Heure",
         confirmar_agendar: "Confirmer et planifier",
         citas_programadas: "📋 Rendez-vous programmés",
+        titulo_ver_agenda: "Agenda Médicale",
+        titulo_agendar_cita: "Prendre Rendez-vous",
+        sin_citas: "Aucun rendez-vous programmé.",
 
-        // ✅ Historial Clínico
         historial_titulo: "Dossier Médical",
         historial_nueva_nota: "📝 Rédiger une Note Médicale",
         historial_tipo_nota: "Type de note",
@@ -226,7 +286,25 @@ const translations = {
         historial_nueva_nota_titulo: "Nouvelle Note Médicale",
         historial_gestion_titulo: "Gestion du Dossier",
 
-        // General
+        gestion_usuarios: "Gestion des Utilisateurs",
+        agregar_personal: "➕ Ajouter du Personnel",
+        nombre_completo_ph: "Nom complet",
+        correo_electronico: "E-mail",
+        contrasena_temporal: "Mot de passe temporaire",
+        crear_cuenta: "🚀 Créer un Compte",
+        personal_clinica: "📋 Personnel de la Clinique",
+        rol_doctor: "Médecin",
+        rol_recepcion: "Réception",
+        rol_admin: "Administrateur",
+        ver_info: "ℹ️ Voir Infos",
+        desactivar: "⏸️ Désactiver",
+        reactivar: "✅ Réactiver",
+        resetear_clave: "🔑 Réinitialiser le Mot de Passe",
+        eliminar_usuario: "🗑️ Supprimer",
+        esta_es_tu_cuenta: "Ceci est votre compte",
+        no_hay_usuarios: "Aucun utilisateur enregistré pour l'instant",
+        desactivado_tag: "(Désactivé)",
+
         btn_nuevo: "Ajouter nouveau",
         buscar: "Chercher...",
         guardar: "Sauvegarder",
@@ -237,11 +315,13 @@ const translations = {
 };
 
 /**
- * Función maestra para cambiar el idioma en el DOM
+ * Función maestra para cambiar el idioma en el DOM (elementos con data-i18n)
  */
 function changeLanguage(lang) {
     const texts = translations[lang];
     if (!texts) return;
+
+    localStorage.setItem("lang", lang);
 
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
@@ -262,4 +342,13 @@ function changeLanguage(lang) {
         const key = el.getAttribute('data-i18n-placeholder');
         if (texts[key]) el.placeholder = texts[key];
     });
+}
+
+/**
+ * ✅ NUEVO: función para traducir texto directamente desde JavaScript
+ * (para botones y contenido que se genera dinámicamente, no desde el HTML)
+ */
+function t(key) {
+    const lang = localStorage.getItem("lang") || "es";
+    return (translations[lang] && translations[lang][key]) || key;
 }
