@@ -15,7 +15,6 @@ if (rolActual !== "admin") {
 let miUserId = null;
 let usuariosCache = [];
 
-// ✅ Helper para sacar el mensaje real de un error de Edge Function
 async function extraerError(error, fallback = "Ocurrió un error inesperado") {
     let mensaje = error?.message || fallback;
     try {
@@ -32,6 +31,13 @@ async function extraerError(error, fallback = "Ocurrió un error inesperado") {
 async function obtenerMiID() {
     const { data } = await supabaseClient.auth.getUser();
     miUserId = data?.user?.id || null;
+}
+
+function etiquetaRol(rol) {
+    if (rol === "doctor") return t("rol_doctor");
+    if (rol === "recepcion") return t("rol_recepcion");
+    if (rol === "admin") return t("rol_admin");
+    return rol;
 }
 
 async function cargarUsuarios() {
@@ -51,10 +57,9 @@ async function cargarUsuarios() {
     }
 
     usuariosCache = data || [];
-    console.log("👥 Usuarios encontrados en esta clínica:", usuariosCache);
 
     if (usuariosCache.length === 0) {
-        lista.innerHTML = "<li style='color:white;'>No hay usuarios registrados aún</li>";
+        lista.innerHTML = `<li style='color:white;'>${t("no_hay_usuarios")}</li>`;
         return;
     }
 
@@ -69,23 +74,23 @@ async function cargarUsuarios() {
         li.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
-                    <strong>${u.nombre || "Sin nombre"}</strong> ${inactivo ? '<span style="color:#f87171; font-size:0.75rem;">(Desactivado)</span>' : ''}<br>
+                    <strong>${u.nombre || "Sin nombre"}</strong> ${inactivo ? `<span style="color:#f87171; font-size:0.75rem;">${t("desactivado_tag")}</span>` : ''}<br>
                     <small style="opacity: 0.8;">${u.email || "-"}</small>
                 </div>
                 <span style="background:#2ecc71; color:#0d1117; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">
-                    ${u.rol.toUpperCase()}
+                    ${etiquetaRol(u.rol).toUpperCase()}
                 </span>
             </div>
             <div style="display:flex; gap:8px; margin-top:10px; flex-wrap: wrap;">
-                <button type="button" onclick="verInfo('${u.id}')" style="background:#3498db; flex:1; padding:6px; min-width: 100px;">ℹ️ Ver Info</button>
+                <button type="button" onclick="verInfo('${u.id}')" style="background:#3498db; flex:1; padding:6px; min-width: 100px;">${t("ver_info")}</button>
                 ${!esUnoMismo ? `
                     ${inactivo
-                        ? `<button type="button" onclick="cambiarEstado('${u.id}','reactivar')" style="background:#2ecc71; flex:1; padding:6px; min-width: 100px;">✅ Reactivar</button>`
-                        : `<button type="button" onclick="cambiarEstado('${u.id}','desactivar')" style="background:#f39c12; flex:1; padding:6px; min-width: 100px;">⏸️ Desactivar</button>`
+                        ? `<button type="button" onclick="cambiarEstado('${u.id}','reactivar')" style="background:#2ecc71; flex:1; padding:6px; min-width: 100px;">${t("reactivar")}</button>`
+                        : `<button type="button" onclick="cambiarEstado('${u.id}','desactivar')" style="background:#f39c12; flex:1; padding:6px; min-width: 100px;">${t("desactivar")}</button>`
                     }
-                    <button type="button" onclick="resetearPassword('${u.id}')" style="background:#9b59b6; flex:1; padding:6px; min-width: 100px;">🔑 Resetear Clave</button>
-                    <button type="button" onclick="eliminarUsuarioPermanente('${u.id}')" style="background:#e74c3c; flex:1; padding:6px; min-width: 100px;">🗑️ Eliminar</button>
-                ` : `<small style="opacity:0.5; align-self:center;">Esta es tu cuenta</small>`}
+                    <button type="button" onclick="resetearPassword('${u.id}')" style="background:#9b59b6; flex:1; padding:6px; min-width: 100px;">${t("resetear_clave")}</button>
+                    <button type="button" onclick="eliminarUsuarioPermanente('${u.id}')" style="background:#e74c3c; flex:1; padding:6px; min-width: 100px;">${t("eliminar_usuario")}</button>
+                ` : `<small style="opacity:0.5; align-self:center;">${t("esta_es_tu_cuenta")}</small>`}
             </div>
         `;
         lista.appendChild(li);
@@ -97,11 +102,11 @@ function verInfo(id) {
     if (!u) return;
     const fecha = u.creado ? new Date(u.creado).toLocaleString("es-GT") : "No disponible";
     alert(
-        `👤 Información del usuario\n\n` +
+        `👤 ${t("ver_info").replace("ℹ️ ", "")}\n\n` +
         `Nombre: ${u.nombre || "-"}\n` +
         `Correo: ${u.email || "-"}\n` +
-        `Rol: ${u.rol.toUpperCase()}\n` +
-        `Estado: ${u.activo === false ? "Desactivado" : "Activo"}\n` +
+        `Rol: ${etiquetaRol(u.rol).toUpperCase()}\n` +
+        `Estado: ${u.activo === false ? t("desactivado_tag") : "Activo"}\n` +
         `Cuenta creada: ${fecha}`
     );
 }
@@ -130,7 +135,7 @@ async function crearUsuario() {
         await cargarUsuarios();
     } catch (err) {
         console.error("Error al crear usuario:", err);
-        alert("Error real: " + (err.message || "No se pudo crear el usuario."));
+        alert("Error: " + (err.message || "No se pudo crear el usuario."));
     }
 }
 
@@ -149,7 +154,7 @@ async function cambiarEstado(usuario_id, accion) {
         await cargarUsuarios();
     } catch (err) {
         console.error("Error al cambiar estado:", err);
-        alert("Error real: " + (err.message || "No se pudo actualizar."));
+        alert("Error: " + (err.message || "No se pudo actualizar."));
     }
 }
 
@@ -167,7 +172,7 @@ async function resetearPassword(usuario_id) {
         alert("✅ Contraseña actualizada. Comunícasela al usuario de forma segura.");
     } catch (err) {
         console.error("Error al resetear contraseña:", err);
-        alert("Error real: " + (err.message || "No se pudo restablecer la contraseña."));
+        alert("Error: " + (err.message || "No se pudo restablecer la contraseña."));
     }
 }
 
@@ -182,7 +187,7 @@ async function eliminarUsuarioPermanente(usuario_id) {
         await cargarUsuarios();
     } catch (err) {
         console.error("Error al eliminar usuario:", err);
-        alert("Error real: " + (err.message || "No se pudo eliminar."));
+        alert("Error: " + (err.message || "No se pudo eliminar."));
     }
 }
 
