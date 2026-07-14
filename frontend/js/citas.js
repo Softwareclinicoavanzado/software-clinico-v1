@@ -27,7 +27,7 @@ async function cargarPacientes() {
         return;
     }
 
-    selectPaciente.innerHTML = '<option value="">Seleccione un paciente</option>';
+    selectPaciente.innerHTML = `<option value="">${t("seleccione_paciente")}</option>`;
     pacientes.forEach(p => {
         const option = document.createElement("option");
         option.value = p.id;
@@ -36,7 +36,6 @@ async function cargarPacientes() {
     });
 }
 
-// ✅ CORREGIDO: Sin join, busca nombre por separado
 async function render() {
     if (!listaCitas) return;
     listaCitas.innerHTML = "";
@@ -54,11 +53,10 @@ async function render() {
     }
 
     if (!citasCloud || citasCloud.length === 0) {
-        listaCitas.innerHTML = "<div class='card'><p style='text-align:center; opacity:0.6;'>No hay citas agendadas.</p></div>";
+        listaCitas.innerHTML = `<div class='card'><p style='text-align:center; opacity:0.6;'>${t("sin_citas")}</p></div>`;
         return;
     }
 
-    // Traer nombres de pacientes por separado
     const { data: pacientesData } = await supabaseClient
         .from('pacientes')
         .select('id, nombre')
@@ -145,11 +143,12 @@ function cambiarVista(modo) {
     if (modo === 'nuevo') {
         if(seccionForm) seccionForm.style.display = "block";
         if(seccionVer) seccionVer.style.display = "none";
-        if(titulo) titulo.innerText = "Agendar Cita";
+        // ✅ CORREGIDO: usa el diccionario en vez de texto fijo en español
+        if(titulo) titulo.innerText = t("titulo_agendar_cita");
     } else {
         if(seccionForm) seccionForm.style.display = "none";
         if(seccionVer) seccionVer.style.display = "block";
-        if(titulo) titulo.innerText = "Agenda Médica";
+        if(titulo) titulo.innerText = t("titulo_ver_agenda");
         render();
     }
 }
