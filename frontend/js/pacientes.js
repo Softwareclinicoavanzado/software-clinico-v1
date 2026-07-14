@@ -45,9 +45,9 @@ function render(data = pacientes) {
     const lista = document.getElementById("listaPacientes");
     if (!lista) return;
     lista.innerHTML = "";
-    
+
     if (!data || !data.length) {
-        lista.innerHTML = "<li style='color:white; text-align:center;'>No hay pacientes registrados</li>";
+        lista.innerHTML = `<li style='color:white; text-align:center;'>${t("no_hay_pacientes")}</li>`;
         return;
     }
 
@@ -57,17 +57,17 @@ function render(data = pacientes) {
         li.innerHTML = `
             <div class="paciente-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                 <span style="font-size: 1.1rem;"><strong>${p.nombre}</strong> <small style="opacity: 0.8;">(DPI: ${p.dpi || "S/D"})</small></span>
-                <button class="btn-pdf" onclick="descargarPDFHistorial(${p.id})" style="padding: 5px 10px; font-size: 0.8rem; cursor:pointer; background-color: #3498db; color: white; border: none; border-radius: 4px;">📄 Exportar Reporte</button>
+                <button class="btn-pdf" onclick="descargarPDFHistorial(${p.id})" style="padding: 5px 10px; font-size: 0.8rem; cursor:pointer; background-color: #3498db; color: white; border: none; border-radius: 4px;">${t("exportar_reporte")}</button>
             </div>
             <div class="paciente-info">
                 <small>Edad: ${p.edad || "-"} | Sexo: ${p.sexo || "-"} | Tel: ${p.telefono || "-"}</small><br>
                 <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza_seguro || "-"} | Sucursal: ${p.sede || "-"}</small>
             </div>
             <div class="actions" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <button type="button" onclick="verHistorial(${p.id})">⚙️ Modificar Historial</button>
-                <button type="button" onclick="editarPaciente(${p.id})">✏️ Editar Perfil</button>
-                <button type="button" class="btn-nota" onclick="agregarNotaDirecta(${p.id})" style="grid-column: span 2; background-color: #2ecc71;">📝 Nueva Nota Médica</button>
-                ${rol !== "recepcion" ? `<button type="button" class="btn-danger" onclick="eliminarPaciente(${p.id})" style="grid-column: span 2; background-color: #e74c3c; color:white;">🗑️ Eliminar Paciente</button>` : ""}
+                <button type="button" onclick="verHistorial(${p.id})">${t("modificar_historial")}</button>
+                <button type="button" onclick="editarPaciente(${p.id})">${t("editar_perfil")}</button>
+                <button type="button" class="btn-nota" onclick="agregarNotaDirecta(${p.id})" style="grid-column: span 2; background-color: #2ecc71;">${t("nueva_nota_medica")}</button>
+                ${rol !== "recepcion" ? `<button type="button" class="btn-danger" onclick="eliminarPaciente(${p.id})" style="grid-column: span 2; background-color: #e74c3c; color:white;">${t("eliminar_paciente")}</button>` : ""}
             </div>
         `;
         lista.appendChild(li);
@@ -94,7 +94,7 @@ function editarPaciente(id) {
     document.getElementById("seccionFormulario").style.display = "block";
     document.getElementById("seccionLista").style.display = "none";
     document.getElementById("tituloPagina").innerText = "Actualizar Perfil de Paciente";
-    
+
     const btnSubmit = document.querySelector(".btn-primary");
     if (btnSubmit) btnSubmit.innerText = "💾 Guardar Cambios";
 }
@@ -197,11 +197,11 @@ function gestionarVistas() {
     if (modo === "nuevo") {
         if(form) form.style.display = "block";
         if(lista) lista.style.display = "none";
-        if(titulo) titulo.innerText = "Registrar Paciente";
+        if(titulo) titulo.innerText = t("gestion_pacientes");
     } else {
         if(form) form.style.display = "none";
         if(lista) lista.style.display = "block";
-        if(titulo) titulo.innerText = "Listado de Pacientes";
+        if(titulo) titulo.innerText = t("listado_pacientes");
         cargarDatos();
     }
 }
