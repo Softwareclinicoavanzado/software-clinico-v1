@@ -9,37 +9,42 @@
 </head>
 <body>
   <div class="container">
-    <h1 id="tituloPagina">Gestión de Usuarios</h1>
-
+    <h1 id="tituloPagina" data-i18n="gestion_usuarios">Gestión de Usuarios</h1>
     <div class="card" id="seccionFormulario">
-      <h3 style="color: #2ecc71; margin-bottom: 15px;">➕ Agregar Personal</h3>
+      <h3 style="color: #2ecc71; margin-bottom: 15px;" data-i18n="agregar_personal">➕ Agregar Personal</h3>
       <div class="form-grid">
-        <input type="text" id="nombre" placeholder="Nombre completo">
-        <input type="email" id="email" placeholder="Correo electrónico" autocomplete="off">
-        <input type="password" id="password" placeholder="Contraseña temporal" autocomplete="new-password">
+        <input type="text" id="nombre" data-i18n-placeholder="nombre_completo_ph" placeholder="Nombre completo">
+        <input type="email" id="email" data-i18n-placeholder="correo_electronico" placeholder="Correo electrónico" autocomplete="off">
+        <input type="password" id="password" data-i18n-placeholder="contrasena_temporal" placeholder="Contraseña temporal" autocomplete="new-password">
         <select id="rol">
-          <option value="doctor">Doctor</option>
-          <option value="recepcion">Recepción</option>
-          <option value="admin">Administrador</option>
+          <option value="doctor" data-i18n="rol_doctor">Doctor</option>
+          <option value="recepcion" data-i18n="rol_recepcion">Recepción</option>
+          <option value="admin" data-i18n="rol_admin">Administrador</option>
         </select>
-        <button type="button" class="btn-primary" onclick="crearUsuario()">
+        <button type="button" class="btn-primary" onclick="crearUsuario()" data-i18n="crear_cuenta">
           🚀 Crear Cuenta
         </button>
       </div>
     </div>
-
     <div id="seccionLista">
-      <h2 style="color: #3498db; margin: 20px 0 15px;">📋 Personal de la Clínica</h2>
+      <h2 style="color: #3498db; margin: 20px 0 15px;" data-i18n="personal_clinica">📋 Personal de la Clínica</h2>
       <ul class="lista" id="listaUsuarios" style="padding: 0;"></ul>
     </div>
-
-    <button class="secondary" type="button" onclick="volver()" style="margin-top: 20px; width: 100%;">
+    <button class="secondary" type="button" onclick="volver()" style="margin-top: 20px; width: 100%;" data-i18n="volver_dashboard">
       Volver al Dashboard
     </button>
   </div>
-
   <script src="./js/storage.js"></script>
+  <script src="./js/translations.js"></script>
   <script src="./js/session.js"></script>
   <script src="./js/usuarios.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+        const savedLang = localStorage.getItem("lang") || "es";
+        if (typeof changeLanguage === 'function') {
+            changeLanguage(savedLang);
+        }
+    });
+  </script>
 </body>
 </html>
