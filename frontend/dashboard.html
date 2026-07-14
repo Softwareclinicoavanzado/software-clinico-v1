@@ -37,8 +37,8 @@
         <button class="btn-primary" onclick="irCitas('nuevo')" style="background-color: #f39c12;">
             <span data-i18n="agendar_cita">⏰ Agendar Cita</span>
         </button>
-        <!-- ✅ Nuevo: solo visible para admins (se activa desde dashboard.js) -->
-        <button class="btn-primary" id="btnUsuarios" onclick="irUsuarios()" style="background-color: #9b59b6; display: none;">
+        <!-- ✅ CORREGIDO: agregado data-i18n para que se traduzca -->
+        <button class="btn-primary" id="btnUsuarios" onclick="irUsuarios()" style="background-color: #9b59b6; display: none;" data-i18n="gestionar_usuarios_btn">
             👤 Gestionar Usuarios
         </button>
       </div>
