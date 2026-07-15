@@ -24,6 +24,25 @@ const pNombre = document.getElementById("pacienteNombre");
 let paciente = null;
 let historial = [];
 
+// ✅ NUEVO: traduce el "tipo" guardado (que siempre se guarda en español)
+// a lo que corresponda según el idioma actual, sin importar cómo esté escrito
+function traducirTipoNota(tipo) {
+    if (!tipo) return "";
+    const normalizado = tipo.toString().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // quita acentos
+
+    const mapa = {
+        consulta: "historial_tipo_consulta",
+        diagnostico: "historial_tipo_diagnostico",
+        seguimiento: "historial_tipo_seguimiento",
+        receta: "historial_tipo_receta",
+        alergia: "historial_tipo_alergia"
+    };
+
+    const clave = mapa[normalizado];
+    return clave ? t(clave).replace(/^[^\w\sáéíóúÁÉÍÓÚñÑ]+/, '').trim() : tipo;
+}
+
 async function inicializarHistorial() {
     try {
         const { data: pacienteData, error: errorPac } = await supabaseClient
@@ -85,12 +104,15 @@ function render() {
             colorTitulo = "#34d399";
         }
 
+        // ✅ Ahora usa la traducción, no el texto guardado tal cual
+        const tipoTraducido = traducirTipoNota(h.tipo);
+
         div.style.borderLeft = `4px solid ${colorBorde}`;
         div.innerHTML = `
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                 <div>
                     <strong style="color: ${colorTitulo}; font-size: 1.1rem;">
-                        ${h.tipo === "Alergia" ? "⚠️ " + h.tipo.toUpperCase() : h.tipo.toUpperCase()}
+                        ${h.tipo === "Alergia" ? "⚠️ " + tipoTraducido.toUpperCase() : tipoTraducido.toUpperCase()}
                     </strong><br>
                     <small style="color: #64748b;">${h.fecha}</small>
                 </div>
@@ -153,7 +175,6 @@ async function eliminarNota(id, index) {
     }
 }
 
-// ✅ CORREGIDO: traducido según idioma, y sin el emoji que corrompía el PDF
 function exportarPDF() {
     if (!window.jspdf || !paciente) return alert("Error con los datos o la librería PDF");
     const { jsPDF } = window.jspdf;
@@ -161,9 +182,9 @@ function exportarPDF() {
 
     const lang = localStorage.getItem("lang") || "es";
     const etiquetas = {
-        es: { titulo: "HISTORIAL CLÍNICO", generado: "Generado el:", alergia: "ALERGIA" },
-        en: { titulo: "CLINICAL RECORD", generado: "Generated on:", alergia: "ALLERGY" },
-        fr: { titulo: "DOSSIER MÉDICAL", generado: "Généré le:", alergia: "ALLERGIE" }
+        es: { titulo: "HISTORIAL CLÍNICO", generado: "Generado el:" },
+        en: { titulo: "CLINICAL RECORD", generado: "Generated on:" },
+        fr: { titulo: "DOSSIER MÉDICAL", generado: "Généré le:" }
     };
     const et = etiquetas[lang] || etiquetas.es;
 
@@ -176,15 +197,17 @@ function exportarPDF() {
     historial.forEach(h => {
         if (y > 270) { doc.addPage(); y = 20; }
 
+        // ✅ Traducido también en el PDF
+        const tipoTraducido = traducirTipoNota(h.tipo);
+
         if (h.tipo === "Alergia") {
             doc.setTextColor(231, 76, 60);
             doc.setFont("helvetica", "bold");
-            // ✅ Se quitó el emoji ⚠️ (no lo soporta la fuente del PDF y salía como texto corrupto)
-            doc.text(`${h.fecha} - ${et.alergia}`, 10, y);
+            doc.text(`${h.fecha} - ${tipoTraducido.toUpperCase()}`, 10, y);
         } else {
             doc.setTextColor(0, 0, 0);
             doc.setFont("helvetica", "bold");
-            doc.text(`${h.fecha} - ${h.tipo}`, 10, y);
+            doc.text(`${h.fecha} - ${tipoTraducido}`, 10, y);
         }
 
         y += 7;
