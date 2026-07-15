@@ -41,7 +41,6 @@ async function inicializarHistorial() {
         paciente = pacienteData;
         if (pNombre) pNombre.textContent = `Paciente: ${paciente.nombre}`;
 
-        // ✅ CORREGIDO: la columna real en Supabase se llama "creado", no "created_at"
         const { data: historialCloud, error: errorHist } = await supabaseClient
             .from('historial')
             .select('*')
@@ -66,7 +65,7 @@ function render() {
     listaHistorial.innerHTML = "";
 
     if (!historial || historial.length === 0) {
-        listaHistorial.innerHTML = `<div class="card"><p style="text-align:center; opacity:0.6;">No hay registros médicos en este historial.</p></div>`;
+        listaHistorial.innerHTML = `<div class="card"><p style="text-align:center; opacity:0.6;">${t("historial_sin_registros")}</p></div>`;
         return;
     }
 
@@ -97,7 +96,7 @@ function render() {
                 </div>
                 <button onclick="eliminarNota('${h.id}', ${index})" 
                         style="background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;">
-                    Eliminar
+                    ${t("historial_eliminar")}
                 </button>
             </div>
             <p style="white-space: pre-wrap; margin-top:12px; color: #e2e8f0; line-height: 1.4;">${h.texto}</p>
@@ -154,15 +153,24 @@ async function eliminarNota(id, index) {
     }
 }
 
+// ✅ CORREGIDO: traducido según idioma, y sin el emoji que corrompía el PDF
 function exportarPDF() {
     if (!window.jspdf || !paciente) return alert("Error con los datos o la librería PDF");
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
 
+    const lang = localStorage.getItem("lang") || "es";
+    const etiquetas = {
+        es: { titulo: "HISTORIAL CLÍNICO", generado: "Generado el:", alergia: "ALERGIA" },
+        en: { titulo: "CLINICAL RECORD", generado: "Generated on:", alergia: "ALLERGY" },
+        fr: { titulo: "DOSSIER MÉDICAL", generado: "Généré le:", alergia: "ALLERGIE" }
+    };
+    const et = etiquetas[lang] || etiquetas.es;
+
     doc.setFontSize(16);
-    doc.text(`HISTORIAL CLÍNICO: ${paciente.nombre}`, 10, 20);
+    doc.text(`${et.titulo}: ${paciente.nombre}`, 10, 20);
     doc.setFontSize(10);
-    doc.text(`Generado el: ${new Date().toLocaleString()}`, 10, 28);
+    doc.text(`${et.generado} ${new Date().toLocaleString()}`, 10, 28);
 
     let y = 40;
     historial.forEach(h => {
@@ -171,7 +179,8 @@ function exportarPDF() {
         if (h.tipo === "Alergia") {
             doc.setTextColor(231, 76, 60);
             doc.setFont("helvetica", "bold");
-            doc.text(`⚠️ ${h.fecha} - ${h.tipo.toUpperCase()}`, 10, y);
+            // ✅ Se quitó el emoji ⚠️ (no lo soporta la fuente del PDF y salía como texto corrupto)
+            doc.text(`${h.fecha} - ${et.alergia}`, 10, y);
         } else {
             doc.setTextColor(0, 0, 0);
             doc.setFont("helvetica", "bold");
@@ -195,16 +204,16 @@ function gestionarVistaActual() {
     const modo = params.get("mode");
 
     if (modo === "nuevaNota") {
-        if(tituloPrincipal) tituloPrincipal.textContent = "Nueva Nota Médica";
+        if(tituloPrincipal) tituloPrincipal.textContent = t("historial_nueva_nota_titulo");
         if(seccionAgregar) seccionAgregar.style.display = "block";
         if(seccionVer) seccionVer.style.display = "none";
         setTimeout(() => { if(notaInput) notaInput.focus(); }, 300);
     } else {
-        if(tituloPrincipal) tituloPrincipal.textContent = "Gestión de Historial";
+        if(tituloPrincipal) tituloPrincipal.textContent = t("historial_gestion_titulo");
         if(seccionAgregar) seccionAgregar.style.display = "none";
         if(seccionVer) seccionVer.style.display = "block";
         render();
     }
 }
 
-inicializarHistorial();s
+inicializarHistorial();
