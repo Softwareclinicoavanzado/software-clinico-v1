@@ -5,16 +5,26 @@
 function generarPDF(nombrePaciente, historial) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
+
+  const tituloHistorial = t("historial_titulo") || "HISTORIAL CLÍNICO";
+  const lang = localStorage.getItem("lang") || "es";
+  const etiquetas = {
+    es: { paciente: "Paciente:", fecha: "Fecha:", sinRegistros: "Este paciente no tiene registros en su historial." },
+    en: { paciente: "Patient:", fecha: "Date:", sinRegistros: "This patient has no records in their history." },
+    fr: { paciente: "Patient:", fecha: "Date:", sinRegistros: "Ce patient n'a aucun dossier dans son historique." }
+  };
+  const et = etiquetas[lang] || etiquetas.es;
+
   doc.setFontSize(18);
-  doc.text("HISTORIAL CLÍNICO", 105, 15, { align: "center" });
+  doc.text(tituloHistorial.toUpperCase(), 105, 15, { align: "center" });
   doc.setFontSize(12);
-  doc.text(`Paciente: ${nombrePaciente}`, 10, 30);
-  doc.text(`Fecha: ${new Date().toLocaleString()}`, 10, 38);
+  doc.text(`${et.paciente} ${nombrePaciente}`, 10, 30);
+  doc.text(`${et.fecha} ${new Date().toLocaleString()}`, 10, 38);
 
   let y = 50;
 
   if (!historial || historial.length === 0) {
-    doc.text("Este paciente no tiene registros en su historial.", 10, y);
+    doc.text(et.sinRegistros, 10, y);
   } else {
     historial.forEach((h, i) => {
       if (y > 270) {
