@@ -24,25 +24,6 @@ const pNombre = document.getElementById("pacienteNombre");
 let paciente = null;
 let historial = [];
 
-// ✅ NUEVO: traduce el "tipo" guardado (que siempre se guarda en español)
-// a lo que corresponda según el idioma actual, sin importar cómo esté escrito
-function traducirTipoNota(tipo) {
-    if (!tipo) return "";
-    const normalizado = tipo.toString().toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // quita acentos
-
-    const mapa = {
-        consulta: "historial_tipo_consulta",
-        diagnostico: "historial_tipo_diagnostico",
-        seguimiento: "historial_tipo_seguimiento",
-        receta: "historial_tipo_receta",
-        alergia: "historial_tipo_alergia"
-    };
-
-    const clave = mapa[normalizado];
-    return clave ? t(clave).replace(/^[^\w\sáéíóúÁÉÍÓÚñÑ]+/, '').trim() : tipo;
-}
-
 async function inicializarHistorial() {
     try {
         const { data: pacienteData, error: errorPac } = await supabaseClient
@@ -104,7 +85,6 @@ function render() {
             colorTitulo = "#34d399";
         }
 
-        // ✅ Ahora usa la traducción, no el texto guardado tal cual
         const tipoTraducido = traducirTipoNota(h.tipo);
 
         div.style.borderLeft = `4px solid ${colorBorde}`;
@@ -197,7 +177,6 @@ function exportarPDF() {
     historial.forEach(h => {
         if (y > 270) { doc.addPage(); y = 20; }
 
-        // ✅ Traducido también en el PDF
         const tipoTraducido = traducirTipoNota(h.tipo);
 
         if (h.tipo === "Alergia") {
