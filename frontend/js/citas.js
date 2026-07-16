@@ -15,6 +15,7 @@ const seccionVer = document.getElementById("seccionLista");
 const titulo = document.getElementById("tituloPagina");
 
 let citas = [];
+let editandoCitaId = null; // ✅ NUEVO: guarda el ID de la cita que se está editando
 
 async function cargarPacientes() {
     const { data: pacientes, error } = await supabaseClient
@@ -36,14 +37,45 @@ async function cargarPacientes() {
     });
 }
 
+// ✅ NUEVO: marca como "completada" cualquier cita cuya fecha/hora ya pasó
+async function archivarCitasVencidas() {
+    try {
+        const { data: pendientes, error } = await supabaseClient
+            .from('citas')
+            .select('id, fecha, hora')
+            .eq('clinica_id', clinicaID)
+            .eq('estado', 'programada');
+
+        if (error || !pendientes) return;
+
+        const ahora = new Date();
+        const idsVencidas = pendientes
+            .filter(c => new Date(`${c.fecha}T${c.hora}`) < ahora)
+            .map(c => c.id);
+
+        if (idsVencidas.length > 0) {
+            await supabaseClient
+                .from('citas')
+                .update({ estado: 'completada' })
+                .in('id', idsVencidas);
+        }
+    } catch (e) {
+        console.warn("No se pudieron archivar citas vencidas:", e);
+    }
+}
+
 async function render() {
     if (!listaCitas) return;
     listaCitas.innerHTML = "";
+
+    // ✅ Primero archivamos las vencidas, luego mostramos solo las que siguen programadas
+    await archivarCitasVencidas();
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
         .select('id, fecha, hora, paciente_id, estado')
         .eq('clinica_id', clinicaID)
+        .eq('estado', 'programada')
         .order('fecha', { ascending: true })
         .order('hora', { ascending: true });
 
@@ -78,10 +110,16 @@ async function render() {
                     <strong style="font-size: 1.1rem; color: #fff;">${nombrePaciente}</strong><br>
                     <span style="color: #3498db;">📅 ${c.fecha}</span> | <span style="color: #2ecc71;">⏰ ${c.hora}</span>
                 </div>
-                <button onclick="eliminarCita('${c.id}')" 
-                        style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
-                    🗑️
-                </button>
+                <div style="display:flex; gap:6px;">
+                    <button onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}')" 
+                            style="background: #9b59b6; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
+                        ✏️
+                    </button>
+                    <button onclick="eliminarCita('${c.id}')" 
+                            style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
+                        🗑️
+                    </button>
+                </div>
             </div>
         `;
         listaCitas.appendChild(div);
@@ -97,22 +135,36 @@ async function agregarCita() {
         return alert("Completa todos los campos para agendar.");
     }
 
-    const nuevaCita = {
+    const datosCita = {
         paciente_id: Number(paciente_id),
         fecha: fecha,
         hora: hora,
-        clinica_id: clinicaID,
-        estado: 'programada'
+        clinica_id: clinicaID
     };
 
     try {
-        const { error } = await supabaseClient
-            .from('citas')
-            .insert([nuevaCita]);
+        if (editandoCitaId) {
+            // ✅ NUEVO: si estamos editando, actualizamos en vez de crear una nueva
+            const { error } = await supabaseClient
+                .from('citas')
+                .update(datosCita)
+                .eq('id', editandoCitaId);
 
-        if (error) throw error;
+            if (error) throw error;
 
-        alert("✅ Cita agendada con éxito en la nube.");
+            alert("✅ Cita actualizada con éxito.");
+            editandoCitaId = null;
+        } else {
+            datosCita.estado = 'programada';
+            const { error } = await supabaseClient
+                .from('citas')
+                .insert([datosCita]);
+
+            if (error) throw error;
+
+            alert("✅ Cita agendada con éxito en la nube.");
+        }
+
         inputFecha.value = "";
         inputHora.value = "";
         selectPaciente.value = "";
@@ -122,6 +174,15 @@ async function agregarCita() {
         console.error("Error al agendar:", error);
         alert("Error al conectar con el servidor.");
     }
+}
+
+// ✅ NUEVO: prepara el formulario con los datos de la cita para editarla
+function editarCita(id, pacienteId, fecha, hora) {
+    editandoCitaId = id;
+    selectPaciente.value = pacienteId;
+    inputFecha.value = fecha;
+    inputHora.value = hora;
+    cambiarVista('nuevo');
 }
 
 async function eliminarCita(id) {
@@ -143,9 +204,13 @@ function cambiarVista(modo) {
     if (modo === 'nuevo') {
         if(seccionForm) seccionForm.style.display = "block";
         if(seccionVer) seccionVer.style.display = "none";
-        // ✅ CORREGIDO: usa el diccionario en vez de texto fijo en español
-        if(titulo) titulo.innerText = t("titulo_agendar_cita");
+        if(titulo) titulo.innerText = editandoCitaId ? t("editar_cita_titulo") : t("titulo_agendar_cita");
+
+        // ✅ El botón de confirmar cambia de texto según si es nueva cita o edición
+        const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
+        if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
     } else {
+        editandoCitaId = null; // ✅ salir de modo edición al volver a la lista
         if(seccionForm) seccionForm.style.display = "none";
         if(seccionVer) seccionVer.style.display = "block";
         if(titulo) titulo.innerText = t("titulo_ver_agenda");
