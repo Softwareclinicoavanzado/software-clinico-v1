@@ -62,6 +62,8 @@ const translations = {
         titulo_ver_agenda: "Agenda Médica",
         titulo_agendar_cita: "Agendar Cita",
         sin_citas: "No hay citas agendadas.",
+        editar_cita_titulo: "Editar Cita",
+        actualizar_cita: "Actualizar Cita",
 
         historial_titulo: "Historial Clínico",
         historial_nueva_nota: "📝 Redactar Nota Médica",
@@ -169,6 +171,8 @@ const translations = {
         titulo_ver_agenda: "Medical Agenda",
         titulo_agendar_cita: "Schedule Appointment",
         sin_citas: "No appointments scheduled.",
+        editar_cita_titulo: "Edit Appointment",
+        actualizar_cita: "Update Appointment",
 
         historial_titulo: "Clinical Record",
         historial_nueva_nota: "📝 Write Medical Note",
@@ -276,6 +280,8 @@ const translations = {
         titulo_ver_agenda: "Agenda Médicale",
         titulo_agendar_cita: "Prendre Rendez-vous",
         sin_citas: "Aucun rendez-vous programmé.",
+        editar_cita_titulo: "Modifier le Rendez-vous",
+        actualizar_cita: "Mettre à Jour le Rendez-vous",
 
         historial_titulo: "Dossier Médical",
         historial_nueva_nota: "📝 Rédiger une Note Médicale",
@@ -365,7 +371,6 @@ function t(key) {
 }
 
 /**
- * ✅ NUEVO (movido aquí para que todos los archivos lo puedan usar):
  * Traduce el "tipo" de una nota médica (guardado siempre en español en la base de datos)
  * al idioma actual, sin importar en qué idioma se guardó originalmente.
  */
