@@ -101,12 +101,13 @@ function verInfo(id) {
     const u = usuariosCache.find(x => x.id === id);
     if (!u) return;
     const fecha = u.creado ? new Date(u.creado).toLocaleString("es-GT") : "No disponible";
+    // ✅ CORREGIDO: "Activo"/"Inactivo" ahora traducidos
     alert(
         `👤 ${t("ver_info").replace("ℹ️ ", "")}\n\n` +
         `Nombre: ${u.nombre || "-"}\n` +
         `Correo: ${u.email || "-"}\n` +
         `Rol: ${etiquetaRol(u.rol).toUpperCase()}\n` +
-        `Estado: ${u.activo === false ? t("desactivado_tag") : "Activo"}\n` +
+        `Estado: ${u.activo === false ? t("inactivo_tag") : t("activo_tag")}\n` +
         `Cuenta creada: ${fecha}`
     );
 }
