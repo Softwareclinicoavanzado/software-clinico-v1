@@ -31,7 +31,9 @@ function generarPDF(nombrePaciente, historial) {
         doc.addPage();
         y = 20;
       }
-      doc.text(`${i + 1}. ${h.tipo} — ${h.fecha}`, 10, y);
+      // ✅ CORREGIDO: traduce el tipo de nota según el idioma activo
+      const tipoTraducido = traducirTipoNota(h.tipo);
+      doc.text(`${i + 1}. ${tipoTraducido} — ${h.fecha}`, 10, y);
       y += 6;
       const texto = doc.splitTextToSize(h.texto, 180);
       doc.text(texto, 10, y);
