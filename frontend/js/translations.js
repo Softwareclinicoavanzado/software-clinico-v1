@@ -47,6 +47,8 @@ const translations = {
         editar_perfil: "✏️ Editar Perfil",
         nueva_nota_medica: "📝 Nueva Nota Médica",
         eliminar_paciente: "🗑️ Eliminar Paciente",
+        actualizar_perfil_titulo: "Actualizar Perfil de Paciente",
+        guardar_cambios_btn: "💾 Guardar Cambios",
 
         gestion_citas: "Gestión de Citas",
         nueva_cita: "➕ Nueva Cita",
@@ -98,6 +100,8 @@ const translations = {
         esta_es_tu_cuenta: "Esta es tu cuenta",
         no_hay_usuarios: "No hay usuarios registrados aún",
         desactivado_tag: "(Desactivado)",
+        activo_tag: "Activo",
+        inactivo_tag: "Inactivo",
 
         btn_nuevo: "Nuevo Registro",
         buscar: "Buscar...",
@@ -150,6 +154,8 @@ const translations = {
         editar_perfil: "✏️ Edit Profile",
         nueva_nota_medica: "📝 New Medical Note",
         eliminar_paciente: "🗑️ Delete Patient",
+        actualizar_perfil_titulo: "Update Patient Profile",
+        guardar_cambios_btn: "💾 Save Changes",
 
         gestion_citas: "Appointment Management",
         nueva_cita: "➕ New Appointment",
@@ -201,6 +207,8 @@ const translations = {
         esta_es_tu_cuenta: "This is your account",
         no_hay_usuarios: "No users registered yet",
         desactivado_tag: "(Deactivated)",
+        activo_tag: "Active",
+        inactivo_tag: "Inactive",
 
         btn_nuevo: "Add New",
         buscar: "Search...",
@@ -253,6 +261,8 @@ const translations = {
         editar_perfil: "✏️ Modifier le Profil",
         nueva_nota_medica: "📝 Nouvelle Note Médicale",
         eliminar_paciente: "🗑️ Supprimer le Patient",
+        actualizar_perfil_titulo: "Mettre à Jour le Profil du Patient",
+        guardar_cambios_btn: "💾 Sauvegarder",
 
         gestion_citas: "Gestion des Rendez-vous",
         nueva_cita: "➕ Nouveau Rendez-vous",
@@ -304,6 +314,8 @@ const translations = {
         esta_es_tu_cuenta: "Ceci est votre compte",
         no_hay_usuarios: "Aucun utilisateur enregistré pour l'instant",
         desactivado_tag: "(Désactivé)",
+        activo_tag: "Actif",
+        inactivo_tag: "Inactif",
 
         btn_nuevo: "Ajouter nouveau",
         buscar: "Chercher...",
@@ -345,10 +357,31 @@ function changeLanguage(lang) {
 }
 
 /**
- * ✅ NUEVO: función para traducir texto directamente desde JavaScript
- * (para botones y contenido que se genera dinámicamente, no desde el HTML)
+ * Traduce texto directamente desde JavaScript (para contenido dinámico)
  */
 function t(key) {
     const lang = localStorage.getItem("lang") || "es";
     return (translations[lang] && translations[lang][key]) || key;
+}
+
+/**
+ * ✅ NUEVO (movido aquí para que todos los archivos lo puedan usar):
+ * Traduce el "tipo" de una nota médica (guardado siempre en español en la base de datos)
+ * al idioma actual, sin importar en qué idioma se guardó originalmente.
+ */
+function traducirTipoNota(tipo) {
+    if (!tipo) return "";
+    const normalizado = tipo.toString().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+    const mapa = {
+        consulta: "historial_tipo_consulta",
+        diagnostico: "historial_tipo_diagnostico",
+        seguimiento: "historial_tipo_seguimiento",
+        receta: "historial_tipo_receta",
+        alergia: "historial_tipo_alergia"
+    };
+
+    const clave = mapa[normalizado];
+    return clave ? t(clave).replace(/^[^\w\sáéíóúÁÉÍÓÚñÑ]+/, '').trim() : tipo;
 }
