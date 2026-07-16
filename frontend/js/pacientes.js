@@ -93,10 +93,11 @@ function editarPaciente(id) {
 
     document.getElementById("seccionFormulario").style.display = "block";
     document.getElementById("seccionLista").style.display = "none";
-    document.getElementById("tituloPagina").innerText = "Actualizar Perfil de Paciente";
+    // ✅ CORREGIDO: usa el diccionario en vez de texto fijo en español
+    document.getElementById("tituloPagina").innerText = t("actualizar_perfil_titulo");
 
     const btnSubmit = document.querySelector(".btn-primary");
-    if (btnSubmit) btnSubmit.innerText = "💾 Guardar Cambios";
+    if (btnSubmit) btnSubmit.innerText = t("guardar_cambios_btn");
 }
 
 async function agregarPaciente() {
