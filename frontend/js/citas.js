@@ -1,236 +1,392 @@
-// ========================= CITAS PRO (CLOUD EDITION) =========================
-const clinicaID = typeof getClinicaID === "function" ? getClinicaID() : localStorage.getItem("clinicaID");
+/* =============================================
+    DICCIONARIO DE IDIOMAS GLOBAL | ClinicOS
+============================================= */
 
-if (!clinicaID) {
-    alert("Sesión inválida");
-    window.location.href = "index.html";
-}
+const translations = {
+    es: {
+        cargando: "Cargando clínica...",
+        usuario: "Usuario",
+        password: "Contraseña",
+        ingresar: "Ingresar",
+        error_auth: "Usuario o contraseña incorrectos",
+        bienvenida: "Bienvenido de nuevo",
 
-const listaCitas = document.getElementById("listaCitas");
-const selectPaciente = document.getElementById("pacienteSelect");
-const inputFecha = document.getElementById("fecha");
-const inputHora = document.getElementById("hora");
-const seccionForm = document.getElementById("seccionFormulario");
-const seccionVer = document.getElementById("seccionLista");
-const titulo = document.getElementById("tituloPagina");
+        pacientes_registrados: "Pacientes Registrados",
+        citas_agendadas: "Citas Agendadas",
+        ver_pacientes: "👥 Ver Pacientes",
+        agregar_paciente: "➕ Agregar Paciente",
+        ver_agenda: "📅 Ver Agenda",
+        agendar_cita: "⏰ Agendar Cita",
+        cerrar_sesion: "Cerrar sesión",
+        gestionar_usuarios_btn: "👤 Gestionar Usuarios",
+        bienvenido_a: "Bienvenido a",
+        rol_prefix: "Rol",
 
-let citas = [];
-let editandoCitaId = null; // ✅ NUEVO: guarda el ID de la cita que se está editando
+        gestion_pacientes: "Gestión de Pacientes",
+        nombre_completo: "Nombre completo",
+        dpi_label: "DPI (Identificación)",
+        edad_label: "Edad",
+        telefono_label: "Teléfono",
+        fecha_nacimiento: "Fecha de Nacimiento:",
+        seleccionar_sexo: "Seleccionar Sexo",
+        sexo_hombre: "Hombre",
+        sexo_mujer: "Mujer",
+        sexo_otro: "Otro",
+        contacto_emergencia_label: "Contacto de emergencia",
+        seguro_nombre: "Nombre del Seguro",
+        seguro_numero: "Número del Seguro",
+        medico_asignado_label: "Médico Asignado",
+        sede_label: "Sede o Sucursal",
+        btn_añadir: "Añadir al Sistema",
+        buscar_placeholder: "🔍 Buscar por nombre, DPI...",
+        volver_dashboard: "Volver al Dashboard",
+        listado_pacientes: "Listado de Pacientes",
+        no_hay_pacientes: "No hay pacientes registrados",
+        exportar_reporte: "📄 Exportar Reporte",
+        modificar_historial: "⚙️ Modificar Historial",
+        editar_perfil: "✏️ Editar Perfil",
+        nueva_nota_medica: "📝 Nueva Nota Médica",
+        eliminar_paciente: "🗑️ Eliminar Paciente",
+        actualizar_perfil_titulo: "Actualizar Perfil de Paciente",
+        guardar_cambios_btn: "💾 Guardar Cambios",
 
-async function cargarPacientes() {
-    const { data: pacientes, error } = await supabaseClient
-        .from('pacientes')
-        .select('id, nombre')
-        .eq('clinica_id', clinicaID);
+        gestion_citas: "Gestión de Citas",
+        nueva_cita: "➕ Nueva Cita",
+        agendar_nueva_cita: "📝 Agendar Nueva Cita",
+        paciente_label: "Paciente",
+        seleccione_paciente: "Seleccione un paciente",
+        fecha_label: "Fecha",
+        hora_label: "Hora",
+        confirmar_agendar: "Confirmar y Agendar",
+        citas_programadas: "📋 Citas Programadas",
+        titulo_ver_agenda: "Agenda Médica",
+        titulo_agendar_cita: "Agendar Cita",
+        sin_citas: "No hay citas agendadas.",
+        editar_cita_titulo: "Editar Cita",
+        actualizar_cita: "Actualizar Cita",
 
-    if (error) {
-        console.error("Error al cargar pacientes:", error);
-        return;
+        historial_titulo: "Historial Clínico",
+        historial_nueva_nota: "📝 Redactar Nota Médica",
+        historial_tipo_nota: "Tipo de nota",
+        historial_detalle: "Detalle de la nota",
+        historial_placeholder_nota: "Escribir nota médica detallada o descripción de la alergia...",
+        historial_guardar_nota: "Guardar Nota Médica",
+        historial_registros: "📋 Registros del Historial",
+        historial_exportar_pdf: "📄 PDF",
+        historial_sin_registros: "No hay registros médicos en este historial.",
+        historial_tipo_consulta: "Consulta",
+        historial_tipo_diagnostico: "Diagnóstico",
+        historial_tipo_seguimiento: "Seguimiento",
+        historial_tipo_receta: "Receta",
+        historial_tipo_alergia: "⚠️ Alergia",
+        historial_eliminar: "Eliminar",
+        historial_volver: "Volver",
+        historial_nueva_nota_titulo: "Nueva Nota Médica",
+        historial_gestion_titulo: "Gestión de Historial",
+
+        gestion_usuarios: "Gestión de Usuarios",
+        agregar_personal: "➕ Agregar Personal",
+        nombre_completo_ph: "Nombre completo",
+        correo_electronico: "Correo electrónico",
+        contrasena_temporal: "Contraseña temporal",
+        crear_cuenta: "🚀 Crear Cuenta",
+        personal_clinica: "📋 Personal de la Clínica",
+        rol_doctor: "Doctor",
+        rol_recepcion: "Recepción",
+        rol_admin: "Administrador",
+        ver_info: "ℹ️ Ver Info",
+        desactivar: "⏸️ Desactivar",
+        reactivar: "✅ Reactivar",
+        resetear_clave: "🔑 Resetear Clave",
+        eliminar_usuario: "🗑️ Eliminar",
+        esta_es_tu_cuenta: "Esta es tu cuenta",
+        no_hay_usuarios: "No hay usuarios registrados aún",
+        desactivado_tag: "(Desactivado)",
+        activo_tag: "Activo",
+        inactivo_tag: "Inactivo",
+
+        btn_nuevo: "Nuevo Registro",
+        buscar: "Buscar...",
+        guardar: "Guardar Cambios",
+        cancelar: "Cancelar",
+        volver: "Volver al Inicio",
+        volver_inicio: "Volver al Inicio"
+    },
+    en: {
+        cargando: "Loading clinic...",
+        usuario: "Username",
+        password: "Password",
+        ingresar: "Login",
+        error_auth: "Incorrect username or password",
+        bienvenida: "Welcome back",
+
+        pacientes_registrados: "Registered Patients",
+        citas_agendadas: "Scheduled Appointments",
+        ver_pacientes: "👥 View Patients",
+        agregar_paciente: "➕ Add Patient",
+        ver_agenda: "📅 View Agenda",
+        agendar_cita: "⏰ Schedule Appointment",
+        cerrar_sesion: "Logout",
+        gestionar_usuarios_btn: "👤 Manage Users",
+        bienvenido_a: "Welcome to",
+        rol_prefix: "Role",
+
+        gestion_pacientes: "Patient Management",
+        nombre_completo: "Full Name",
+        dpi_label: "ID Number",
+        edad_label: "Age",
+        telefono_label: "Phone",
+        fecha_nacimiento: "Date of Birth:",
+        seleccionar_sexo: "Select Gender",
+        sexo_hombre: "Male",
+        sexo_mujer: "Female",
+        sexo_otro: "Other",
+        contacto_emergencia_label: "Emergency Contact",
+        seguro_nombre: "Insurance Provider",
+        seguro_numero: "Policy Number",
+        medico_asignado_label: "Assigned Doctor",
+        sede_label: "Branch/Office",
+        btn_añadir: "Add to System",
+        buscar_placeholder: "🔍 Search by name, ID...",
+        volver_dashboard: "Back to Dashboard",
+        listado_pacientes: "Patient List",
+        no_hay_pacientes: "No patients registered",
+        exportar_reporte: "📄 Export Report",
+        modificar_historial: "⚙️ Edit History",
+        editar_perfil: "✏️ Edit Profile",
+        nueva_nota_medica: "📝 New Medical Note",
+        eliminar_paciente: "🗑️ Delete Patient",
+        actualizar_perfil_titulo: "Update Patient Profile",
+        guardar_cambios_btn: "💾 Save Changes",
+
+        gestion_citas: "Appointment Management",
+        nueva_cita: "➕ New Appointment",
+        agendar_nueva_cita: "📝 Schedule New Appointment",
+        paciente_label: "Patient",
+        seleccione_paciente: "Select a patient",
+        fecha_label: "Date",
+        hora_label: "Time",
+        confirmar_agendar: "Confirm and Schedule",
+        citas_programadas: "📋 Scheduled Appointments",
+        titulo_ver_agenda: "Medical Agenda",
+        titulo_agendar_cita: "Schedule Appointment",
+        sin_citas: "No appointments scheduled.",
+        editar_cita_titulo: "Edit Appointment",
+        actualizar_cita: "Update Appointment",
+
+        historial_titulo: "Clinical Record",
+        historial_nueva_nota: "📝 Write Medical Note",
+        historial_tipo_nota: "Note type",
+        historial_detalle: "Note detail",
+        historial_placeholder_nota: "Write detailed medical note or allergy description...",
+        historial_guardar_nota: "Save Medical Note",
+        historial_registros: "📋 Medical Records",
+        historial_exportar_pdf: "📄 PDF",
+        historial_sin_registros: "No medical records in this history.",
+        historial_tipo_consulta: "Consultation",
+        historial_tipo_diagnostico: "Diagnosis",
+        historial_tipo_seguimiento: "Follow-up",
+        historial_tipo_receta: "Prescription",
+        historial_tipo_alergia: "⚠️ Allergy",
+        historial_eliminar: "Delete",
+        historial_volver: "Go Back",
+        historial_nueva_nota_titulo: "New Medical Note",
+        historial_gestion_titulo: "Record Management",
+
+        gestion_usuarios: "User Management",
+        agregar_personal: "➕ Add Staff",
+        nombre_completo_ph: "Full Name",
+        correo_electronico: "Email",
+        contrasena_temporal: "Temporary Password",
+        crear_cuenta: "🚀 Create Account",
+        personal_clinica: "📋 Clinic Staff",
+        rol_doctor: "Doctor",
+        rol_recepcion: "Reception",
+        rol_admin: "Administrator",
+        ver_info: "ℹ️ View Info",
+        desactivar: "⏸️ Deactivate",
+        reactivar: "✅ Reactivate",
+        resetear_clave: "🔑 Reset Password",
+        eliminar_usuario: "🗑️ Delete",
+        esta_es_tu_cuenta: "This is your account",
+        no_hay_usuarios: "No users registered yet",
+        desactivado_tag: "(Deactivated)",
+        activo_tag: "Active",
+        inactivo_tag: "Inactive",
+
+        btn_nuevo: "Add New",
+        buscar: "Search...",
+        guardar: "Save Changes",
+        cancelar: "Cancel",
+        volver: "Back to Home",
+        volver_inicio: "Back to Home"
+    },
+    fr: {
+        cargando: "Chargement de la clinique...",
+        usuario: "Utilisateur",
+        password: "Mot de passe",
+        ingresar: "Se connecter",
+        error_auth: "Identifiant ou mot de passe incorrect",
+        bienvenida: "Bienvenue à nouveau",
+
+        pacientes_registrados: "Patients enregistrés",
+        citas_agendadas: "Rendez-vous prévus",
+        ver_pacientes: "👥 Voir les patients",
+        agregar_paciente: "➕ Ajouter un patient",
+        ver_agenda: "📅 Voir l'agenda",
+        agendar_cita: "⏰ Prendre rendez-vous",
+        cerrar_sesion: "Se déconnecter",
+        gestionar_usuarios_btn: "👤 Gérer les Utilisateurs",
+        bienvenido_a: "Bienvenue à",
+        rol_prefix: "Rôle",
+
+        gestion_pacientes: "Gestion des Patients",
+        nombre_completo: "Nom complet",
+        dpi_label: "Numéro d'identité",
+        edad_label: "Âge",
+        telefono_label: "Téléphone",
+        fecha_nacimiento: "Date de naissance:",
+        seleccionar_sexo: "Sélectionner le sexe",
+        sexo_hombre: "Homme",
+        sexo_mujer: "Femme",
+        sexo_otro: "Autre",
+        contacto_emergencia_label: "Contact d'urgence",
+        seguro_nombre: "Compagnie d'assurance",
+        seguro_numero: "Numéro de police",
+        medico_asignado_label: "Médecin assigné",
+        sede_label: "Succursale",
+        btn_añadir: "Ajouter au système",
+        buscar_placeholder: "🔍 Rechercher par nom, ID...",
+        volver_dashboard: "Retour au tableau de bord",
+        listado_pacientes: "Liste des Patients",
+        no_hay_pacientes: "Aucun patient enregistré",
+        exportar_reporte: "📄 Exporter le Rapport",
+        modificar_historial: "⚙️ Modifier l'Historique",
+        editar_perfil: "✏️ Modifier le Profil",
+        nueva_nota_medica: "📝 Nouvelle Note Médicale",
+        eliminar_paciente: "🗑️ Supprimer le Patient",
+        actualizar_perfil_titulo: "Mettre à Jour le Profil du Patient",
+        guardar_cambios_btn: "💾 Sauvegarder",
+
+        gestion_citas: "Gestion des Rendez-vous",
+        nueva_cita: "➕ Nouveau Rendez-vous",
+        agendar_nueva_cita: "📝 Prendre un nouveau rendez-vous",
+        paciente_label: "Patient",
+        seleccione_paciente: "Sélectionner un patient",
+        fecha_label: "Date",
+        hora_label: "Heure",
+        confirmar_agendar: "Confirmer et planifier",
+        citas_programadas: "📋 Rendez-vous programmés",
+        titulo_ver_agenda: "Agenda Médicale",
+        titulo_agendar_cita: "Prendre Rendez-vous",
+        sin_citas: "Aucun rendez-vous programmé.",
+        editar_cita_titulo: "Modifier le Rendez-vous",
+        actualizar_cita: "Mettre à Jour le Rendez-vous",
+
+        historial_titulo: "Dossier Médical",
+        historial_nueva_nota: "📝 Rédiger une Note Médicale",
+        historial_tipo_nota: "Type de note",
+        historial_detalle: "Détail de la note",
+        historial_placeholder_nota: "Écrire une note médicale détaillée ou description d'allergie...",
+        historial_guardar_nota: "Sauvegarder la Note",
+        historial_registros: "📋 Dossiers Médicaux",
+        historial_exportar_pdf: "📄 PDF",
+        historial_sin_registros: "Aucun dossier médical dans cet historique.",
+        historial_tipo_consulta: "Consultation",
+        historial_tipo_diagnostico: "Diagnostic",
+        historial_tipo_seguimiento: "Suivi",
+        historial_tipo_receta: "Ordonnance",
+        historial_tipo_alergia: "⚠️ Allergie",
+        historial_eliminar: "Supprimer",
+        historial_volver: "Retour",
+        historial_nueva_nota_titulo: "Nouvelle Note Médicale",
+        historial_gestion_titulo: "Gestion du Dossier",
+
+        gestion_usuarios: "Gestion des Utilisateurs",
+        agregar_personal: "➕ Ajouter du Personnel",
+        nombre_completo_ph: "Nom complet",
+        correo_electronico: "E-mail",
+        contrasena_temporal: "Mot de passe temporaire",
+        crear_cuenta: "🚀 Créer un Compte",
+        personal_clinica: "📋 Personnel de la Clinique",
+        rol_doctor: "Médecin",
+        rol_recepcion: "Réception",
+        rol_admin: "Administrateur",
+        ver_info: "ℹ️ Voir Infos",
+        desactivar: "⏸️ Désactiver",
+        reactivar: "✅ Réactiver",
+        resetear_clave: "🔑 Réinitialiser le Mot de Passe",
+        eliminar_usuario: "🗑️ Supprimer",
+        esta_es_tu_cuenta: "Ceci est votre compte",
+        no_hay_usuarios: "Aucun utilisateur enregistré pour l'instant",
+        desactivado_tag: "(Désactivé)",
+        activo_tag: "Actif",
+        inactivo_tag: "Inactif",
+
+        btn_nuevo: "Ajouter nouveau",
+        buscar: "Chercher...",
+        guardar: "Sauvegarder",
+        cancelar: "Annuler",
+        volver: "Retour à l'accueil",
+        volver_inicio: "Retour à l'accueil"
     }
+};
 
-    selectPaciente.innerHTML = `<option value="">${t("seleccione_paciente")}</option>`;
-    pacientes.forEach(p => {
-        const option = document.createElement("option");
-        option.value = p.id;
-        option.textContent = p.nombre;
-        selectPaciente.appendChild(option);
-    });
-}
+/**
+ * Función maestra para cambiar el idioma en el DOM (elementos con data-i18n)
+ */
+function changeLanguage(lang) {
+    const texts = translations[lang];
+    if (!texts) return;
 
-// ✅ NUEVO: marca como "completada" cualquier cita cuya fecha/hora ya pasó
-async function archivarCitasVencidas() {
-    try {
-        const { data: pendientes, error } = await supabaseClient
-            .from('citas')
-            .select('id, fecha, hora')
-            .eq('clinica_id', clinicaID)
-            .eq('estado', 'programada');
+    localStorage.setItem("lang", lang);
 
-        if (error || !pendientes) return;
-
-        const ahora = new Date();
-        const idsVencidas = pendientes
-            .filter(c => new Date(`${c.fecha}T${c.hora}`) < ahora)
-            .map(c => c.id);
-
-        if (idsVencidas.length > 0) {
-            await supabaseClient
-                .from('citas')
-                .update({ estado: 'completada' })
-                .in('id', idsVencidas);
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (texts[key]) {
+            const icon = el.querySelector('span, i');
+            if (icon) {
+                el.innerHTML = '';
+                el.appendChild(icon);
+                const cleanText = texts[key].replace(/^[^\w\sáéíóúÁÉÍÓÚñÑ]+/, '').trim();
+                el.innerHTML += ' ' + cleanText;
+            } else {
+                el.innerText = texts[key];
+            }
         }
-    } catch (e) {
-        console.warn("No se pudieron archivar citas vencidas:", e);
-    }
-}
+    });
 
-async function render() {
-    if (!listaCitas) return;
-    listaCitas.innerHTML = "";
-
-    // ✅ Primero archivamos las vencidas, luego mostramos solo las que siguen programadas
-    await archivarCitasVencidas();
-
-    const { data: citasCloud, error } = await supabaseClient
-        .from('citas')
-        .select('id, fecha, hora, paciente_id, estado')
-        .eq('clinica_id', clinicaID)
-        .eq('estado', 'programada')
-        .order('fecha', { ascending: true })
-        .order('hora', { ascending: true });
-
-    if (error) {
-        console.error("Error cargando citas:", error);
-        return;
-    }
-
-    if (!citasCloud || citasCloud.length === 0) {
-        listaCitas.innerHTML = `<div class='card'><p style='text-align:center; opacity:0.6;'>${t("sin_citas")}</p></div>`;
-        return;
-    }
-
-    const { data: pacientesData } = await supabaseClient
-        .from('pacientes')
-        .select('id, nombre')
-        .eq('clinica_id', clinicaID);
-
-    citasCloud.forEach((c) => {
-        const paciente = pacientesData 
-            ? pacientesData.find(p => Number(p.id) === Number(c.paciente_id)) 
-            : null;
-        const nombrePaciente = paciente ? paciente.nombre : "Paciente no identificado";
-
-        const div = document.createElement("div");
-        div.className = "card";
-        div.style.marginBottom = "12px";
-        div.style.borderLeft = "4px solid #3498db";
-        div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong style="font-size: 1.1rem; color: #fff;">${nombrePaciente}</strong><br>
-                    <span style="color: #3498db;">📅 ${c.fecha}</span> | <span style="color: #2ecc71;">⏰ ${c.hora}</span>
-                </div>
-                <div style="display:flex; gap:6px;">
-                    <button onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}')" 
-                            style="background: #9b59b6; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
-                        ✏️
-                    </button>
-                    <button onclick="eliminarCita('${c.id}')" 
-                            style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
-                        🗑️
-                    </button>
-                </div>
-            </div>
-        `;
-        listaCitas.appendChild(div);
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (texts[key]) el.placeholder = texts[key];
     });
 }
 
-async function agregarCita() {
-    const paciente_id = selectPaciente.value;
-    const fecha = inputFecha.value;
-    const hora = inputHora.value;
+/**
+ * Traduce texto directamente desde JavaScript (para contenido dinámico)
+ */
+function t(key) {
+    const lang = localStorage.getItem("lang") || "es";
+    return (translations[lang] && translations[lang][key]) || key;
+}
 
-    if (!paciente_id || !fecha || !hora) {
-        return alert("Completa todos los campos para agendar.");
-    }
+/**
+ * Traduce el "tipo" de una nota médica (guardado siempre en español en la base de datos)
+ * al idioma actual, sin importar en qué idioma se guardó originalmente.
+ */
+function traducirTipoNota(tipo) {
+    if (!tipo) return "";
+    const normalizado = tipo.toString().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-    const datosCita = {
-        paciente_id: Number(paciente_id),
-        fecha: fecha,
-        hora: hora,
-        clinica_id: clinicaID
+    const mapa = {
+        consulta: "historial_tipo_consulta",
+        diagnostico: "historial_tipo_diagnostico",
+        seguimiento: "historial_tipo_seguimiento",
+        receta: "historial_tipo_receta",
+        alergia: "historial_tipo_alergia"
     };
 
-    try {
-        if (editandoCitaId) {
-            // ✅ NUEVO: si estamos editando, actualizamos en vez de crear una nueva
-            const { error } = await supabaseClient
-                .from('citas')
-                .update(datosCita)
-                .eq('id', editandoCitaId);
-
-            if (error) throw error;
-
-            alert("✅ Cita actualizada con éxito.");
-            editandoCitaId = null;
-        } else {
-            datosCita.estado = 'programada';
-            const { error } = await supabaseClient
-                .from('citas')
-                .insert([datosCita]);
-
-            if (error) throw error;
-
-            alert("✅ Cita agendada con éxito en la nube.");
-        }
-
-        inputFecha.value = "";
-        inputHora.value = "";
-        selectPaciente.value = "";
-        cambiarVista('ver');
-
-    } catch (error) {
-        console.error("Error al agendar:", error);
-        alert("Error al conectar con el servidor.");
-    }
+    const clave = mapa[normalizado];
+    return clave ? t(clave).replace(/^[^\w\sáéíóúÁÉÍÓÚñÑ]+/, '').trim() : tipo;
 }
-
-// ✅ NUEVO: prepara el formulario con los datos de la cita para editarla
-function editarCita(id, pacienteId, fecha, hora) {
-    editandoCitaId = id;
-    selectPaciente.value = pacienteId;
-    inputFecha.value = fecha;
-    inputHora.value = hora;
-    cambiarVista('nuevo');
-}
-
-async function eliminarCita(id) {
-    if (!confirm("¿Deseas cancelar esta cita permanentemente?")) return;
-
-    const { error } = await supabaseClient
-        .from('citas')
-        .delete()
-        .eq('id', id);
-
-    if (error) {
-        alert("No se pudo eliminar la cita.");
-    } else {
-        render();
-    }
-}
-
-function cambiarVista(modo) {
-    if (modo === 'nuevo') {
-        if(seccionForm) seccionForm.style.display = "block";
-        if(seccionVer) seccionVer.style.display = "none";
-        if(titulo) titulo.innerText = editandoCitaId ? t("editar_cita_titulo") : t("titulo_agendar_cita");
-
-        // ✅ El botón de confirmar cambia de texto según si es nueva cita o edición
-        const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
-        if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
-    } else {
-        editandoCitaId = null; // ✅ salir de modo edición al volver a la lista
-        if(seccionForm) seccionForm.style.display = "none";
-        if(seccionVer) seccionVer.style.display = "block";
-        if(titulo) titulo.innerText = t("titulo_ver_agenda");
-        render();
-    }
-}
-
-function volver() {
-    window.location.href = "dashboard.html";
-}
-
-async function inicializarVistaCitas() {
-    const params = new URLSearchParams(window.location.search);
-    const modo = params.get("mode");
-    await cargarPacientes();
-    if (modo === 'nuevo') {
-        cambiarVista('nuevo');
-    } else {
-        cambiarVista('ver');
-    }
-}
-
-inicializarVistaCitas();
