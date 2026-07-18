@@ -97,18 +97,18 @@ async function cargarUsuarios() {
     });
 }
 
+// ✅ CORREGIDO: todas las etiquetas ahora usan el diccionario de idiomas
 function verInfo(id) {
     const u = usuariosCache.find(x => x.id === id);
     if (!u) return;
     const fecha = u.creado ? new Date(u.creado).toLocaleString("es-GT") : "No disponible";
-    // ✅ CORREGIDO: "Activo"/"Inactivo" ahora traducidos
     alert(
         `👤 ${t("ver_info").replace("ℹ️ ", "")}\n\n` +
-        `Nombre: ${u.nombre || "-"}\n` +
-        `Correo: ${u.email || "-"}\n` +
-        `Rol: ${etiquetaRol(u.rol).toUpperCase()}\n` +
-        `Estado: ${u.activo === false ? t("inactivo_tag") : t("activo_tag")}\n` +
-        `Cuenta creada: ${fecha}`
+        `${t("info_nombre")}: ${u.nombre || "-"}\n` +
+        `${t("info_correo")}: ${u.email || "-"}\n` +
+        `${t("info_rol")}: ${etiquetaRol(u.rol).toUpperCase()}\n` +
+        `${t("info_estado")}: ${u.activo === false ? t("inactivo_tag") : t("activo_tag")}\n` +
+        `${t("info_creada")}: ${fecha}`
     );
 }
 
