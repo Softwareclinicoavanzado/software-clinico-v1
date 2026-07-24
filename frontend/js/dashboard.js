@@ -16,39 +16,87 @@ window.logout = function() {
     }
 };
 
-async function actualizarContadores(clinicaID) {
+// ✅ NUEVO: calcula estadísticas reales y útiles en vez de solo contar totales
+async function actualizarEstadisticas(clinicaID) {
     const totalPacientesElem = document.getElementById("totalPacientes");
-    const totalCitasElem = document.getElementById("totalCitas");
+    const pacientesNuevosElem = document.getElementById("pacientesNuevosMes");
+    const citasHoyElem = document.getElementById("citasHoy");
+    const citasSemanaElem = document.getElementById("citasSemana");
+
     try {
-        const pacientes = await getPacientes();
-        const citas = await getCitas();
-        if(totalPacientesElem) totalPacientesElem.innerText = pacientes.length;
-        if(totalCitasElem) totalCitasElem.innerText = citas.length;
-        console.log("📊 Contadores sincronizados con la nube");
+        const hoy = new Date();
+        const hoyStr = hoy.toISOString().split("T")[0]; // YYYY-MM-DD
+        const en7dias = new Date(hoy);
+        en7dias.setDate(en7dias.getDate() + 7);
+        const en7diasStr = en7dias.toISOString().split("T")[0];
+
+        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
+
+        // Total de pacientes
+        const { count: totalPacientes } = await supabaseClient
+            .from('pacientes')
+            .select('id', { count: 'exact', head: true })
+            .eq('clinica_id', clinicaID);
+
+        // Pacientes registrados este mes
+        const { count: nuevosMes } = await supabaseClient
+            .from('pacientes')
+            .select('id', { count: 'exact', head: true })
+            .eq('clinica_id', clinicaID)
+            .gte('creado', inicioMes);
+
+        // Citas de hoy
+        const { count: citasHoy } = await supabaseClient
+            .from('citas')
+            .select('id', { count: 'exact', head: true })
+            .eq('clinica_id', clinicaID)
+            .eq('estado', 'programada')
+            .eq('fecha', hoyStr);
+
+        // Citas en los próximos 7 días (incluye hoy)
+        const { count: citasSemana } = await supabaseClient
+            .from('citas')
+            .select('id', { count: 'exact', head: true })
+            .eq('clinica_id', clinicaID)
+            .eq('estado', 'programada')
+            .gte('fecha', hoyStr)
+            .lte('fecha', en7diasStr);
+
+        if (totalPacientesElem) totalPacientesElem.innerText = totalPacientes ?? 0;
+        if (pacientesNuevosElem) pacientesNuevosElem.innerText = nuevosMes ?? 0;
+        if (citasHoyElem) citasHoyElem.innerText = citasHoy ?? 0;
+        if (citasSemanaElem) citasSemanaElem.innerText = citasSemana ?? 0;
+
+        console.log("📊 Estadísticas del dashboard actualizadas");
+
     } catch (error) {
-        console.error("Error al actualizar contadores:", error);
-        const pacLocal = JSON.parse(localStorage.getItem(`pacientes_${clinicaID}`)) || [];
-        const citLocal = JSON.parse(localStorage.getItem(`citas_${clinicaID}`)) || [];
-        if(totalPacientesElem) totalPacientesElem.innerText = pacLocal.length;
-        if(totalCitasElem) totalCitasElem.innerText = citLocal.length;
+        console.error("Error al calcular estadísticas:", error);
+        // Fallback simple si algo falla: al menos mostrar el total de pacientes/citas en caché
+        try {
+            const pacLocal = JSON.parse(localStorage.getItem(`pacientes_${clinicaID}`)) || [];
+            const citLocal = JSON.parse(localStorage.getItem(`citas_${clinicaID}`)) || [];
+            if (totalPacientesElem) totalPacientesElem.innerText = pacLocal.length;
+            if (citasHoyElem) citasHoyElem.innerText = "-";
+            if (citasSemanaElem) citasSemanaElem.innerText = citLocal.length;
+            if (pacientesNuevosElem) pacientesNuevosElem.innerText = "-";
+        } catch (e2) {
+            console.warn("No se pudo aplicar fallback de estadísticas:", e2);
+        }
     }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
     const clinicaID = localStorage.getItem("clinicaID");
     const rol = localStorage.getItem("rol");
-
     if (!clinicaID || !rol) {
         window.location.replace("index.html");
         return;
     }
-
     const clinicaElem = document.getElementById("clinica");
     const usuarioElem = document.getElementById("usuarioInfo");
     const usuario = localStorage.getItem("usuario");
     const clinicaNombre = localStorage.getItem("clinicaNombre");
 
-    // ✅ CORREGIDO: usa t() para traducir "Bienvenido a" y "Rol"
     if(clinicaElem) clinicaElem.innerText = clinicaNombre ? `${t("bienvenido_a")} ${clinicaNombre}` : "ClinicOS";
     if(usuarioElem) usuarioElem.innerText = `${usuario || ""} · ${t("rol_prefix")}: ${rol.toUpperCase()}`;
 
@@ -57,5 +105,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (btnUsuarios) btnUsuarios.style.display = "block";
     }
 
-    actualizarContadores(clinicaID);
+    // ✅ Ahora llama a la nueva función de estadísticas
+    actualizarEstadisticas(clinicaID);
 });
