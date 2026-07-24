@@ -14,14 +14,23 @@
     <div class="dashboard-card card">
       <h1 id="clinica">ClinicOS</h1>
       <p id="usuarioInfo" class="user-badge"></p>
-      <div class="stats" id="statsContainer" style="display: flex; gap: 10px; justify-content: center; margin-bottom: 20px;">
+      <!-- ✅ CORREGIDO: 4 estadísticas útiles en vez de 2 genéricas -->
+      <div class="stats" id="statsContainer" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
         <div class="stat-card">
           <h2 id="totalPacientes">0</h2>
           <p data-i18n="pacientes_registrados">Pacientes Registrados</p>
         </div>
         <div class="stat-card">
-          <h2 id="totalCitas">0</h2>
-          <p data-i18n="citas_agendadas">Citas Agendadas</p>
+          <h2 id="pacientesNuevosMes">0</h2>
+          <p data-i18n="stat_pacientes_nuevos">Nuevos este mes</p>
+        </div>
+        <div class="stat-card">
+          <h2 id="citasHoy">0</h2>
+          <p data-i18n="stat_citas_hoy">Citas Hoy</p>
+        </div>
+        <div class="stat-card">
+          <h2 id="citasSemana">0</h2>
+          <p data-i18n="stat_citas_semana">Próximos 7 días</p>
         </div>
       </div>
       <div class="menu">
@@ -37,7 +46,6 @@
         <button class="btn-primary" onclick="irCitas('nuevo')" style="background-color: #f39c12;">
             <span data-i18n="agendar_cita">⏰ Agendar Cita</span>
         </button>
-        <!-- ✅ CORREGIDO: agregado data-i18n para que se traduzca -->
         <button class="btn-primary" id="btnUsuarios" onclick="irUsuarios()" style="background-color: #9b59b6; display: none;" data-i18n="gestionar_usuarios_btn">
             👤 Gestionar Usuarios
         </button>
