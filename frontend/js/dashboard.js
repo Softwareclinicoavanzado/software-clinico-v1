@@ -16,7 +16,6 @@ window.logout = function() {
     }
 };
 
-// ✅ NUEVO: calcula estadísticas reales y útiles en vez de solo contar totales
 async function actualizarEstadisticas(clinicaID) {
     const totalPacientesElem = document.getElementById("totalPacientes");
     const pacientesNuevosElem = document.getElementById("pacientesNuevosMes");
@@ -25,27 +24,24 @@ async function actualizarEstadisticas(clinicaID) {
 
     try {
         const hoy = new Date();
-        const hoyStr = hoy.toISOString().split("T")[0]; // YYYY-MM-DD
+        const hoyStr = hoy.toISOString().split("T")[0];
         const en7dias = new Date(hoy);
         en7dias.setDate(en7dias.getDate() + 7);
         const en7diasStr = en7dias.toISOString().split("T")[0];
 
         const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
 
-        // Total de pacientes
         const { count: totalPacientes } = await supabaseClient
             .from('pacientes')
             .select('id', { count: 'exact', head: true })
             .eq('clinica_id', clinicaID);
 
-        // Pacientes registrados este mes
         const { count: nuevosMes } = await supabaseClient
             .from('pacientes')
             .select('id', { count: 'exact', head: true })
             .eq('clinica_id', clinicaID)
             .gte('creado', inicioMes);
 
-        // Citas de hoy
         const { count: citasHoy } = await supabaseClient
             .from('citas')
             .select('id', { count: 'exact', head: true })
@@ -53,7 +49,6 @@ async function actualizarEstadisticas(clinicaID) {
             .eq('estado', 'programada')
             .eq('fecha', hoyStr);
 
-        // Citas en los próximos 7 días (incluye hoy)
         const { count: citasSemana } = await supabaseClient
             .from('citas')
             .select('id', { count: 'exact', head: true })
@@ -71,7 +66,6 @@ async function actualizarEstadisticas(clinicaID) {
 
     } catch (error) {
         console.error("Error al calcular estadísticas:", error);
-        // Fallback simple si algo falla: al menos mostrar el total de pacientes/citas en caché
         try {
             const pacLocal = JSON.parse(localStorage.getItem(`pacientes_${clinicaID}`)) || [];
             const citLocal = JSON.parse(localStorage.getItem(`citas_${clinicaID}`)) || [];
@@ -100,11 +94,13 @@ document.addEventListener("DOMContentLoaded", () => {
     if(clinicaElem) clinicaElem.innerText = clinicaNombre ? `${t("bienvenido_a")} ${clinicaNombre}` : "ClinicOS";
     if(usuarioElem) usuarioElem.innerText = `${usuario || ""} · ${t("rol_prefix")}: ${rol.toUpperCase()}`;
 
+    // ✅ Ahora activa el link Y la tarjeta grande de Gestionar Usuarios
     if (rol === "admin") {
-        const btnUsuarios = document.getElementById("btnUsuarios");
-        if (btnUsuarios) btnUsuarios.style.display = "block";
+        const liUsuarios = document.getElementById("liUsuarios");
+        const cardUsuarios = document.getElementById("cardUsuarios");
+        if (liUsuarios) liUsuarios.style.display = "block";
+        if (cardUsuarios) cardUsuarios.style.display = "flex";
     }
 
-    // ✅ Ahora llama a la nueva función de estadísticas
     actualizarEstadisticas(clinicaID);
 });
