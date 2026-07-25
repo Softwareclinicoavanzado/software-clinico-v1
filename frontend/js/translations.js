@@ -13,6 +13,9 @@ const translations = {
 
         pacientes_registrados: "Pacientes Registrados",
         citas_agendadas: "Citas Agendadas",
+        stat_pacientes_nuevos: "Nuevos este mes",
+        stat_citas_hoy: "Citas Hoy",
+        stat_citas_semana: "Próximos 7 días",
         ver_pacientes: "👥 Ver Pacientes",
         agregar_paciente: "➕ Agregar Paciente",
         ver_agenda: "📅 Ver Agenda",
@@ -127,6 +130,9 @@ const translations = {
 
         pacientes_registrados: "Registered Patients",
         citas_agendadas: "Scheduled Appointments",
+        stat_pacientes_nuevos: "New this month",
+        stat_citas_hoy: "Today's Appointments",
+        stat_citas_semana: "Next 7 days",
         ver_pacientes: "👥 View Patients",
         agregar_paciente: "➕ Add Patient",
         ver_agenda: "📅 View Agenda",
@@ -241,6 +247,9 @@ const translations = {
 
         pacientes_registrados: "Patients enregistrés",
         citas_agendadas: "Rendez-vous prévus",
+        stat_pacientes_nuevos: "Nouveaux ce mois",
+        stat_citas_hoy: "Rendez-vous Aujourd'hui",
+        stat_citas_semana: "7 prochains jours",
         ver_pacientes: "👥 Voir les patients",
         agregar_paciente: "➕ Ajouter un patient",
         ver_agenda: "📅 Voir l'agenda",
