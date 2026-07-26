@@ -78,6 +78,19 @@
             <small id="usuarioInfo"></small>
           </div>
         </div>
+
+        <!-- ✅ NUEVO: selector de idioma -->
+        <div class="lang-switcher">
+          <button class="lang-btn" type="button" onclick="toggleLangDropdown()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+            <span id="langBtnTexto">ES</span>
+          </button>
+          <div class="lang-dropdown" id="langDropdown">
+            <button class="lang-option" data-lang="es" onclick="seleccionarIdioma('es')"><span class="flag">🇲🇽</span> Español</button>
+            <button class="lang-option" data-lang="en" onclick="seleccionarIdioma('en')"><span class="flag">🇺🇸</span> English</button>
+            <button class="lang-option" data-lang="fr" onclick="seleccionarIdioma('fr')"><span class="flag">🇫🇷</span> Français</button>
+          </div>
+        </div>
       </div>
 
       <div class="content-area">
