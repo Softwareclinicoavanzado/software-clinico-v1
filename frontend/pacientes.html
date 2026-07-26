@@ -5,70 +5,143 @@
   <title>ClinicOS | Pacientes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./css/styles.css">
-  
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <div class="container">
-    <h1 id="tituloPagina" data-i18n="gestion_pacientes">Gestión de Pacientes</h1>
+  <div class="app-shell">
 
-    <div class="card" id="seccionFormulario">
-      <div class="form-grid">
-        <input type="text" id="nombre" data-i18n-placeholder="nombre_completo" placeholder="Nombre completo">
-        <input type="text" id="dpi" data-i18n-placeholder="dpi_label" placeholder="DPI (Documento de Identificación)">
-        <input type="number" id="edad" data-i18n-placeholder="edad_label" placeholder="Edad">
-        <input type="text" id="telefono" data-i18n-placeholder="telefono_label" placeholder="Teléfono">
-        
-        <div class="input-group">
-            <label style="color: white; font-size: 0.8rem; display: block; margin-bottom: 5px;" data-i18n="fecha_nacimiento">Fecha de Nacimiento:</label>
-            <input type="date" id="fechaNacimiento">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"/><path d="M9 12l2 2 4-4"/></svg>
         </div>
-        
-        <select id="sexo">
-          <option value="" data-i18n="seleccionar_sexo">Seleccionar Sexo</option>
-          <option value="Hombre" data-i18n="sexo_hombre">Hombre</option>
-          <option value="Mujer" data-i18n="sexo_mujer">Mujer</option>
-          <option value="Otro" data-i18n="sexo_otro">Otro</option>
-        </select>
+        <span class="sidebar-brand-name">ClinicOS</span>
+      </div>
 
-        <input type="text" id="contactoEmergencia" data-i18n-placeholder="contacto_emergencia_label" placeholder="Contacto de emergencia (Nombre/Tel)">
-        <input type="text" id="aseguradora" data-i18n-placeholder="seguro_nombre" placeholder="Nombre del Seguro">
-        <input type="text" id="poliza" data-i18n-placeholder="seguro_numero" placeholder="Número del Seguro">
-        <input type="text" id="medicoAsignado" data-i18n-placeholder="medico_asignado_label" placeholder="Médico Asignado">
-        <input type="text" id="sede" data-i18n-placeholder="sede_label" placeholder="Sede o Sucursal">
+      <ul class="sidebar-nav">
+        <li>
+          <button class="sidebar-link" type="button" onclick="volver()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V9.5Z"/></svg>
+            <span data-i18n="menu_dashboard">Dashboard</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link active" type="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span data-i18n="ver_pacientes_link">Ver Pacientes</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" type="button" onclick="irCitas('ver')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span data-i18n="ver_agenda_link">Ver Agenda</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" type="button" onclick="irCitas('nuevo')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v6M9 17h6"/></svg>
+            <span data-i18n="agendar_cita_link">Agendar Cita</span>
+          </button>
+        </li>
+        <li id="liUsuarios" style="display:none;">
+          <button class="sidebar-link" type="button" onclick="irUsuarios()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span data-i18n="gestionar_usuarios_link">Gestionar Usuarios</span>
+          </button>
+        </li>
+      </ul>
 
-        <button type="button" class="btn-primary" onclick="agregarPaciente()">
-          <span data-i18n="btn_añadir">🚀 Añadir al Sistema</span>
-        </button>
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-link danger-link" type="button" onclick="logout()" id="btnLogout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        <span data-i18n="cerrar_sesion">Cerrar sesión</span>
+      </button>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <button class="hamburger-btn" onclick="toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
+          <div class="topbar-title">
+            <span id="tituloPagina" data-i18n="gestion_pacientes">Gestión de Pacientes</span>
+          </div>
+        </div>
+
+        <div class="lang-switcher">
+          <button class="lang-btn" type="button" id="langMainBtn" onclick="toggleLangDropdown()">
+            <span class="lang-flag-current" id="langFlagActual">🇲🇽</span>
+            <span id="langBtnTexto">ES</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="lang-dropdown" id="langDropdown">
+            <button class="lang-option" data-lang="es" onclick="seleccionarIdioma('es')"><span class="flag">🇲🇽</span> Español</button>
+            <button class="lang-option" data-lang="en" onclick="seleccionarIdioma('en')"><span class="flag">🇺🇸</span> English</button>
+            <button class="lang-option" data-lang="fr" onclick="seleccionarIdioma('fr')"><span class="flag">🇫🇷</span> Français</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-area">
+
+        <div class="card" id="seccionFormulario">
+          <div class="form-grid">
+            <input type="text" id="nombre" data-i18n-placeholder="nombre_completo" placeholder="Nombre completo">
+            <input type="text" id="dpi" data-i18n-placeholder="dpi_label" placeholder="DPI (Documento de Identificación)">
+            <input type="number" id="edad" data-i18n-placeholder="edad_label" placeholder="Edad">
+            <input type="text" id="telefono" data-i18n-placeholder="telefono_label" placeholder="Teléfono">
+
+            <div class="input-group">
+              <label style="color: white; font-size: 0.8rem; display: block; margin-bottom: 5px;" data-i18n="fecha_nacimiento">Fecha de Nacimiento:</label>
+              <input type="date" id="fechaNacimiento">
+            </div>
+
+            <select id="sexo">
+              <option value="" data-i18n="seleccionar_sexo">Seleccionar Sexo</option>
+              <option value="Hombre" data-i18n="sexo_hombre">Hombre</option>
+              <option value="Mujer" data-i18n="sexo_mujer">Mujer</option>
+              <option value="Otro" data-i18n="sexo_otro">Otro</option>
+            </select>
+            <input type="text" id="contactoEmergencia" data-i18n-placeholder="contacto_emergencia_label" placeholder="Contacto de emergencia (Nombre/Tel)">
+            <input type="text" id="aseguradora" data-i18n-placeholder="seguro_nombre" placeholder="Nombre del Seguro">
+            <input type="text" id="poliza" data-i18n-placeholder="seguro_numero" placeholder="Número del Seguro">
+            <input type="text" id="medicoAsignado" data-i18n-placeholder="medico_asignado_label" placeholder="Médico Asignado">
+            <input type="text" id="sede" data-i18n-placeholder="sede_label" placeholder="Sede o Sucursal">
+            <button type="button" class="btn-primary" onclick="agregarPaciente()">
+              <span data-i18n="btn_añadir">🚀 Añadir al Sistema</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="seccionLista">
+          <br>
+          <input
+            type="text"
+            id="busqueda"
+            data-i18n-placeholder="buscar_placeholder"
+            placeholder="🔍 Buscar por nombre, DPI, tel o seguro..."
+            oninput="filtrarPacientes()"
+          >
+          <ul class="lista" id="listaPacientes"></ul>
+        </div>
+
       </div>
     </div>
-
-    <div id="seccionLista">
-        <br>
-        <input
-          type="text"
-          id="busqueda"
-          data-i18n-placeholder="buscar_placeholder"
-          placeholder="🔍 Buscar por nombre, DPI, tel o seguro..."
-          oninput="filtrarPacientes()"
-        >
-        <ul class="lista" id="listaPacientes"></ul>
-    </div>
-
-    <button class="secondary" type="button" onclick="volver()" style="margin-top: 20px; width: 100%;">
-      <span data-i18n="volver_dashboard">Volver al Dashboard</span>
-    </button>
   </div>
 
   <script src="./js/storage.js"></script>
-  <script src="./js/session.js"></script> 
-  <script src="./js/translations.js"></script> 
-  <script src="./js/pdf.js"></script> 
-  <script src="./js/pacientes.js"></script> 
-
+  <script src="./js/session.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/layout.js"></script>
+  <script src="./js/pdf.js"></script>
+  <script src="./js/pacientes.js"></script>
   <script>
     window.addEventListener('load', () => {
         const savedLang = localStorage.getItem("lang") || "es";
