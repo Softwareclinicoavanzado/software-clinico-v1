@@ -79,11 +79,11 @@
           </div>
         </div>
 
-        <!-- ✅ NUEVO: selector de idioma -->
         <div class="lang-switcher">
-          <button class="lang-btn" type="button" onclick="toggleLangDropdown()">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+          <button class="lang-btn" type="button" id="langMainBtn" onclick="toggleLangDropdown()">
+            <span class="lang-flag-current" id="langFlagActual">🇲🇽</span>
             <span id="langBtnTexto">ES</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
           </button>
           <div class="lang-dropdown" id="langDropdown">
             <button class="lang-option" data-lang="es" onclick="seleccionarIdioma('es')"><span class="flag">🇲🇽</span> Español</button>
