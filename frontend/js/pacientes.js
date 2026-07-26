@@ -2,15 +2,12 @@
     PACIENTES | ClinicOS (Cloud Edition - Direct Sync)
 ============================================= */
 const clinicaID = typeof getClinicaID === "function" ? getClinicaID() : localStorage.getItem("clinicaID");
-
 if (!clinicaID) {
     window.location.href = "index.html";
 }
-
 const rol = localStorage.getItem("rol") || "admin";
 let pacientes = [];
 let editandoID = null;
-
 const inputs = {
     nombre: document.getElementById("nombre"),
     dpi: document.getElementById("dpi"),
@@ -32,7 +29,6 @@ async function cargarDatos() {
             .select('*')
             .eq('clinica_id', clinicaID)
             .order('nombre', { ascending: true });
-
         if (error) throw error;
         pacientes = data;
         render();
@@ -41,33 +37,78 @@ async function cargarDatos() {
     }
 }
 
+/* =========================
+   Helpers visuales para las tarjetas
+========================= */
+function iniciales(nombre) {
+    if (!nombre) return "?";
+    const partes = nombre.trim().split(" ").filter(Boolean);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0][0] + partes[1][0]).toUpperCase();
+}
+
+function colorAvatar(nombre) {
+    const paleta = ["#3b82f6", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4"];
+    let hash = 0;
+    for (let i = 0; i < (nombre || "").length; i++) hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+    return paleta[Math.abs(hash) % paleta.length];
+}
+
+/* =========================
+   Render de tarjetas de paciente (rediseño premium)
+========================= */
 function render(data = pacientes) {
     const lista = document.getElementById("listaPacientes");
     if (!lista) return;
     lista.innerHTML = "";
-
     if (!data || !data.length) {
-        lista.innerHTML = `<li style='color:white; text-align:center;'>${t("no_hay_pacientes")}</li>`;
+        lista.innerHTML = `<li style='color:var(--text-secondary); text-align:center; background:none; border:none; box-shadow:none;'>${t("no_hay_pacientes")}</li>`;
         return;
     }
-
     data.forEach(p => {
         const li = document.createElement("li");
-        li.className = "paciente-item";
+        li.className = "patient-card";
         li.innerHTML = `
-            <div class="paciente-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                <span style="font-size: 1.1rem;"><strong>${p.nombre}</strong> <small style="opacity: 0.8;">(DPI: ${p.dpi || "S/D"})</small></span>
-                <button class="btn-pdf" onclick="descargarPDFHistorial(${p.id})" style="padding: 5px 10px; font-size: 0.8rem; cursor:pointer; background-color: #3498db; color: white; border: none; border-radius: 4px;">${t("exportar_reporte")}</button>
+            <div class="patient-card-top">
+                <div class="patient-identity">
+                    <div class="patient-avatar" style="background:${colorAvatar(p.nombre)}20; color:${colorAvatar(p.nombre)}; border-color:${colorAvatar(p.nombre)}40;">
+                        ${iniciales(p.nombre)}
+                    </div>
+                    <div>
+                        <div class="patient-name">${p.nombre}</div>
+                        <div class="patient-dpi">DPI ${p.dpi || "S/D"}</div>
+                    </div>
+                </div>
+                <button type="button" class="btn-ghost-icon" onclick="descargarPDFHistorial(${p.id})" title="${t("exportar_reporte")}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
+                </button>
             </div>
-            <div class="paciente-info">
-                <small>Edad: ${p.edad || "-"} | Sexo: ${p.sexo || "-"} | Tel: ${p.telefono || "-"}</small><br>
-                <small>Seguro: ${p.aseguradora || "Particular"} | No. Seguro: ${p.poliza_seguro || "-"} | Sucursal: ${p.sede || "-"}</small>
+
+            <div class="patient-tags">
+                <span class="patient-tag">${p.edad ? p.edad + " años" : "Edad —"}</span>
+                <span class="patient-tag">${p.sexo || "Sexo —"}</span>
+                <span class="patient-tag">${p.telefono || "Tel —"}</span>
+                <span class="patient-tag patient-tag-accent">${p.aseguradora || "Particular"}</span>
             </div>
-            <div class="actions" style="margin-top: 15px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <button type="button" onclick="verHistorial(${p.id})">${t("modificar_historial")}</button>
-                <button type="button" onclick="editarPaciente(${p.id})">${t("editar_perfil")}</button>
-                <button type="button" class="btn-nota" onclick="agregarNotaDirecta(${p.id})" style="grid-column: span 2; background-color: #2ecc71;">${t("nueva_nota_medica")}</button>
-                ${rol !== "recepcion" ? `<button type="button" class="btn-danger" onclick="eliminarPaciente(${p.id})" style="grid-column: span 2; background-color: #e74c3c; color:white;">${t("eliminar_paciente")}</button>` : ""}
+
+            <div class="patient-actions">
+                <button type="button" class="btn-action btn-action-primary" onclick="verHistorial(${p.id})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8 12 14.7l-3.5-3.5L3 16.5"/></svg>
+                    ${t("modificar_historial")}
+                </button>
+                <button type="button" class="btn-action" onclick="agregarNotaDirecta(${p.id})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                    ${t("nueva_nota_medica")}
+                </button>
+                <button type="button" class="btn-action" onclick="editarPaciente(${p.id})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                    ${t("editar_perfil")}
+                </button>
+                ${rol !== "recepcion" ? `
+                <button type="button" class="btn-action btn-action-danger" onclick="eliminarPaciente(${p.id})">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    ${t("eliminar_paciente")}
+                </button>` : ""}
             </div>
         `;
         lista.appendChild(li);
@@ -77,7 +118,6 @@ function render(data = pacientes) {
 function editarPaciente(id) {
     const p = pacientes.find(pac => Number(pac.id) === Number(id));
     if (!p) return;
-
     editandoID = id;
     if (inputs.nombre) inputs.nombre.value = p.nombre || "";
     if (inputs.dpi) inputs.dpi.value = p.dpi || "";
@@ -90,12 +130,9 @@ function editarPaciente(id) {
     if (inputs.poliza) inputs.poliza.value = p.poliza_seguro || "";
     if (inputs.medicoAsignado) inputs.medicoAsignado.value = p.medico_asignado || "";
     if (inputs.sede) inputs.sede.value = p.sede || "";
-
     document.getElementById("seccionFormulario").style.display = "block";
     document.getElementById("seccionLista").style.display = "none";
-    // ✅ CORREGIDO: usa el diccionario en vez de texto fijo en español
     document.getElementById("tituloPagina").innerText = t("actualizar_perfil_titulo");
-
     const btnSubmit = document.querySelector(".btn-primary");
     if (btnSubmit) btnSubmit.innerText = t("guardar_cambios_btn");
 }
@@ -103,7 +140,6 @@ function editarPaciente(id) {
 async function agregarPaciente() {
     const nombre = inputs.nombre.value.trim();
     if (!nombre) return alert("El nombre es obligatorio");
-
     const datosPaciente = {
         nombre: nombre,
         dpi: inputs.dpi.value.trim(),
@@ -118,14 +154,12 @@ async function agregarPaciente() {
         sede: inputs.sede.value.trim(),
         clinica_id: clinicaID
     };
-
     try {
         if (editandoID) {
             const { error } = await supabaseClient
                 .from('pacientes')
                 .update(datosPaciente)
                 .eq('id', editandoID);
-
             if (error) throw error;
             alert("¡Perfil actualizado con éxito!");
             editandoID = null;
@@ -133,14 +167,11 @@ async function agregarPaciente() {
             const { error } = await supabaseClient
                 .from('pacientes')
                 .insert([datosPaciente]);
-
             if (error) throw error;
             alert("¡Paciente registrado con éxito!");
         }
-
         Object.values(inputs).forEach(input => { if(input) input.value = ""; });
         window.location.href = "pacientes.html?mode=ver";
-
     } catch (err) {
         console.error("Error detallado de Supabase:", err);
         alert("Error al sincronizar: " + (err.message || "Verifica la consola"));
@@ -150,14 +181,12 @@ async function agregarPaciente() {
 async function eliminarPaciente(id) {
     const p = pacientes.find(pac => Number(pac.id) === Number(id));
     if (!p) return;
-
     if (confirm(`⚠️ ¿ELIMINAR PACIENTE DEFINITIVAMENTE?\n\nNombre: ${p.nombre}`)) {
         try {
             const { error } = await supabaseClient
                 .from('pacientes')
                 .delete()
                 .eq('id', id);
-
             if (error) throw error;
             cargarDatos();
         } catch (err) {
@@ -194,7 +223,6 @@ function gestionarVistas() {
     const form = document.getElementById("seccionFormulario");
     const lista = document.getElementById("seccionLista");
     const titulo = document.getElementById("tituloPagina");
-
     if (modo === "nuevo") {
         if(form) form.style.display = "block";
         if(lista) lista.style.display = "none";
