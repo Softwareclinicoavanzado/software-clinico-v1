@@ -65,9 +65,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if(clinicaElem) clinicaElem.innerText = clinicaNombre ? `${t("bienvenido_a")} ${clinicaNombre}` : "ClinicOS";
     if(usuarioElem) usuarioElem.innerText = `${usuario || ""} · ${t("rol_prefix")}: ${rol.toUpperCase()}`;
     if (rol === "admin") {
-        const liUsuarios = document.getElementById("liUsuarios");
         const cardUsuarios = document.getElementById("cardUsuarios");
-        if (liUsuarios) liUsuarios.style.display = "block";
         if (cardUsuarios) cardUsuarios.style.display = "flex";
     }
     actualizarEstadisticas(clinicaID);
