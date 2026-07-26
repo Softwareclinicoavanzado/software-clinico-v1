@@ -49,8 +49,7 @@ document.addEventListener("click", (e) => {
 document.addEventListener("DOMContentLoaded", actualizarBotonIdioma);
 
 /* =========================
-   NAVEGACIÓN GLOBAL (antes vivía solo en dashboard.js, por eso
-   no funcionaba en las demás páginas — ahora está disponible en todo el sistema)
+   NAVEGACIÓN GLOBAL (disponible en todas las páginas)
 ========================= */
 window.irPacientes = function(modo) {
     window.location.href = `pacientes.html?mode=${modo}`;
@@ -69,3 +68,15 @@ window.logout = function() {
         window.location.replace("index.html");
     }
 };
+
+/* =========================
+   Mostrar/ocultar "Gestionar Usuarios" en el sidebar según el rol
+   (corre en TODAS las páginas, no solo en el dashboard)
+========================= */
+document.addEventListener("DOMContentLoaded", () => {
+    const rol = localStorage.getItem("rol");
+    const liUsuarios = document.getElementById("liUsuarios");
+    if (rol === "admin" && liUsuarios) {
+        liUsuarios.style.display = "block";
+    }
+});
