@@ -4,55 +4,128 @@
   <meta charset="UTF-8">
   <title>ClinicOS | Citas</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="./css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <div class="container">
-    <h1 id="tituloPagina" data-i18n="gestion_citas">Gestión de Citas</h1>
+  <div class="app-shell">
 
-    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-        <button type="button" onclick="cambiarVista('ver')" style="background-color: #3498db; flex: 1;">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <span class="sidebar-brand-name">ClinicOS</span>
+      </div>
+
+      <ul class="sidebar-nav">
+        <li>
+          <button class="sidebar-link" type="button" onclick="volver()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V9.5Z"/></svg>
+            <span data-i18n="menu_dashboard">Dashboard</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" type="button" onclick="irPacientes('ver')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span data-i18n="ver_pacientes_link">Ver Pacientes</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link active" type="button" onclick="cambiarVista('ver')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span data-i18n="ver_agenda_link">Ver Agenda</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" type="button" onclick="cambiarVista('nuevo')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v6M9 17h6"/></svg>
+            <span data-i18n="agendar_cita_link">Agendar Cita</span>
+          </button>
+        </li>
+        <li id="liUsuarios" style="display:none;">
+          <button class="sidebar-link" type="button" onclick="irUsuarios()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span data-i18n="gestionar_usuarios_link">Gestionar Usuarios</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-link danger-link" type="button" onclick="logout()" id="btnLogout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        <span data-i18n="cerrar_sesion">Cerrar sesión</span>
+      </button>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <button class="hamburger-btn" onclick="toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
+          <div class="topbar-title">
+            <span id="tituloPagina" data-i18n="gestion_citas">Gestión de Citas</span>
+          </div>
+        </div>
+
+        <div class="lang-switcher">
+          <button class="lang-btn" type="button" id="langMainBtn" onclick="toggleLangDropdown()">
+            <span class="lang-flag-current" id="langFlagActual">🇲🇽</span>
+            <span id="langBtnTexto">ES</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="lang-dropdown" id="langDropdown">
+            <button class="lang-option" data-lang="es" onclick="seleccionarIdioma('es')"><span class="flag">🇲🇽</span> Español</button>
+            <button class="lang-option" data-lang="en" onclick="seleccionarIdioma('en')"><span class="flag">🇺🇸</span> English</button>
+            <button class="lang-option" data-lang="fr" onclick="seleccionarIdioma('fr')"><span class="flag">🇫🇷</span> Français</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-area">
+
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+          <button type="button" onclick="cambiarVista('ver')" style="background-color: #3498db; flex: 1;">
             <span data-i18n="ver_agenda">📅 Ver Agenda</span>
-        </button>
-        <button type="button" onclick="cambiarVista('nuevo')" style="background-color: #2ecc71; flex: 1;">
+          </button>
+          <button type="button" onclick="cambiarVista('nuevo')" style="background-color: #2ecc71; flex: 1;">
             <span data-i18n="nueva_cita">➕ Nueva Cita</span>
-        </button>
+          </button>
+        </div>
+
+        <div id="seccionFormulario" class="card" style="display: none;">
+          <h3 style="color: #2ecc71; margin-bottom: 15px;" data-i18n="agendar_nueva_cita">📝 Agendar Nueva Cita</h3>
+
+          <label><strong data-i18n="paciente_label">Paciente</strong></label>
+          <select id="pacienteSelect" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white;">
+            <option value="" data-i18n="seleccione_paciente">Seleccione un paciente</option>
+          </select>
+          <label><strong data-i18n="fecha_label">Fecha</strong></label>
+          <input type="date" id="fecha" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
+          <label><strong data-i18n="hora_label">Hora</strong></label>
+          <input type="time" id="hora" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
+          <button type="button" onclick="agregarCita()" style="background-color: #2ecc71; width: 100%; margin-top: 10px;" data-i18n="confirmar_agendar">Confirmar y Agendar</button>
+        </div>
+
+        <div id="seccionLista" style="display: none;">
+          <h2 style="color: #3498db; margin-bottom: 15px;" data-i18n="citas_programadas">📋 Citas Programadas</h2>
+          <ul class="lista" id="listaCitas" style="padding: 0;"></ul>
+        </div>
+
+      </div>
     </div>
-
-    <div id="seccionFormulario" class="card" style="display: none;">
-        <h3 style="color: #2ecc71; margin-bottom: 15px;" data-i18n="agendar_nueva_cita">📝 Agendar Nueva Cita</h3>
-        
-        <label><strong data-i18n="paciente_label">Paciente</strong></label>
-        <select id="pacienteSelect" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white;">
-          <option value="" data-i18n="seleccione_paciente">Seleccione un paciente</option>
-        </select>
-
-        <label><strong data-i18n="fecha_label">Fecha</strong></label>
-        <input type="date" id="fecha" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
-
-        <label><strong data-i18n="hora_label">Hora</strong></label>
-        <input type="time" id="hora" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
-
-        <button type="button" onclick="agregarCita()" style="background-color: #2ecc71; width: 100%; margin-top: 10px;" data-i18n="confirmar_agendar">Confirmar y Agendar</button>
-    </div>
-
-    <div id="seccionLista" style="display: none;">
-        <h2 style="color: #3498db; margin-bottom: 15px;" data-i18n="citas_programadas">📋 Citas Programadas</h2>
-        <ul class="lista" id="listaCitas" style="padding: 0;"></ul>
-    </div>
-
-    <button class="logout" type="button" onclick="volver()" style="margin-top: 20px; border: 1px solid #e74c3c; color: #e74c3c; background: transparent;" data-i18n="volver_inicio">Volver al Inicio</button>
   </div>
 
-  <script src="js/session.js"></script> <script src="js/translations.js"></script>
-  
-  <script src="js/storage.js"></script> 
-  <script src="js/citas.js"></script>
-
+  <script src="./js/session.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/layout.js"></script>
+  <script src="./js/citas.js"></script>
   <script>
-    // Manejo de idioma al cargar
     window.addEventListener('load', () => {
         const savedLang = localStorage.getItem("lang") || "es";
         if(typeof changeLanguage === 'function') {
