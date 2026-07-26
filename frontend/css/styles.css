@@ -47,7 +47,7 @@ body {
 }
 
 /* =========================
-   LOGIN (sigue siendo tarjeta centrada — así es estándar)
+   LOGIN (tarjeta centrada)
 ========================= */
 body:has(.login-card) {
   display: flex;
@@ -174,7 +174,7 @@ button.danger:hover {
 #error { color: #f87171; margin-top: 10px; font-size: 13.5px; font-weight: 500; }
 
 /* =========================
-   APP SHELL (menú lateral + panel) — para pantallas internas
+   APP SHELL (menú lateral + panel)
 ========================= */
 .app-shell {
   display: flex;
@@ -516,11 +516,9 @@ button.danger:hover {
 @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
 
 /* =========================
-   LANGUAGE SWITCHER
+   LANGUAGE SWITCHER (dentro del panel, barra superior)
 ========================= */
-.lang-switcher {
-  position: relative;
-}
+.lang-switcher { position: relative; }
 
 .lang-btn {
   width: auto;
@@ -585,12 +583,128 @@ button.danger:hover {
 .lang-option span.flag { font-size: 15px; }
 
 /* =========================
+   SELECTOR DE IDIOMA (LOGIN) — versión premium
+========================= */
+.lang-select-overlay {
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(59, 130, 246, 0.12), transparent 45%),
+    radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.10), transparent 45%),
+    var(--bg-app);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.4s ease;
+  padding: 20px;
+}
+
+.lang-select-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.lang-select-brand .brand-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+}
+.lang-select-brand .brand-icon svg { width: 24px; height: 24px; }
+
+.lang-select-overlay h1 {
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  background: linear-gradient(90deg, #ffffff, #93c5fd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.lang-select-subtitle {
+  color: var(--text-secondary);
+  font-size: 1rem;
+  margin-top: 6px;
+  margin-bottom: 44px;
+  font-weight: 500;
+  text-align: center;
+}
+
+.lang-select-options {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.lang-select-btn {
+  background: linear-gradient(180deg, var(--bg-elevated), var(--bg-panel));
+  border: 1px solid var(--border-soft);
+  color: white;
+  padding: 28px 38px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  box-shadow: var(--shadow-elevated);
+  width: 160px;
+}
+
+.lang-select-btn .flag-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border-soft);
+}
+
+.lang-select-btn .lang-code {
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.lang-select-btn:hover {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--bg-elevated-2), var(--bg-elevated));
+  transform: translateY(-8px) scale(1.03);
+  box-shadow: 0 20px 45px rgba(59, 130, 246, 0.3);
+}
+
+.lang-select-btn:hover .flag-circle {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-soft);
+}
+
+@media (max-width: 560px) {
+  .lang-select-overlay h1 { font-size: 1.9rem; }
+  .lang-select-btn { width: 130px; padding: 22px 20px; }
+}
+
+/* =========================
    RESPONSIVE
 ========================= */
 @media (max-width: 860px) {
-  .sidebar {
-    transform: translateX(-100%);
-  }
+  .sidebar { transform: translateX(-100%); }
   .sidebar.open { transform: translateX(0); }
   .sidebar-overlay.open { display: block; }
   .main-area { margin-left: 0; }
