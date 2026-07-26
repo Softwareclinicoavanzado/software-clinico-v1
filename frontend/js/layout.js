@@ -17,7 +17,9 @@ function closeSidebar() {
 
 function toggleLangDropdown() {
     const dropdown = document.getElementById("langDropdown");
+    const btn = document.getElementById("langMainBtn");
     if (dropdown) dropdown.classList.toggle("open");
+    if (btn) btn.classList.toggle("open");
 }
 
 function seleccionarIdioma(lang) {
@@ -30,8 +32,11 @@ function seleccionarIdioma(lang) {
 function actualizarBotonIdioma() {
     const lang = localStorage.getItem("lang") || "es";
     const nombres = { es: "ES", en: "EN", fr: "FR" };
+    const banderas = { es: "🇲🇽", en: "🇺🇸", fr: "🇫🇷" };
     const btnTexto = document.getElementById("langBtnTexto");
+    const btnFlag = document.getElementById("langFlagActual");
     if (btnTexto) btnTexto.innerText = nombres[lang] || "ES";
+    if (btnFlag) btnFlag.innerText = banderas[lang] || "🇲🇽";
 
     document.querySelectorAll(".lang-option").forEach(el => {
         el.classList.toggle("active", el.dataset.lang === lang);
@@ -44,6 +49,8 @@ document.addEventListener("click", (e) => {
     const dropdown = document.getElementById("langDropdown");
     if (switcher && dropdown && !switcher.contains(e.target)) {
         dropdown.classList.remove("open");
+        const btn = document.getElementById("langMainBtn");
+        if (btn) btn.classList.remove("open");
     }
 });
 
