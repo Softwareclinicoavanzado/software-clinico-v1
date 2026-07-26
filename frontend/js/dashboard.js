@@ -1,54 +1,30 @@
-window.irPacientes = function(modo) {
-    window.location.href = `pacientes.html?mode=${modo}`;
-};
-window.irCitas = function(modo) {
-    window.location.href = `citas.html?mode=${modo}`;
-};
-window.irUsuarios = function() {
-    window.location.href = `usuarios.html`;
-};
-window.logout = function() {
-    if (typeof cerrarSesion === "function") {
-        cerrarSesion();
-    } else {
-        localStorage.clear();
-        window.location.replace("index.html");
-    }
-};
-
 async function actualizarEstadisticas(clinicaID) {
     const totalPacientesElem = document.getElementById("totalPacientes");
     const pacientesNuevosElem = document.getElementById("pacientesNuevosMes");
     const citasHoyElem = document.getElementById("citasHoy");
     const citasSemanaElem = document.getElementById("citasSemana");
-
     try {
         const hoy = new Date();
         const hoyStr = hoy.toISOString().split("T")[0];
         const en7dias = new Date(hoy);
         en7dias.setDate(en7dias.getDate() + 7);
         const en7diasStr = en7dias.toISOString().split("T")[0];
-
         const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString();
-
         const { count: totalPacientes } = await supabaseClient
             .from('pacientes')
             .select('id', { count: 'exact', head: true })
             .eq('clinica_id', clinicaID);
-
         const { count: nuevosMes } = await supabaseClient
             .from('pacientes')
             .select('id', { count: 'exact', head: true })
             .eq('clinica_id', clinicaID)
             .gte('creado', inicioMes);
-
         const { count: citasHoy } = await supabaseClient
             .from('citas')
             .select('id', { count: 'exact', head: true })
             .eq('clinica_id', clinicaID)
             .eq('estado', 'programada')
             .eq('fecha', hoyStr);
-
         const { count: citasSemana } = await supabaseClient
             .from('citas')
             .select('id', { count: 'exact', head: true })
@@ -56,14 +32,11 @@ async function actualizarEstadisticas(clinicaID) {
             .eq('estado', 'programada')
             .gte('fecha', hoyStr)
             .lte('fecha', en7diasStr);
-
         if (totalPacientesElem) totalPacientesElem.innerText = totalPacientes ?? 0;
         if (pacientesNuevosElem) pacientesNuevosElem.innerText = nuevosMes ?? 0;
         if (citasHoyElem) citasHoyElem.innerText = citasHoy ?? 0;
         if (citasSemanaElem) citasSemanaElem.innerText = citasSemana ?? 0;
-
         console.log("📊 Estadísticas del dashboard actualizadas");
-
     } catch (error) {
         console.error("Error al calcular estadísticas:", error);
         try {
@@ -78,7 +51,6 @@ async function actualizarEstadisticas(clinicaID) {
         }
     }
 }
-
 document.addEventListener("DOMContentLoaded", () => {
     const clinicaID = localStorage.getItem("clinicaID");
     const rol = localStorage.getItem("rol");
@@ -90,17 +62,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const usuarioElem = document.getElementById("usuarioInfo");
     const usuario = localStorage.getItem("usuario");
     const clinicaNombre = localStorage.getItem("clinicaNombre");
-
     if(clinicaElem) clinicaElem.innerText = clinicaNombre ? `${t("bienvenido_a")} ${clinicaNombre}` : "ClinicOS";
     if(usuarioElem) usuarioElem.innerText = `${usuario || ""} · ${t("rol_prefix")}: ${rol.toUpperCase()}`;
-
-    // ✅ Ahora activa el link Y la tarjeta grande de Gestionar Usuarios
     if (rol === "admin") {
         const liUsuarios = document.getElementById("liUsuarios");
         const cardUsuarios = document.getElementById("cardUsuarios");
         if (liUsuarios) liUsuarios.style.display = "block";
         if (cardUsuarios) cardUsuarios.style.display = "flex";
     }
-
     actualizarEstadisticas(clinicaID);
 });
