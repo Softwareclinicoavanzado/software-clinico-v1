@@ -73,6 +73,9 @@ const translations = {
         sin_citas: "No hay citas agendadas.",
         editar_cita_titulo: "Editar Cita",
         actualizar_cita: "Actualizar Cita",
+        hoy: "Hoy",
+        editar_cita_btn: "✏️ Editar",
+        cancelar_cita_btn: "🗑️ Cancelar",
 
         historial_titulo: "Historial Clínico",
         historial_nueva_nota: "📝 Redactar Nota Médica",
@@ -196,6 +199,9 @@ const translations = {
         sin_citas: "No appointments scheduled.",
         editar_cita_titulo: "Edit Appointment",
         actualizar_cita: "Update Appointment",
+        hoy: "Today",
+        editar_cita_btn: "✏️ Edit",
+        cancelar_cita_btn: "🗑️ Cancel",
 
         historial_titulo: "Clinical Record",
         historial_nueva_nota: "📝 Write Medical Note",
@@ -319,6 +325,9 @@ const translations = {
         sin_citas: "Aucun rendez-vous programmé.",
         editar_cita_titulo: "Modifier le Rendez-vous",
         actualizar_cita: "Mettre à Jour le Rendez-vous",
+        hoy: "Aujourd'hui",
+        editar_cita_btn: "✏️ Modifier",
+        cancelar_cita_btn: "🗑️ Annuler",
 
         historial_titulo: "Dossier Médical",
         historial_nueva_nota: "📝 Rédiger une Note Médicale",
