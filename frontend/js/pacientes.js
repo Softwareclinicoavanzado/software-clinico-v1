@@ -59,6 +59,19 @@ function limpiarTexto(str) {
 }
 
 /* =========================
+   Traduce el valor de "sexo" guardado en español (Hombre/Mujer/Otro)
+   al idioma activo, reutilizando las claves ya existentes del formulario.
+========================= */
+function traducirSexo(valor) {
+    if (!valor) return null;
+    const normalizado = valor.toString().toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    const mapa = { hombre: "sexo_hombre", mujer: "sexo_mujer", otro: "sexo_otro" };
+    const clave = mapa[normalizado];
+    return clave ? t(clave) : valor;
+}
+
+/* =========================
    Render de tarjetas de paciente (rediseño premium)
 ========================= */
 function render(data = pacientes) {
@@ -72,6 +85,12 @@ function render(data = pacientes) {
     data.forEach(p => {
         const li = document.createElement("li");
         li.className = "patient-card";
+
+        const edadTexto = p.edad ? `${p.edad} ${t("tag_anios")}` : `${t("tag_edad")} —`;
+        const sexoTexto = traducirSexo(p.sexo) || `${t("tag_sexo")} —`;
+        const telTexto = p.telefono || `${t("tag_tel")} —`;
+        const aseguradoraTexto = p.aseguradora || t("tag_particular");
+
         li.innerHTML = `
             <div class="patient-card-top">
                 <div class="patient-identity">
@@ -90,10 +109,10 @@ function render(data = pacientes) {
             </div>
 
             <div class="patient-tags">
-                <span class="patient-tag">${p.edad ? p.edad + " años" : "Edad —"}</span>
-                <span class="patient-tag">${p.sexo || "Sexo —"}</span>
-                <span class="patient-tag">${p.telefono || "Tel —"}</span>
-                <span class="patient-tag patient-tag-accent">${p.aseguradora || "Particular"}</span>
+                <span class="patient-tag">${edadTexto}</span>
+                <span class="patient-tag">${sexoTexto}</span>
+                <span class="patient-tag">${telTexto}</span>
+                <span class="patient-tag patient-tag-accent">${aseguradoraTexto}</span>
             </div>
 
             <div class="patient-actions">
