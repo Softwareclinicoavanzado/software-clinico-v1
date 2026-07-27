@@ -23,6 +23,7 @@ const pNombre = document.getElementById("pacienteNombre");
 
 let paciente = null;
 let historial = [];
+let editandoNotaId = null;
 
 async function inicializarHistorial() {
     try {
@@ -97,9 +98,14 @@ function render() {
                     </span>
                     <div class="note-date">${h.fecha}</div>
                 </div>
-                <button type="button" class="btn-ghost-icon" onclick="eliminarNota('${h.id}', ${index})" title="${t("historial_eliminar")}">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                </button>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" class="btn-ghost-icon" onclick="editarNota('${h.id}')" title="${t("historial_editar") || "Editar"}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                    </button>
+                    <button type="button" class="btn-ghost-icon" onclick="eliminarNota('${h.id}', ${index})" title="${t("historial_eliminar")}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    </button>
+                </div>
             </div>
             <p class="note-text">${h.texto}</p>
         `;
@@ -107,29 +113,70 @@ function render() {
     });
 }
 
+/* =========================
+   Editar una nota existente (sin recargar la página)
+========================= */
+function editarNota(id) {
+    const nota = historial.find(h => String(h.id) === String(id));
+    if (!nota) return;
+
+    editandoNotaId = id;
+    if (tipoNotaInput) tipoNotaInput.value = nota.tipo;
+    if (notaInput) notaInput.value = nota.texto;
+
+    if (seccionAgregar) seccionAgregar.style.display = "block";
+    if (seccionVer) seccionVer.style.display = "none";
+    if (tituloPrincipal) tituloPrincipal.textContent = t("historial_editar_nota_titulo") || "Editar Nota Médica";
+
+    const btnGuardar = document.querySelector('[onclick="agregarNota()"]');
+    if (btnGuardar) btnGuardar.innerText = t("historial_actualizar_nota") || "Actualizar Nota";
+
+    setTimeout(() => { if (notaInput) notaInput.focus(); }, 200);
+}
+
+function cancelarEdicionNota() {
+    editandoNotaId = null;
+    if (notaInput) notaInput.value = "";
+    if (seccionAgregar) seccionAgregar.style.display = "none";
+    if (seccionVer) seccionVer.style.display = "block";
+    if (tituloPrincipal) tituloPrincipal.textContent = t("historial_gestion_titulo");
+}
+
 async function agregarNota() {
     const texto = notaInput.value.trim();
     if (!texto) return alert("Por favor, escribe el detalle de la nota.");
 
-    const nuevaNota = {
-        paciente_id: pacienteID,
-        clinica_id: clinicaID,
-        tipo: tipoNotaInput.value,
-        texto: texto,
-        fecha: new Date().toLocaleString("es-GT")
-    };
-
     try {
-        const { error } = await supabaseClient
-            .from('historial')
-            .insert([nuevaNota]);
+        if (editandoNotaId) {
+            const { error } = await supabaseClient
+                .from('historial')
+                .update({ tipo: tipoNotaInput.value, texto: texto })
+                .eq('id', editandoNotaId);
 
-        if (error) throw error;
+            if (error) throw error;
 
-        alert("✅ Nota guardada en la nube correctamente.");
-        notaInput.value = "";
-        window.location.href = "historial.html?mode=modificar";
+            alert("✅ Nota actualizada correctamente.");
+            editandoNotaId = null;
+            window.location.href = "historial.html?mode=modificar";
+        } else {
+            const nuevaNota = {
+                paciente_id: pacienteID,
+                clinica_id: clinicaID,
+                tipo: tipoNotaInput.value,
+                texto: texto,
+                fecha: new Date().toLocaleString("es-GT")
+            };
 
+            const { error } = await supabaseClient
+                .from('historial')
+                .insert([nuevaNota]);
+
+            if (error) throw error;
+
+            alert("✅ Nota guardada en la nube correctamente.");
+            notaInput.value = "";
+            window.location.href = "historial.html?mode=modificar";
+        }
     } catch (e) {
         console.error("Error al guardar nota:", e);
         alert("Error al guardar: " + e.message);
