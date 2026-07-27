@@ -882,3 +882,14 @@ button.danger:hover {
   .menu { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* =========================
+   ANTI-PARPADEO DE IDIOMA
+========================= */
+.app-shell, .lang-select-overlay {
+  opacity: 0;
+}
+.app-shell.i18n-ready, .lang-select-overlay.i18n-ready {
+  opacity: 1;
+  transition: opacity 0.15s ease;
+}
