@@ -81,6 +81,10 @@ const translations = {
         hoy: "Hoy",
         editar_cita_btn: "✏️ Editar",
         cancelar_cita_btn: "🗑️ Cancelar",
+        calendario_btn: "🗓️ Calendario",
+        calendario_titulo: "Calendario",
+        calendario_mas: "más",
+        calendario_selecciona_dia: "Selecciona un día para ver las citas",
 
         historial_titulo: "Historial Clínico",
         historial_nueva_nota: "📝 Redactar Nota Médica",
@@ -216,6 +220,10 @@ const translations = {
         hoy: "Today",
         editar_cita_btn: "✏️ Edit",
         cancelar_cita_btn: "🗑️ Cancel",
+        calendario_btn: "🗓️ Calendar",
+        calendario_titulo: "Calendar",
+        calendario_mas: "more",
+        calendario_selecciona_dia: "Select a day to view appointments",
 
         historial_titulo: "Clinical Record",
         historial_nueva_nota: "📝 Write Medical Note",
@@ -351,6 +359,10 @@ const translations = {
         hoy: "Aujourd'hui",
         editar_cita_btn: "✏️ Modifier",
         cancelar_cita_btn: "🗑️ Annuler",
+        calendario_btn: "🗓️ Calendrier",
+        calendario_titulo: "Calendrier",
+        calendario_mas: "plus",
+        calendario_selecciona_dia: "Sélectionnez un jour pour voir les rendez-vous",
 
         historial_titulo: "Dossier Médical",
         historial_nueva_nota: "📝 Rédiger une Note Médicale",
