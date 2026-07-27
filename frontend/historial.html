@@ -113,9 +113,12 @@
             placeholder="Escribir nota médica detallada o descripción de la alergia..."
             style="width:100%; height:150px; border-radius:8px; padding:10px; background: #1a1a1a; color: white; border: 1px solid #333;"
           ></textarea>
-          <div style="margin-top:15px;">
-            <button type="button" onclick="agregarNota()" style="background-color: #2ecc71; width: 100%;" data-i18n="historial_guardar_nota">
+          <div style="margin-top:15px; display:flex; gap:10px;">
+            <button type="button" onclick="agregarNota()" style="background-color: #2ecc71;" data-i18n="historial_guardar_nota">
               Guardar Nota Médica
+            </button>
+            <button type="button" class="secondary" onclick="cancelarEdicionNota()" data-i18n="historial_cancelar_edicion" style="width:auto; padding:13px 20px;">
+              Cancelar
             </button>
           </div>
         </div>
