@@ -80,3 +80,38 @@ document.addEventListener("DOMContentLoaded", () => {
         liUsuarios.style.display = "block";
     }
 });
+
+/* =========================
+   Marcar dinámicamente el link activo del sidebar
+   según la página y el ?mode= actual en la URL
+========================= */
+function marcarLinkActivoPorURL() {
+    const pagina = window.location.pathname.split("/").pop().replace(".html", "") || "dashboard";
+    const params = new URLSearchParams(window.location.search);
+    const modo = params.get("mode") || "ver";
+    let clave = pagina;
+    if (pagina === "pacientes" || pagina === "citas") clave = `${pagina}-${modo}`;
+
+    document.querySelectorAll(".sidebar-link[data-nav]").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.nav === clave);
+    });
+}
+document.addEventListener("DOMContentLoaded", marcarLinkActivoPorURL);
+
+/* =========================
+   Marcar el link activo al hacer clic (para citas.html,
+   que cambia de vista sin recargar la página)
+========================= */
+function marcarActivoSidebar(btnClickeado) {
+    document.querySelectorAll(".sidebar-link[data-nav]").forEach(b => b.classList.remove("active"));
+    btnClickeado.classList.add("active");
+}
+
+/* =========================
+   Revelar contenido solo cuando ya se aplicó el idioma
+   (evita el parpadeo ES -> EN al cargar)
+========================= */
+function revelarContenido() {
+    const el = document.querySelector(".app-shell") || document.querySelector(".lang-select-overlay") || document.body;
+    el.classList.add("i18n-ready");
+}
