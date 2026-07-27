@@ -39,7 +39,7 @@ async function inicializarHistorial() {
         }
 
         paciente = pacienteData;
-        if (pNombre) pNombre.textContent = `Paciente: ${paciente.nombre}`;
+        if (pNombre) pNombre.textContent = `${t("paciente_label") || "Paciente"}: ${paciente.nombre}`;
 
         const { data: historialCloud, error: errorHist } = await supabaseClient
             .from('historial')
@@ -60,6 +60,20 @@ async function inicializarHistorial() {
     gestionarVistaActual();
 }
 
+/* =========================
+   Config visual por tipo de nota
+========================= */
+function estiloTipoNota(tipo) {
+    if (tipo === "Alergia") {
+        return { clase: "note-chip-danger", icono: "⚠️" };
+    } else if (tipo === "Receta") {
+        return { clase: "note-chip-success", icono: "" };
+    } else if (tipo === "Diagnóstico") {
+        return { clase: "note-chip-warning", icono: "" };
+    }
+    return { clase: "note-chip-info", icono: "" };
+}
+
 function render() {
     if (!listaHistorial) return;
     listaHistorial.innerHTML = "";
@@ -70,38 +84,24 @@ function render() {
     }
 
     historial.forEach((h, index) => {
-        const div = document.createElement("div");
-        div.className = "card";
-        div.style.marginBottom = "15px";
-
-        let colorBorde = "#3498db";
-        let colorTitulo = "#93c5fd";
-
-        if (h.tipo === "Alergia") {
-            colorBorde = "#e74c3c";
-            colorTitulo = "#e74c3c";
-        } else if (h.tipo === "Receta") {
-            colorBorde = "#34d399";
-            colorTitulo = "#34d399";
-        }
-
         const tipoTraducido = traducirTipoNota(h.tipo);
+        const estilo = estiloTipoNota(h.tipo);
 
-        div.style.borderLeft = `4px solid ${colorBorde}`;
+        const div = document.createElement("div");
+        div.className = "note-card";
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div class="note-card-top">
                 <div>
-                    <strong style="color: ${colorTitulo}; font-size: 1.1rem;">
-                        ${h.tipo === "Alergia" ? "⚠️ " + tipoTraducido.toUpperCase() : tipoTraducido.toUpperCase()}
-                    </strong><br>
-                    <small style="color: #64748b;">${h.fecha}</small>
+                    <span class="note-chip ${estilo.clase}">
+                        ${estilo.icono ? estilo.icono + " " : ""}${tipoTraducido}
+                    </span>
+                    <div class="note-date">${h.fecha}</div>
                 </div>
-                <button onclick="eliminarNota('${h.id}', ${index})" 
-                        style="background: #e74c3c; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;">
-                    ${t("historial_eliminar")}
+                <button type="button" class="btn-ghost-icon" onclick="eliminarNota('${h.id}', ${index})" title="${t("historial_eliminar")}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                 </button>
             </div>
-            <p style="white-space: pre-wrap; margin-top:12px; color: #e2e8f0; line-height: 1.4;">${h.texto}</p>
+            <p class="note-text">${h.texto}</p>
         `;
         listaHistorial.appendChild(div);
     });
