@@ -12,6 +12,7 @@ const inputFecha = document.getElementById("fecha");
 const inputHora = document.getElementById("hora");
 const seccionForm = document.getElementById("seccionFormulario");
 const seccionVer = document.getElementById("seccionLista");
+const seccionCal = document.getElementById("seccionCalendario");
 const titulo = document.getElementById("tituloPagina");
 
 let citas = [];
@@ -53,6 +54,13 @@ function esCitaHoy(fechaISO) {
     const hoy = new Date();
     const hoyStr = hoy.toISOString().split("T")[0];
     return fechaISO === hoyStr;
+}
+
+function fechaLocalISO(dateObj) {
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const d = String(dateObj.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
 }
 
 async function cargarPacientes() {
@@ -178,6 +186,225 @@ async function render() {
     });
 }
 
+/* =========================================================
+   CALENDARIO VISUAL (vista de mes)
+========================================================= */
+let calFecha = new Date();
+let calCitasDelMes = [];
+let calPacientesMap = {};
+let calDiaSeleccionado = null;
+
+function nombresMeses() {
+    const lang = localStorage.getItem("lang") || "es";
+    const mapa = {
+        es: ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
+        en: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+        fr: ["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"]
+    };
+    return mapa[lang] || mapa.es;
+}
+
+function nombresDiasCortos() {
+    const lang = localStorage.getItem("lang") || "es";
+    const mapa = {
+        es: ["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"],
+        en: ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
+        fr: ["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"]
+    };
+    return mapa[lang] || mapa.es;
+}
+
+async function cargarCitasDelMes() {
+    const anio = calFecha.getFullYear();
+    const mes = calFecha.getMonth();
+    const primerDia = fechaLocalISO(new Date(anio, mes, 1));
+    const ultimoDia = fechaLocalISO(new Date(anio, mes + 1, 0));
+
+    const { data: citasCloud, error } = await supabaseClient
+        .from('citas')
+        .select('id, fecha, hora, paciente_id, estado')
+        .eq('clinica_id', clinicaID)
+        .eq('estado', 'programada')
+        .gte('fecha', primerDia)
+        .lte('fecha', ultimoDia)
+        .order('hora', { ascending: true });
+
+    if (error) {
+        console.error("Error cargando citas del mes:", error);
+        calCitasDelMes = [];
+        return;
+    }
+    calCitasDelMes = citasCloud || [];
+
+    const { data: pacientesData } = await supabaseClient
+        .from('pacientes')
+        .select('id, nombre')
+        .eq('clinica_id', clinicaID);
+
+    calPacientesMap = {};
+    (pacientesData || []).forEach(p => { calPacientesMap[p.id] = p.nombre; });
+}
+
+function renderCalendario() {
+    const grid = document.getElementById("calendarGrid");
+    const label = document.getElementById("calendarMesLabel");
+    if (!grid || !label) return;
+
+    const anio = calFecha.getFullYear();
+    const mes = calFecha.getMonth();
+    label.textContent = `${nombresMeses()[mes]} ${anio}`;
+
+    const primerDiaSemana = new Date(anio, mes, 1).getDay();
+    const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+    const hoyStr = fechaLocalISO(new Date());
+
+    const citasPorDia = {};
+    calCitasDelMes.forEach(c => {
+        if (!citasPorDia[c.fecha]) citasPorDia[c.fecha] = [];
+        citasPorDia[c.fecha].push(c);
+    });
+
+    let html = "";
+    nombresDiasCortos().forEach(d => {
+        html += `<div class="calendar-day-header">${d}</div>`;
+    });
+
+    for (let i = 0; i < primerDiaSemana; i++) {
+        html += `<div class="calendar-day calendar-day-empty"></div>`;
+    }
+
+    for (let dia = 1; dia <= diasEnMes; dia++) {
+        const fechaStr = fechaLocalISO(new Date(anio, mes, dia));
+        const esHoy = fechaStr === hoyStr;
+        const esSeleccionado = fechaStr === calDiaSeleccionado;
+        const citasDia = citasPorDia[fechaStr] || [];
+        const maxVisible = 2;
+
+        let chipsHtml = "";
+        citasDia.slice(0, maxVisible).forEach(c => {
+            const nombre = calPacientesMap[c.paciente_id] || "?";
+            chipsHtml += `<div class="calendar-appt-chip">${formatearHora(c.hora)} · ${nombre.split(" ")[0]}</div>`;
+        });
+        if (citasDia.length > maxVisible) {
+            chipsHtml += `<div class="calendar-more-badge">+${citasDia.length - maxVisible} ${t("calendario_mas") || "más"}</div>`;
+        }
+
+        html += `
+            <div class="calendar-day ${esHoy ? "calendar-day-today" : ""} ${esSeleccionado ? "calendar-day-selected" : ""}" onclick="seleccionarDiaCalendario('${fechaStr}')">
+                <div class="calendar-day-number">${dia}</div>
+                <div class="calendar-day-chips">${chipsHtml}</div>
+            </div>
+        `;
+    }
+
+    grid.innerHTML = html;
+    renderDetalleDiaSeleccionado(citasPorDia);
+}
+
+function renderDetalleDiaSeleccionado(citasPorDia) {
+    const panel = document.getElementById("calendarDetallePanel");
+    if (!panel) return;
+
+    if (!calDiaSeleccionado) {
+        panel.innerHTML = `<p style="text-align:center; opacity:0.5; padding:20px;">${t("calendario_selecciona_dia") || "Selecciona un día para ver las citas"}</p>`;
+        return;
+    }
+
+    const citasDia = (citasPorDia || {})[calDiaSeleccionado] || calCitasDelMes.filter(c => c.fecha === calDiaSeleccionado);
+
+    if (citasDia.length === 0) {
+        panel.innerHTML = `
+            <div class="calendar-detalle-header">${formatearFecha(calDiaSeleccionado)}</div>
+            <p style="text-align:center; opacity:0.5; padding:20px 0;">${t("sin_citas")}</p>
+        `;
+        return;
+    }
+
+    let html = `<div class="calendar-detalle-header">${formatearFecha(calDiaSeleccionado)}</div>`;
+    citasDia.forEach(c => {
+        const nombre = calPacientesMap[c.paciente_id] || "?";
+        html += `
+            <div class="appt-card" style="margin-bottom:10px;">
+                <div class="appt-card-top">
+                    <div class="patient-identity">
+                        <div class="patient-avatar" style="background:${colorAvatar(nombre)}20; color:${colorAvatar(nombre)}; border-color:${colorAvatar(nombre)}40;">
+                            ${iniciales(nombre)}
+                        </div>
+                        <div>
+                            <div class="patient-name">${nombre}</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="appt-tags">
+                    <span class="appt-chip appt-chip-time">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                        ${formatearHora(c.hora)}
+                    </span>
+                </div>
+                <div class="patient-actions">
+                    <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                        ${t("editar_cita_btn") || "Editar"}
+                    </button>
+                    <button type="button" class="btn-action btn-action-danger" onclick="eliminarCitaDesdeCalendario('${c.id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        ${t("cancelar_cita_btn") || "Cancelar"}
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    panel.innerHTML = html;
+}
+
+async function seleccionarDiaCalendario(fechaStr) {
+    calDiaSeleccionado = fechaStr;
+    await renderCalendario();
+}
+
+async function eliminarCitaDesdeCalendario(id) {
+    if (!confirm("¿Deseas cancelar esta cita permanentemente?")) return;
+    const { error } = await supabaseClient.from('citas').delete().eq('id', id);
+    if (error) {
+        alert("No se pudo eliminar la cita.");
+        return;
+    }
+    await cargarCitasDelMes();
+    renderCalendario();
+}
+
+async function mesAnterior() {
+    calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth() - 1, 1);
+    calDiaSeleccionado = null;
+    await cargarCitasDelMes();
+    renderCalendario();
+}
+
+async function mesSiguiente() {
+    calFecha = new Date(calFecha.getFullYear(), calFecha.getMonth() + 1, 1);
+    calDiaSeleccionado = null;
+    await cargarCitasDelMes();
+    renderCalendario();
+}
+
+async function irHoyCalendario() {
+    calFecha = new Date();
+    calDiaSeleccionado = fechaLocalISO(new Date());
+    await cargarCitasDelMes();
+    renderCalendario();
+}
+
+async function abrirCalendario() {
+    if (seccionForm) seccionForm.style.display = "none";
+    if (seccionVer) seccionVer.style.display = "none";
+    if (seccionCal) seccionCal.style.display = "block";
+    if (titulo) titulo.innerText = t("calendario_titulo") || "Calendario";
+    await cargarCitasDelMes();
+    renderCalendario();
+}
+
+/* ========================================================= */
+
 async function agregarCita() {
     const paciente_id = selectPaciente.value;
     const fecha = inputFecha.value;
@@ -251,6 +478,15 @@ async function eliminarCita(id) {
 }
 
 function cambiarVista(modo) {
+    if (modo === 'calendario') {
+        if(seccionForm) seccionForm.style.display = "none";
+        if(seccionVer) seccionVer.style.display = "none";
+        abrirCalendario();
+        return;
+    }
+
+    if (seccionCal) seccionCal.style.display = "none";
+
     if (modo === 'nuevo') {
         if(seccionForm) seccionForm.style.display = "block";
         if(seccionVer) seccionVer.style.display = "none";
@@ -277,6 +513,8 @@ async function inicializarVistaCitas() {
     await cargarPacientes();
     if (modo === 'nuevo') {
         cambiarVista('nuevo');
+    } else if (modo === 'calendario') {
+        cambiarVista('calendario');
     } else {
         cambiarVista('ver');
     }
