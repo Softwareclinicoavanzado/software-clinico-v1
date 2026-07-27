@@ -47,6 +47,12 @@
           </button>
         </li>
         <li>
+          <button class="sidebar-link" type="button" onclick="cambiarVista('calendario'); history.replaceState(null,'','citas.html?mode=calendario'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" data-nav="citas-calendario">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
+            <span data-i18n="calendario_btn">Calendario</span>
+          </button>
+        </li>
+        <li>
           <button class="sidebar-link" type="button" onclick="cambiarVista('nuevo'); history.replaceState(null,'','citas.html?mode=nuevo'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" data-nav="citas-nuevo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v6M9 17h6"/></svg>
             <span data-i18n="agendar_cita_link">Agendar Cita</span>
@@ -98,6 +104,9 @@
           <button type="button" onclick="cambiarVista('ver'); history.replaceState(null,'','citas.html?mode=ver'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #3498db; flex: 1;">
             <span data-i18n="ver_agenda">📅 Ver Agenda</span>
           </button>
+          <button type="button" onclick="cambiarVista('calendario'); history.replaceState(null,'','citas.html?mode=calendario'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #8b5cf6; flex: 1;">
+            <span data-i18n="calendario_btn">🗓️ Calendario</span>
+          </button>
           <button type="button" onclick="cambiarVista('nuevo'); history.replaceState(null,'','citas.html?mode=nuevo'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #2ecc71; flex: 1;">
             <span data-i18n="nueva_cita">➕ Nueva Cita</span>
           </button>
@@ -120,6 +129,23 @@
         <div id="seccionLista" style="display: none;">
           <h2 style="color: #3498db; margin-bottom: 15px;" data-i18n="citas_programadas">📋 Citas Programadas</h2>
           <ul class="lista" id="listaCitas" style="padding: 0;"></ul>
+        </div>
+
+        <div id="seccionCalendario" style="display: none;">
+          <div class="calendar-toolbar">
+            <button type="button" class="calendar-nav-btn" onclick="mesAnterior()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+            </button>
+            <div id="calendarMesLabel" class="calendar-mes-label"></div>
+            <button type="button" class="calendar-nav-btn" onclick="mesSiguiente()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+            <button type="button" class="calendar-today-btn" onclick="irHoyCalendario()" data-i18n="hoy">Hoy</button>
+          </div>
+
+          <div id="calendarGrid" class="calendar-grid"></div>
+
+          <div id="calendarDetallePanel" class="calendar-detalle-panel"></div>
         </div>
 
       </div>
