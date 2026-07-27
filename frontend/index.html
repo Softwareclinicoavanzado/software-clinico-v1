@@ -40,7 +40,6 @@
             </button>
         </div>
     </div>
-
     <div class="login-card" style="display: none;" id="loginSection">
         <h1>ClinicOS</h1>
         <p id="mensaje" class="subtitulo" data-i18n="bienvenida">Bienvenido de nuevo</p>
@@ -52,7 +51,6 @@
         <p id="error"></p>
         <button type="button" class="secondary" onclick="showLangSelector()" style="margin-top:15px; font-size:0.85rem;">🌐 Change Language</button>
     </div>
-
     <script src="./js/storage.js"></script>
     <script src="./js/translations.js"></script>
     <script src="./js/auth.js"></script>
@@ -71,6 +69,10 @@
             document.getElementById("languageSelector").style.opacity = "1";
             document.getElementById("loginSection").style.display = "none";
         }
+        document.addEventListener('DOMContentLoaded', () => {
+            const overlay = document.getElementById("languageSelector");
+            if (overlay) overlay.classList.add("i18n-ready");
+        });
     </script>
 </body>
 </html>
