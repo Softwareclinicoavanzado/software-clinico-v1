@@ -40,6 +40,29 @@ function etiquetaRol(rol) {
     return rol;
 }
 
+/* =========================
+   Helpers visuales (mismo lenguaje que pacientes/citas)
+========================= */
+function iniciales(nombre) {
+    if (!nombre) return "?";
+    const partes = nombre.trim().split(" ").filter(Boolean);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0][0] + partes[1][0]).toUpperCase();
+}
+
+function colorAvatar(nombre) {
+    const paleta = ["#3b82f6", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4"];
+    let hash = 0;
+    for (let i = 0; i < (nombre || "").length; i++) hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+    return paleta[Math.abs(hash) % paleta.length];
+}
+
+function claseBadgeRol(rol) {
+    if (rol === "admin") return "role-badge-admin";
+    if (rol === "doctor") return "role-badge-doctor";
+    return "role-badge-recepcion";
+}
+
 async function cargarUsuarios() {
     const lista = document.getElementById("listaUsuarios");
     if (!lista) return;
@@ -59,7 +82,7 @@ async function cargarUsuarios() {
     usuariosCache = data || [];
 
     if (usuariosCache.length === 0) {
-        lista.innerHTML = `<li style='color:white;'>${t("no_hay_usuarios")}</li>`;
+        lista.innerHTML = `<li style='color:var(--text-secondary); text-align:center; background:none; border:none; box-shadow:none;'>${t("no_hay_usuarios")}</li>`;
         return;
     }
 
@@ -69,35 +92,57 @@ async function cargarUsuarios() {
         const inactivo = u.activo === false;
 
         const li = document.createElement("li");
-        li.className = "paciente-item";
-        li.style.opacity = inactivo ? "0.5" : "1";
+        li.className = "staff-card" + (inactivo ? " staff-card-inactive" : "");
         li.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong>${u.nombre || "Sin nombre"}</strong> ${inactivo ? `<span style="color:#f87171; font-size:0.75rem;">${t("desactivado_tag")}</span>` : ''}<br>
-                    <small style="opacity: 0.8;">${u.email || "-"}</small>
+            <div class="staff-card-top">
+                <div class="patient-identity">
+                    <div class="patient-avatar" style="background:${colorAvatar(u.nombre)}20; color:${colorAvatar(u.nombre)}; border-color:${colorAvatar(u.nombre)}40;">
+                        ${iniciales(u.nombre)}
+                    </div>
+                    <div>
+                        <div class="patient-name">
+                            ${u.nombre || "Sin nombre"}
+                            ${inactivo ? `<span class="status-dot status-dot-inactive" title="${t("inactivo_tag")}"></span>` : `<span class="status-dot status-dot-active" title="${t("activo_tag")}"></span>`}
+                        </div>
+                        <div class="patient-dpi">${u.email || "-"}</div>
+                    </div>
                 </div>
-                <span style="background:#2ecc71; color:#0d1117; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: bold;">
-                    ${etiquetaRol(u.rol).toUpperCase()}
-                </span>
+                <span class="role-badge ${claseBadgeRol(u.rol)}">${etiquetaRol(u.rol)}</span>
             </div>
-            <div style="display:flex; gap:8px; margin-top:10px; flex-wrap: wrap;">
-                <button type="button" onclick="verInfo('${u.id}')" style="background:#3498db; flex:1; padding:6px; min-width: 100px;">${t("ver_info")}</button>
+
+            ${inactivo ? `<div class="patient-tags"><span class="patient-tag" style="color:#fca5a5; border-color:rgba(248,113,113,0.3); background:rgba(248,113,113,0.08);">${t("desactivado_tag")}</span></div>` : ""}
+
+            <div class="patient-actions">
+                <button type="button" class="btn-action" onclick="verInfo('${u.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    ${t("ver_info")}
+                </button>
                 ${!esUnoMismo ? `
                     ${inactivo
-                        ? `<button type="button" onclick="cambiarEstado('${u.id}','reactivar')" style="background:#2ecc71; flex:1; padding:6px; min-width: 100px;">${t("reactivar")}</button>`
-                        : `<button type="button" onclick="cambiarEstado('${u.id}','desactivar')" style="background:#f39c12; flex:1; padding:6px; min-width: 100px;">${t("desactivar")}</button>`
+                        ? `<button type="button" class="btn-action" onclick="cambiarEstado('${u.id}','reactivar')">
+                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3.5-7.1"/><path d="M21 3v6h-6"/></svg>
+                             ${t("reactivar")}
+                           </button>`
+                        : `<button type="button" class="btn-action" onclick="cambiarEstado('${u.id}','desactivar')">
+                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+                             ${t("desactivar")}
+                           </button>`
                     }
-                    <button type="button" onclick="resetearPassword('${u.id}')" style="background:#9b59b6; flex:1; padding:6px; min-width: 100px;">${t("resetear_clave")}</button>
-                    <button type="button" onclick="eliminarUsuarioPermanente('${u.id}')" style="background:#e74c3c; flex:1; padding:6px; min-width: 100px;">${t("eliminar_usuario")}</button>
-                ` : `<small style="opacity:0.5; align-self:center;">${t("esta_es_tu_cuenta")}</small>`}
+                    <button type="button" class="btn-action" onclick="resetearPassword('${u.id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                        ${t("resetear_clave")}
+                    </button>
+                    <button type="button" class="btn-action btn-action-danger" onclick="eliminarUsuarioPermanente('${u.id}')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                        ${t("eliminar_usuario")}
+                    </button>
+                ` : `<span class="patient-tag" style="align-self:center;">${t("esta_es_tu_cuenta")}</span>`}
             </div>
         `;
         lista.appendChild(li);
     });
 }
 
-// ✅ CORREGIDO: todas las etiquetas ahora usan el diccionario de idiomas
 function verInfo(id) {
     const u = usuariosCache.find(x => x.id === id);
     if (!u) return;
