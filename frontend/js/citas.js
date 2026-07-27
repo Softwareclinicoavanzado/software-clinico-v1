@@ -17,6 +17,44 @@ const titulo = document.getElementById("tituloPagina");
 let citas = [];
 let editandoCitaId = null;
 
+/* =========================
+   Helpers visuales (mismos que pacientes.js, para consistencia)
+========================= */
+function iniciales(nombre) {
+    if (!nombre) return "?";
+    const partes = nombre.trim().split(" ").filter(Boolean);
+    if (partes.length === 1) return partes[0].substring(0, 2).toUpperCase();
+    return (partes[0][0] + partes[1][0]).toUpperCase();
+}
+
+function colorAvatar(nombre) {
+    const paleta = ["#3b82f6", "#8b5cf6", "#22c55e", "#f59e0b", "#ec4899", "#06b6d4"];
+    let hash = 0;
+    for (let i = 0; i < (nombre || "").length; i++) hash = nombre.charCodeAt(i) + ((hash << 5) - hash);
+    return paleta[Math.abs(hash) % paleta.length];
+}
+
+function formatearFecha(fechaISO) {
+    if (!fechaISO) return "";
+    const [y, m, d] = fechaISO.split("-");
+    const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+    return `${d} ${meses[parseInt(m, 10) - 1]}`;
+}
+
+function formatearHora(horaStr) {
+    if (!horaStr) return "";
+    let [h, m] = horaStr.split(":").map(Number);
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    return `${h}:${String(m).padStart(2, "0")} ${ampm}`;
+}
+
+function esCitaHoy(fechaISO) {
+    const hoy = new Date();
+    const hoyStr = hoy.toISOString().split("T")[0];
+    return fechaISO === hoyStr;
+}
+
 async function cargarPacientes() {
     const { data: pacientes, error } = await supabaseClient
         .from('pacientes')
@@ -93,31 +131,47 @@ async function render() {
         .eq('clinica_id', clinicaID);
 
     citasCloud.forEach((c) => {
-        const paciente = pacientesData 
-            ? pacientesData.find(p => Number(p.id) === Number(c.paciente_id)) 
+        const paciente = pacientesData
+            ? pacientesData.find(p => Number(p.id) === Number(c.paciente_id))
             : null;
         const nombrePaciente = paciente ? paciente.nombre : "Paciente no identificado";
+        const hoy = esCitaHoy(c.fecha);
 
         const div = document.createElement("div");
-        div.className = "card";
-        div.style.marginBottom = "12px";
-        div.style.borderLeft = "4px solid #3498db";
+        div.className = "appt-card";
         div.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <strong style="font-size: 1.1rem; color: #fff;">${nombrePaciente}</strong><br>
-                    <span style="color: #3498db;">📅 ${c.fecha}</span> | <span style="color: #2ecc71;">⏰ ${c.hora}</span>
+            <div class="appt-card-top">
+                <div class="patient-identity">
+                    <div class="patient-avatar" style="background:${colorAvatar(nombrePaciente)}20; color:${colorAvatar(nombrePaciente)}; border-color:${colorAvatar(nombrePaciente)}40;">
+                        ${iniciales(nombrePaciente)}
+                    </div>
+                    <div>
+                        <div class="patient-name">${nombrePaciente}</div>
+                        ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
+                    </div>
                 </div>
-                <div style="display:flex; gap:6px;">
-                    <button onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}')" 
-                            style="background: #9b59b6; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
-                        ✏️
-                    </button>
-                    <button onclick="eliminarCita('${c.id}')" 
-                            style="background: #e74c3c; color: white; border: none; padding: 6px 10px; border-radius: 4px; cursor: pointer;">
-                        🗑️
-                    </button>
-                </div>
+            </div>
+
+            <div class="appt-tags">
+                <span class="appt-chip appt-chip-date">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    ${formatearFecha(c.fecha)}
+                </span>
+                <span class="appt-chip appt-chip-time">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    ${formatearHora(c.hora)}
+                </span>
+            </div>
+
+            <div class="patient-actions">
+                <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
+                    ${t("editar_cita_btn") || "Editar"}
+                </button>
+                <button type="button" class="btn-action btn-action-danger" onclick="eliminarCita('${c.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+                    ${t("cancelar_cita_btn") || "Cancelar"}
+                </button>
             </div>
         `;
         listaCitas.appendChild(div);
