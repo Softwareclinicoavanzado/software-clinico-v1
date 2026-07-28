@@ -364,6 +364,10 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
 async function seleccionarDiaCalendario(fechaStr) {
     calDiaSeleccionado = fechaStr;
     await renderCalendario();
+    const panel = document.getElementById("calendarDetallePanel");
+    if (panel) {
+        panel.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
 }
 
 async function eliminarCitaDesdeCalendario(id) {
