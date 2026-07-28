@@ -1274,3 +1274,15 @@ button.danger:hover {
   border-radius: var(--radius-sm);
   border-left: 3px solid var(--accent);
 }
+/* =========================
+   AJUSTE MÓVIL — botones de vista en citas.html
+========================= */
+@media (max-width: 600px) {
+  .content-area > div[style*="display: flex"][style*="gap: 10px"] {
+    flex-wrap: wrap;
+  }
+  .content-area > div[style*="display: flex"][style*="gap: 10px"] > button {
+    flex: 1 1 100%;
+    font-size: 13px;
+  }
+}
