@@ -10,6 +10,7 @@ const listaCitas = document.getElementById("listaCitas");
 const selectPaciente = document.getElementById("pacienteSelect");
 const inputFecha = document.getElementById("fecha");
 const inputHora = document.getElementById("hora");
+const inputMotivo = document.getElementById("motivo");
 const seccionForm = document.getElementById("seccionFormulario");
 const seccionVer = document.getElementById("seccionLista");
 const seccionCal = document.getElementById("seccionCalendario");
@@ -117,7 +118,7 @@ async function render() {
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, paciente_id, estado')
+        .select('id, fecha, hora, paciente_id, estado, motivo')
         .eq('clinica_id', clinicaID)
         .eq('estado', 'programada')
         .order('fecha', { ascending: true })
@@ -171,8 +172,10 @@ async function render() {
                 </span>
             </div>
 
+            ${c.motivo ? `<p class="appt-motivo">${c.motivo}</p>` : ""}
+
             <div class="patient-actions">
-                <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}')">
+                <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${JSON.stringify(c.motivo || "")})">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                     ${t("editar_cita_btn") || "Editar"}
                 </button>
@@ -222,7 +225,7 @@ async function cargarCitasDelMes() {
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, paciente_id, estado')
+        .select('id, fecha, hora, paciente_id, estado, motivo')
         .eq('clinica_id', clinicaID)
         .eq('estado', 'programada')
         .gte('fecha', primerDia)
@@ -341,8 +344,9 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                         ${formatearHora(c.hora)}
                     </span>
                 </div>
+                ${c.motivo ? `<p class="appt-motivo">${c.motivo}</p>` : ""}
                 <div class="patient-actions">
-                    <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}')">
+                    <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${JSON.stringify(c.motivo || "")})">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         ${t("editar_cita_btn") || "Editar"}
                     </button>
@@ -409,6 +413,7 @@ async function agregarCita() {
     const paciente_id = selectPaciente.value;
     const fecha = inputFecha.value;
     const hora = inputHora.value;
+    const motivo = inputMotivo ? inputMotivo.value.trim() : "";
 
     if (!paciente_id || !fecha || !hora) {
         return alert("Completa todos los campos para agendar.");
@@ -418,6 +423,7 @@ async function agregarCita() {
         paciente_id: Number(paciente_id),
         fecha: fecha,
         hora: hora,
+        motivo: motivo || null,
         clinica_id: clinicaID
     };
 
@@ -446,6 +452,7 @@ async function agregarCita() {
         inputFecha.value = "";
         inputHora.value = "";
         selectPaciente.value = "";
+        if (inputMotivo) inputMotivo.value = "";
         cambiarVista('ver');
 
     } catch (error) {
@@ -454,11 +461,12 @@ async function agregarCita() {
     }
 }
 
-function editarCita(id, pacienteId, fecha, hora) {
+function editarCita(id, pacienteId, fecha, hora, motivo) {
     editandoCitaId = id;
     selectPaciente.value = pacienteId;
     inputFecha.value = fecha;
     inputHora.value = hora;
+    if (inputMotivo) inputMotivo.value = motivo || "";
     cambiarVista('nuevo');
 }
 
