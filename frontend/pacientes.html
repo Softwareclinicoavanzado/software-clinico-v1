@@ -8,6 +8,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -141,6 +142,16 @@
             placeholder="🔍 Buscar por nombre, DPI, tel o seguro..."
             oninput="filtrarPacientes()"
           >
+          <div class="excel-toolbar">
+            <button type="button" class="excel-btn" onclick="exportarTodosExcel()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg>
+              <span data-i18n="excel_export_todos">Exportar Todos</span>
+            </button>
+            <button type="button" class="excel-btn excel-btn-secondary" id="btnExportarFiltrados" onclick="exportarFiltradosExcel()" style="display:none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+              <span id="txtExportarFiltrados" data-i18n="excel_export_filtrados">Exportar Filtrados</span>
+            </button>
+          </div>
           <ul class="lista" id="listaPacientes"></ul>
         </div>
 
