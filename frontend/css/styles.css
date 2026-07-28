@@ -1261,3 +1261,16 @@ button.danger:hover {
   .calendar-day-number { font-size: 11px; }
   .calendar-appt-chip { font-size: 9px; }
 }
+/* =========================
+   MOTIVO DE CITA (texto dentro de la tarjeta)
+========================= */
+.appt-motivo {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: var(--bg-elevated-2);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent);
+}
