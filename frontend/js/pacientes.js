@@ -7,6 +7,7 @@ if (!clinicaID) {
 }
 const rol = localStorage.getItem("rol") || "admin";
 let pacientes = [];
+let pacientesFiltradosActual = [];
 let editandoID = null;
 const inputs = {
     nombre: document.getElementById("nombre"),
@@ -31,6 +32,7 @@ async function cargarDatos() {
             .order('nombre', { ascending: true });
         if (error) throw error;
         pacientes = data;
+        pacientesFiltradosActual = data;
         render();
     } catch (err) {
         console.error("Error cargando pacientes:", err.message);
@@ -58,10 +60,6 @@ function limpiarTexto(str) {
     return (str || "").replace(/^[^\w\sáéíóúÁÉÍÓÚñÑ]+/, '').trim();
 }
 
-/* =========================
-   Traduce el valor de "sexo" guardado en español (Hombre/Mujer/Otro)
-   al idioma activo, reutilizando las claves ya existentes del formulario.
-========================= */
 function traducirSexo(valor) {
     if (!valor) return null;
     const normalizado = valor.toString().toLowerCase()
@@ -71,10 +69,141 @@ function traducirSexo(valor) {
     return clave ? t(clave) : valor;
 }
 
+/* =========================================================
+   EXPORTAR A EXCEL (SheetJS)
+========================================================= */
+function nombreArchivoSeguro(str) {
+    return (str || "archivo").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+}
+
+function fechaHoyArchivo() {
+    const hoy = new Date();
+    const y = hoy.getFullYear();
+    const m = String(hoy.getMonth() + 1).padStart(2, "0");
+    const d = String(hoy.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
+function encabezadosExcel() {
+    return {
+        nombre: t("nombre_completo") || "Nombre",
+        dpi: t("dpi_label") || "DPI",
+        edad: t("edad_label") || "Edad",
+        sexo: t("excel_col_sexo") || "Sexo",
+        telefono: t("telefono_label") || "Teléfono",
+        fechaNacimiento: (t("fecha_nacimiento") || "Fecha de Nacimiento").replace(":", ""),
+        contacto: t("contacto_emergencia_label") || "Contacto de Emergencia",
+        seguro: t("seguro_nombre") || "Seguro",
+        poliza: t("seguro_numero") || "Número de Póliza",
+        medico: t("medico_asignado_label") || "Médico Asignado",
+        sede: t("sede_label") || "Sede"
+    };
+}
+
+function construirFilaPaciente(p) {
+    const h = encabezadosExcel();
+    return {
+        [h.nombre]: p.nombre || "",
+        [h.dpi]: p.dpi || "",
+        [h.edad]: p.edad || "",
+        [h.sexo]: traducirSexo(p.sexo) || "",
+        [h.telefono]: p.telefono || "",
+        [h.fechaNacimiento]: p.fecha_nacimiento || "",
+        [h.contacto]: p.contacto_emergencia || "",
+        [h.seguro]: p.aseguradora || (t("tag_particular") || "Particular"),
+        [h.poliza]: p.poliza_seguro || "",
+        [h.medico]: p.medico_asignado || "",
+        [h.sede]: p.sede || ""
+    };
+}
+
+function generarLibroExcel(lista, tituloHoja) {
+    const filas = lista.map(construirFilaPaciente);
+    const ws = XLSX.utils.json_to_sheet(filas);
+
+    ws['!cols'] = [
+        { wch: 26 }, { wch: 16 }, { wch: 8 }, { wch: 10 },
+        { wch: 15 }, { wch: 16 }, { wch: 24 }, { wch: 18 },
+        { wch: 16 }, { wch: 20 }, { wch: 16 }
+    ];
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, tituloHoja.substring(0, 31));
+    return wb;
+}
+
+function exportarTodosExcel() {
+    if (!pacientes || pacientes.length === 0) {
+        alert(t("excel_sin_datos") || "No hay pacientes para exportar.");
+        return;
+    }
+    const clinicaNombre = localStorage.getItem("clinicaNombre") || "ClinicOS";
+    const wb = generarLibroExcel(pacientes, t("excel_hoja_pacientes") || "Pacientes");
+    const nombreArchivo = `${nombreArchivoSeguro(clinicaNombre)}_Pacientes_${fechaHoyArchivo()}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
+}
+
+function exportarFiltradosExcel() {
+    if (!pacientesFiltradosActual || pacientesFiltradosActual.length === 0) {
+        alert(t("excel_sin_datos") || "No hay pacientes para exportar.");
+        return;
+    }
+    const clinicaNombre = localStorage.getItem("clinicaNombre") || "ClinicOS";
+    const wb = generarLibroExcel(pacientesFiltradosActual, t("excel_hoja_pacientes") || "Pacientes");
+    const nombreArchivo = `${nombreArchivoSeguro(clinicaNombre)}_Pacientes_Filtrados_${fechaHoyArchivo()}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
+}
+
+function exportarPacienteIndividualExcel(id) {
+    const p = pacientes.find(pac => Number(pac.id) === Number(id));
+    if (!p) return;
+
+    const h = encabezadosExcel();
+    const filasVerticales = [
+        [h.nombre, p.nombre || ""],
+        [h.dpi, p.dpi || ""],
+        [h.edad, p.edad || ""],
+        [h.sexo, traducirSexo(p.sexo) || ""],
+        [h.telefono, p.telefono || ""],
+        [h.fechaNacimiento, p.fecha_nacimiento || ""],
+        [h.contacto, p.contacto_emergencia || ""],
+        [h.seguro, p.aseguradora || (t("tag_particular") || "Particular")],
+        [h.poliza, p.poliza_seguro || ""],
+        [h.medico, p.medico_asignado || ""],
+        [h.sede, p.sede || ""]
+    ];
+
+    const ws = XLSX.utils.aoa_to_sheet(filasVerticales);
+    ws['!cols'] = [{ wch: 24 }, { wch: 34 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, (t("excel_hoja_ficha") || "Ficha").substring(0, 31));
+    const nombreArchivo = `${nombreArchivoSeguro(p.nombre)}_${fechaHoyArchivo()}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
+}
+
+/* ========================================================= */
+
 /* =========================
    Render de tarjetas de paciente (rediseño premium)
 ========================= */
 function render(data = pacientes) {
+    pacientesFiltradosActual = data;
+
+    const btnFiltrados = document.getElementById("btnExportarFiltrados");
+    const txtFiltrados = document.getElementById("txtExportarFiltrados");
+    if (btnFiltrados) {
+        const busquedaActiva = document.getElementById("busqueda") && document.getElementById("busqueda").value.trim().length > 0;
+        if (busquedaActiva && data.length > 0 && data.length !== pacientes.length) {
+            btnFiltrados.style.display = "flex";
+            if (txtFiltrados) txtFiltrados.innerText = `${limpiarTexto(t("excel_export_filtrados"))} (${data.length})`;
+        } else {
+            btnFiltrados.style.display = "none";
+        }
+    }
+
     const lista = document.getElementById("listaPacientes");
     if (!lista) return;
     lista.innerHTML = "";
@@ -102,10 +231,15 @@ function render(data = pacientes) {
                         <div class="patient-dpi">DPI ${p.dpi || "S/D"}</div>
                     </div>
                 </div>
-                <button type="button" class="btn-pdf-pill" onclick="descargarPDFHistorial(${p.id})">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
-                    <span>${limpiarTexto(t("exportar_reporte"))}</span>
-                </button>
+                <div style="display:flex; gap:6px;">
+                    <button type="button" class="btn-excel-pill" onclick="exportarPacienteIndividualExcel(${p.id})" title="${t("excel_export_individual") || "Exportar a Excel"}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg>
+                    </button>
+                    <button type="button" class="btn-pdf-pill" onclick="descargarPDFHistorial(${p.id})">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
+                        <span>${limpiarTexto(t("exportar_reporte"))}</span>
+                    </button>
+                </div>
             </div>
 
             <div class="patient-tags">
