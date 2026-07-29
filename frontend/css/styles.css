@@ -1346,3 +1346,67 @@ button.danger:hover {
   transform: none;
   box-shadow: none;
 }
+/* =========================
+   BOTONES DE EXPORTAR (grupo por tarjeta + botón PDF masivo)
+========================= */
+.card-export-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.btn-excel-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: auto;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  font-weight: 700;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.1);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: none;
+  flex-shrink: 0;
+}
+.btn-excel-pill svg { width: 14px; height: 14px; flex-shrink: 0; }
+.btn-excel-pill:hover {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.5);
+  transform: none;
+  box-shadow: none;
+}
+
+.pdf-btn {
+  width: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-weight: 700;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+.pdf-btn svg { width: 15px; height: 15px; flex-shrink: 0; }
+.pdf-btn:hover {
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+}
+
+.pdf-btn-secondary {
+  background: var(--bg-elevated-2);
+  color: #93c5fd;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  box-shadow: none;
+}
+.pdf-btn-secondary:hover {
+  background: var(--accent-soft);
+  box-shadow: none;
+}
