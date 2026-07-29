@@ -184,6 +184,66 @@ function exportarPacienteIndividualExcel(id) {
     XLSX.writeFile(wb, nombreArchivo);
 }
 
+/* =========================================================
+   EXPORTAR LISTA COMPLETA A PDF (tabla, no historial médico)
+========================================================= */
+function generarPDFListaPacientes(lista, titulo) {
+    if (!window.jspdf) {
+        alert("No se pudo cargar la librería PDF.");
+        return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ orientation: "landscape" });
+    const clinicaNombre = localStorage.getItem("clinicaNombre") || "ClinicOS";
+
+    doc.setFontSize(16);
+    doc.text(titulo, 14, 15);
+    doc.setFontSize(10);
+    doc.setTextColor(120);
+    doc.text(`${clinicaNombre} — ${new Date().toLocaleString()}`, 14, 21);
+
+    const h = encabezadosExcel();
+    const columnas = [h.nombre, h.dpi, h.edad, h.sexo, h.telefono, h.seguro, h.medico, h.sede];
+    const filas = lista.map(p => [
+        p.nombre || "",
+        p.dpi || "",
+        p.edad || "",
+        traducirSexo(p.sexo) || "",
+        p.telefono || "",
+        p.aseguradora || (t("tag_particular") || "Particular"),
+        p.medico_asignado || "",
+        p.sede || ""
+    ]);
+
+    doc.autoTable({
+        head: [columnas],
+        body: filas,
+        startY: 28,
+        styles: { fontSize: 8.5, cellPadding: 3.5 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [244, 247, 251] }
+    });
+
+    const nombreArchivo = `${nombreArchivoSeguro(clinicaNombre)}_Pacientes_${fechaHoyArchivo()}.pdf`;
+    doc.save(nombreArchivo);
+}
+
+function exportarTodosPDF() {
+    if (!pacientes || pacientes.length === 0) {
+        alert(t("excel_sin_datos") || "No hay pacientes para exportar.");
+        return;
+    }
+    generarPDFListaPacientes(pacientes, t("pdf_titulo_todos") || "Listado de Pacientes");
+}
+
+function exportarFiltradosPDF() {
+    if (!pacientesFiltradosActual || pacientesFiltradosActual.length === 0) {
+        alert(t("excel_sin_datos") || "No hay pacientes para exportar.");
+        return;
+    }
+    generarPDFListaPacientes(pacientesFiltradosActual, t("pdf_titulo_filtrados") || "Listado de Pacientes (Filtrado)");
+}
+
 /* ========================================================= */
 
 /* =========================
@@ -192,16 +252,21 @@ function exportarPacienteIndividualExcel(id) {
 function render(data = pacientes) {
     pacientesFiltradosActual = data;
 
-    const btnFiltrados = document.getElementById("btnExportarFiltrados");
-    const txtFiltrados = document.getElementById("txtExportarFiltrados");
-    if (btnFiltrados) {
-        const busquedaActiva = document.getElementById("busqueda") && document.getElementById("busqueda").value.trim().length > 0;
-        if (busquedaActiva && data.length > 0 && data.length !== pacientes.length) {
-            btnFiltrados.style.display = "flex";
-            if (txtFiltrados) txtFiltrados.innerText = `${limpiarTexto(t("excel_export_filtrados"))} (${data.length})`;
-        } else {
-            btnFiltrados.style.display = "none";
-        }
+    const busquedaActiva = document.getElementById("busqueda") && document.getElementById("busqueda").value.trim().length > 0;
+    const hayFiltro = busquedaActiva && data.length > 0 && data.length !== pacientes.length;
+
+    const btnExcelFiltrados = document.getElementById("btnExportarFiltrados");
+    const txtExcelFiltrados = document.getElementById("txtExportarFiltrados");
+    if (btnExcelFiltrados) {
+        btnExcelFiltrados.style.display = hayFiltro ? "flex" : "none";
+        if (hayFiltro && txtExcelFiltrados) txtExcelFiltrados.innerText = `${limpiarTexto(t("excel_export_filtrados"))} (${data.length})`;
+    }
+
+    const btnPdfFiltrados = document.getElementById("btnExportarFiltradosPDF");
+    const txtPdfFiltrados = document.getElementById("txtExportarFiltradosPDF");
+    if (btnPdfFiltrados) {
+        btnPdfFiltrados.style.display = hayFiltro ? "flex" : "none";
+        if (hayFiltro && txtPdfFiltrados) txtPdfFiltrados.innerText = `${limpiarTexto(t("pdf_export_filtrados"))} (${data.length})`;
     }
 
     const lista = document.getElementById("listaPacientes");
@@ -231,9 +296,10 @@ function render(data = pacientes) {
                         <div class="patient-dpi">DPI ${p.dpi || "S/D"}</div>
                     </div>
                 </div>
-                <div style="display:flex; gap:6px;">
-                    <button type="button" class="btn-excel-pill" onclick="exportarPacienteIndividualExcel(${p.id})" title="${t("excel_export_individual") || "Exportar a Excel"}">
+                <div class="card-export-group">
+                    <button type="button" class="btn-excel-pill" onclick="exportarPacienteIndividualExcel(${p.id})">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg>
+                        <span>${limpiarTexto(t("excel_export_individual"))}</span>
                     </button>
                     <button type="button" class="btn-pdf-pill" onclick="descargarPDFHistorial(${p.id})">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
