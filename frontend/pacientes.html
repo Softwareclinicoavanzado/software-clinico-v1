@@ -145,11 +145,19 @@
           <div class="excel-toolbar">
             <button type="button" class="excel-btn" onclick="exportarTodosExcel()">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg>
-              <span data-i18n="excel_export_todos">Exportar Todos</span>
+              <span data-i18n="excel_export_todos">Exportar Todos (Excel)</span>
             </button>
             <button type="button" class="excel-btn excel-btn-secondary" id="btnExportarFiltrados" onclick="exportarFiltradosExcel()" style="display:none;">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
               <span id="txtExportarFiltrados" data-i18n="excel_export_filtrados">Exportar Filtrados</span>
+            </button>
+            <button type="button" class="pdf-btn" onclick="exportarTodosPDF()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6M9 15l3 3 3-3"/></svg>
+              <span data-i18n="pdf_export_todos">Exportar Todos (PDF)</span>
+            </button>
+            <button type="button" class="pdf-btn pdf-btn-secondary" id="btnExportarFiltradosPDF" onclick="exportarFiltradosPDF()" style="display:none;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+              <span id="txtExportarFiltradosPDF" data-i18n="pdf_export_filtrados">Exportar Filtrados</span>
             </button>
           </div>
           <ul class="lista" id="listaPacientes"></ul>
