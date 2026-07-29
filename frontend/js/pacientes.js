@@ -33,6 +33,7 @@ async function cargarDatos() {
         if (error) throw error;
         pacientes = data;
         pacientesFiltradosActual = data;
+        poblarFiltros();
         render();
     } catch (err) {
         console.error("Error cargando pacientes:", err.message);
@@ -68,6 +69,131 @@ function traducirSexo(valor) {
     const clave = mapa[normalizado];
     return clave ? t(clave) : valor;
 }
+
+/* =========================================================
+   FILTROS AVANZADOS
+========================================================= */
+function toggleFiltrosPanel() {
+    const panel = document.getElementById("panelFiltros");
+    const btn = document.getElementById("btnToggleFiltros");
+    if (!panel) return;
+    const abierto = panel.style.display === "block";
+    panel.style.display = abierto ? "none" : "block";
+    if (btn) btn.classList.toggle("open", !abierto);
+}
+
+function poblarFiltros() {
+    const selMedico = document.getElementById("filtroMedico");
+    const selSeguro = document.getElementById("filtroSeguro");
+    if (!selMedico || !selSeguro) return;
+
+    const medicos = [...new Set(pacientes.map(p => (p.medico_asignado || "").trim()).filter(Boolean))].sort();
+    const seguros = [...new Set(pacientes.map(p => (p.aseguradora || "").trim()).filter(Boolean))].sort();
+
+    const valorMedicoActual = selMedico.value;
+    const valorSeguroActual = selSeguro.value;
+
+    selMedico.innerHTML = `<option value="">${t("filtro_todos_medicos") || "Todos los médicos"}</option>`;
+    medicos.forEach(m => {
+        const op = document.createElement("option");
+        op.value = m;
+        op.textContent = m;
+        selMedico.appendChild(op);
+    });
+    selMedico.value = medicos.includes(valorMedicoActual) ? valorMedicoActual : "";
+
+    selSeguro.innerHTML = `<option value="">${t("filtro_todos_seguros") || "Todos los seguros"}</option><option value="__particular__">${t("tag_particular") || "Particular"}</option>`;
+    seguros.forEach(s => {
+        const op = document.createElement("option");
+        op.value = s;
+        op.textContent = s;
+        selSeguro.appendChild(op);
+    });
+    selSeguro.value = (seguros.includes(valorSeguroActual) || valorSeguroActual === "__particular__") ? valorSeguroActual : "";
+}
+
+function filtrosActivosCount() {
+    let count = 0;
+    const medico = document.getElementById("filtroMedico");
+    const seguro = document.getElementById("filtroSeguro");
+    const sexo = document.getElementById("filtroSexo");
+    const edadMin = document.getElementById("filtroEdadMin");
+    const edadMax = document.getElementById("filtroEdadMax");
+    if (medico && medico.value) count++;
+    if (seguro && seguro.value) count++;
+    if (sexo && sexo.value) count++;
+    if (edadMin && edadMin.value) count++;
+    if (edadMax && edadMax.value) count++;
+    return count;
+}
+
+function actualizarBadgeFiltros() {
+    const badge = document.getElementById("filtrosBadge");
+    if (!badge) return;
+    const n = filtrosActivosCount();
+    if (n > 0) {
+        badge.style.display = "inline-flex";
+        badge.innerText = n;
+    } else {
+        badge.style.display = "none";
+    }
+}
+
+function aplicarFiltros() {
+    const texto = (document.getElementById("busqueda").value || "").toLowerCase();
+    const medico = document.getElementById("filtroMedico") ? document.getElementById("filtroMedico").value : "";
+    const seguro = document.getElementById("filtroSeguro") ? document.getElementById("filtroSeguro").value : "";
+    const sexo = document.getElementById("filtroSexo") ? document.getElementById("filtroSexo").value : "";
+    const edadMin = document.getElementById("filtroEdadMin") ? parseInt(document.getElementById("filtroEdadMin").value) : NaN;
+    const edadMax = document.getElementById("filtroEdadMax") ? parseInt(document.getElementById("filtroEdadMax").value) : NaN;
+
+    const filtrados = pacientes.filter(p => {
+        const coincideTexto = !texto ||
+            (p.nombre && p.nombre.toLowerCase().includes(texto)) ||
+            (p.dpi && p.dpi.includes(texto)) ||
+            (p.telefono && p.telefono.includes(texto));
+        if (!coincideTexto) return false;
+
+        if (medico && (p.medico_asignado || "").trim() !== medico) return false;
+
+        if (seguro === "__particular__" && (p.aseguradora || "").trim() !== "") return false;
+        if (seguro && seguro !== "__particular__" && (p.aseguradora || "").trim() !== seguro) return false;
+
+        if (sexo && (p.sexo || "").trim() !== sexo) return false;
+
+        if (!isNaN(edadMin) && (p.edad === null || p.edad === undefined || p.edad < edadMin)) return false;
+        if (!isNaN(edadMax) && (p.edad === null || p.edad === undefined || p.edad > edadMax)) return false;
+
+        return true;
+    });
+
+    actualizarBadgeFiltros();
+    render(filtrados);
+}
+
+function limpiarFiltros() {
+    const busqueda = document.getElementById("busqueda");
+    const medico = document.getElementById("filtroMedico");
+    const seguro = document.getElementById("filtroSeguro");
+    const sexo = document.getElementById("filtroSexo");
+    const edadMin = document.getElementById("filtroEdadMin");
+    const edadMax = document.getElementById("filtroEdadMax");
+    if (busqueda) busqueda.value = "";
+    if (medico) medico.value = "";
+    if (seguro) seguro.value = "";
+    if (sexo) sexo.value = "";
+    if (edadMin) edadMin.value = "";
+    if (edadMax) edadMax.value = "";
+    actualizarBadgeFiltros();
+    render(pacientes);
+}
+
+/* Mantiene compatibilidad: el input de búsqueda sigue llamando a esta función */
+function filtrarPacientes() {
+    aplicarFiltros();
+}
+
+/* ========================================================= */
 
 /* =========================================================
    EXPORTAR A EXCEL (SheetJS)
@@ -252,8 +378,7 @@ function exportarFiltradosPDF() {
 function render(data = pacientes) {
     pacientesFiltradosActual = data;
 
-    const busquedaActiva = document.getElementById("busqueda") && document.getElementById("busqueda").value.trim().length > 0;
-    const hayFiltro = busquedaActiva && data.length > 0 && data.length !== pacientes.length;
+    const hayFiltro = data.length > 0 && data.length !== pacientes.length;
 
     const btnExcelFiltrados = document.getElementById("btnExportarFiltrados");
     const txtExcelFiltrados = document.getElementById("txtExportarFiltrados");
@@ -417,16 +542,6 @@ async function eliminarPaciente(id) {
             alert("Error al eliminar: " + err.message);
         }
     }
-}
-
-function filtrarPacientes() {
-    const texto = document.getElementById("busqueda").value.toLowerCase();
-    const filtrados = pacientes.filter(p => 
-        (p.nombre && p.nombre.toLowerCase().includes(texto)) || 
-        (p.dpi && p.dpi.includes(texto)) ||
-        (p.telefono && p.telefono.includes(texto))
-    );
-    render(filtrados);
 }
 
 function verHistorial(id) {
