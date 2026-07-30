@@ -265,4 +265,11 @@ function gestionarVistaActual() {
     }
 }
 
+/* =========================================================
+   RETRADUCCIÓN AL CAMBIAR IDIOMA SIN RECARGAR
+========================================================= */
+function retraducirContenidoDinamico() {
+    gestionarVistaActual();
+}
+
 inicializarHistorial();
