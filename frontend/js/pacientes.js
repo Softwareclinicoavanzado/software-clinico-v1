@@ -193,6 +193,18 @@ function filtrarPacientes() {
     aplicarFiltros();
 }
 
+/* =========================================================
+   RETRADUCCIÓN AL CAMBIAR IDIOMA SIN RECARGAR
+========================================================= */
+function retraducirContenidoDinamico() {
+    poblarFiltros();
+    aplicarFiltros();
+    const params = new URLSearchParams(window.location.search);
+    const modo = params.get("mode");
+    const titulo = document.getElementById("tituloPagina");
+    if (titulo) titulo.innerText = modo === "nuevo" ? t("gestion_pacientes") : t("listado_pacientes");
+}
+
 /* ========================================================= */
 
 /* =========================================================
