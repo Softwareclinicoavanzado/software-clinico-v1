@@ -411,6 +411,23 @@ async function abrirCalendario() {
     renderCalendario();
 }
 
+/* =========================================================
+   RETRADUCCIÓN AL CAMBIAR IDIOMA SIN RECARGAR
+========================================================= */
+function retraducirContenidoDinamico() {
+    if (seccionCal && seccionCal.style.display === "block") {
+        renderCalendario();
+        if (titulo) titulo.innerText = t("calendario_titulo");
+    } else if (seccionForm && seccionForm.style.display === "block") {
+        if (titulo) titulo.innerText = editandoCitaId ? t("editar_cita_titulo") : t("titulo_agendar_cita");
+        const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
+        if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
+    } else {
+        render();
+        if (titulo) titulo.innerText = t("titulo_ver_agenda");
+    }
+}
+
 /* ========================================================= */
 
 async function agregarCita() {
