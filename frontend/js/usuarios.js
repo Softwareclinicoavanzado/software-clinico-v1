@@ -239,6 +239,13 @@ async function eliminarUsuarioPermanente(usuario_id) {
 
 function volver() { window.location.href = "dashboard.html"; }
 
+/* =========================================================
+   RETRADUCCIÓN AL CAMBIAR IDIOMA SIN RECARGAR
+========================================================= */
+function retraducirContenidoDinamico() {
+    cargarUsuarios();
+}
+
 (async () => {
     await obtenerMiID();
     await cargarUsuarios();
