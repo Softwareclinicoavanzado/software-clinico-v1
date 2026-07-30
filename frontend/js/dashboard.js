@@ -51,6 +51,17 @@ async function actualizarEstadisticas(clinicaID) {
         }
     }
 }
+
+function retraducirContenidoDinamico() {
+    const clinicaElem = document.getElementById("clinica");
+    const usuarioElem = document.getElementById("usuarioInfo");
+    const usuario = localStorage.getItem("usuario");
+    const clinicaNombre = localStorage.getItem("clinicaNombre");
+    const rol = localStorage.getItem("rol") || "";
+    if (clinicaElem) clinicaElem.innerText = clinicaNombre ? `${t("bienvenido_a")} ${clinicaNombre}` : "ClinicOS";
+    if (usuarioElem) usuarioElem.innerText = `${usuario || ""} · ${t("rol_prefix")}: ${rol.toUpperCase()}`;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const clinicaID = localStorage.getItem("clinicaID");
     const rol = localStorage.getItem("rol");
@@ -58,12 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.location.replace("index.html");
         return;
     }
-    const clinicaElem = document.getElementById("clinica");
-    const usuarioElem = document.getElementById("usuarioInfo");
-    const usuario = localStorage.getItem("usuario");
-    const clinicaNombre = localStorage.getItem("clinicaNombre");
-    if(clinicaElem) clinicaElem.innerText = clinicaNombre ? `${t("bienvenido_a")} ${clinicaNombre}` : "ClinicOS";
-    if(usuarioElem) usuarioElem.innerText = `${usuario || ""} · ${t("rol_prefix")}: ${rol.toUpperCase()}`;
+    retraducirContenidoDinamico();
     if (rol === "admin") {
         const cardUsuarios = document.getElementById("cardUsuarios");
         if (cardUsuarios) cardUsuarios.style.display = "flex";
