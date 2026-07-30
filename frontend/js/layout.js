@@ -23,6 +23,7 @@ function seleccionarIdioma(lang) {
     localStorage.setItem("lang", lang);
     if (typeof changeLanguage === "function") changeLanguage(lang);
     actualizarBotonIdioma();
+    if (typeof retraducirContenidoDinamico === "function") retraducirContenidoDinamico();
     toggleLangDropdown();
 }
 function actualizarBotonIdioma() {
