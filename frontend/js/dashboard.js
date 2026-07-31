@@ -72,7 +72,9 @@ document.addEventListener("DOMContentLoaded", () => {
     retraducirContenidoDinamico();
     if (rol === "admin") {
         const cardUsuarios = document.getElementById("cardUsuarios");
+        const cardAuditoria = document.getElementById("cardAuditoria");
         if (cardUsuarios) cardUsuarios.style.display = "flex";
+        if (cardAuditoria) cardAuditoria.style.display = "flex";
     }
     actualizarEstadisticas(clinicaID);
 });
