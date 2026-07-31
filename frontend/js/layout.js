@@ -71,14 +71,16 @@ window.logout = function() {
 };
 
 /* =========================
-   Mostrar/ocultar "Gestionar Usuarios" en el sidebar según el rol
-   (corre en TODAS las páginas, no solo en el dashboard)
+   Mostrar/ocultar "Gestionar Usuarios" y "Auditoría" en el sidebar
+   según el rol (corre en TODAS las páginas, no solo en el dashboard)
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
     const rol = localStorage.getItem("rol");
     const liUsuarios = document.getElementById("liUsuarios");
-    if (rol === "admin" && liUsuarios) {
-        liUsuarios.style.display = "block";
+    const liAuditoria = document.getElementById("liAuditoria");
+    if (rol === "admin") {
+        if (liUsuarios) liUsuarios.style.display = "block";
+        if (liAuditoria) liAuditoria.style.display = "block";
     }
 });
 
