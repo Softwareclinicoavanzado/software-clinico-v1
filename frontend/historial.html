@@ -64,6 +64,12 @@
             <span data-i18n="gestionar_usuarios_link">Gestionar Usuarios</span>
           </button>
         </li>
+        <li id="liAuditoria" style="display:none;">
+          <button class="sidebar-link" type="button" onclick="window.location.href='auditoria.html'" data-nav="auditoria">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span data-i18n="auditoria_link">Auditoría</span>
+          </button>
+        </li>
       </ul>
 
       <div class="sidebar-divider"></div>
@@ -149,6 +155,7 @@
   <script src="./js/layout.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="./js/pdf.js"></script>
+  <script src="./js/auditoria.js"></script>
   <script src="./js/historial.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', () => {
