@@ -377,6 +377,9 @@ async function eliminarCitaDesdeCalendario(id) {
         alert("No se pudo eliminar la cita.");
         return;
     }
+    if (typeof registrarAuditoria === "function") {
+        registrarAuditoria("eliminar", "cita", "Cita cancelada desde el calendario");
+    }
     await cargarCitasDelMes();
     renderCalendario();
 }
@@ -440,6 +443,10 @@ async function agregarCita() {
         return alert("Completa todos los campos para agendar.");
     }
 
+    const nombrePacienteSel = selectPaciente.options[selectPaciente.selectedIndex]
+        ? selectPaciente.options[selectPaciente.selectedIndex].text
+        : "";
+
     const datosCita = {
         paciente_id: Number(paciente_id),
         fecha: fecha,
@@ -457,6 +464,10 @@ async function agregarCita() {
 
             if (error) throw error;
 
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("editar", "cita", `${nombrePacienteSel} — ${fecha} ${hora}`);
+            }
+
             alert("✅ Cita actualizada con éxito.");
             editandoCitaId = null;
         } else {
@@ -466,6 +477,10 @@ async function agregarCita() {
                 .insert([datosCita]);
 
             if (error) throw error;
+
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("crear", "cita", `${nombrePacienteSel} — ${fecha} ${hora}`);
+            }
 
             alert("✅ Cita agendada con éxito en la nube.");
         }
@@ -502,6 +517,9 @@ async function eliminarCita(id) {
     if (error) {
         alert("No se pudo eliminar la cita.");
     } else {
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("eliminar", "cita", "Cita cancelada");
+        }
         render();
     }
 }
