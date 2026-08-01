@@ -155,6 +155,10 @@ async function agregarNota() {
 
             if (error) throw error;
 
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("editar", "nota_medica", `${paciente ? paciente.nombre : ""} — ${tipoNotaInput.value}`);
+            }
+
             alert("✅ Nota actualizada correctamente.");
             editandoNotaId = null;
             window.location.href = "historial.html?mode=modificar";
@@ -172,6 +176,10 @@ async function agregarNota() {
                 .insert([nuevaNota]);
 
             if (error) throw error;
+
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("crear", "nota_medica", `${paciente ? paciente.nombre : ""} — ${tipoNotaInput.value}`);
+            }
 
             alert("✅ Nota guardada en la nube correctamente.");
             notaInput.value = "";
@@ -193,6 +201,11 @@ async function eliminarNota(id, index) {
             .eq('id', id);
 
         if (error) throw error;
+
+        if (typeof registrarAuditoria === "function") {
+            const notaEliminada = historial[index];
+            registrarAuditoria("eliminar", "nota_medica", `${paciente ? paciente.nombre : ""} — ${notaEliminada ? notaEliminada.tipo : ""}`);
+        }
 
         historial.splice(index, 1);
         render();
