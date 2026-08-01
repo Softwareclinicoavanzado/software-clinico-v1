@@ -522,6 +522,9 @@ async function agregarPaciente() {
                 .update(datosPaciente)
                 .eq('id', editandoID);
             if (error) throw error;
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("editar", "paciente", nombre);
+            }
             alert("¡Perfil actualizado con éxito!");
             editandoID = null;
         } else {
@@ -529,6 +532,9 @@ async function agregarPaciente() {
                 .from('pacientes')
                 .insert([datosPaciente]);
             if (error) throw error;
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("crear", "paciente", nombre);
+            }
             alert("¡Paciente registrado con éxito!");
         }
         Object.values(inputs).forEach(input => { if(input) input.value = ""; });
@@ -549,6 +555,9 @@ async function eliminarPaciente(id) {
                 .delete()
                 .eq('id', id);
             if (error) throw error;
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("eliminar", "paciente", p.nombre);
+            }
             cargarDatos();
         } catch (err) {
             alert("Error al eliminar: " + err.message);
