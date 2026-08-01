@@ -174,6 +174,10 @@ async function crearUsuario() {
         if (error) throw new Error(await extraerError(error));
         if (data?.error) throw new Error(data.error);
 
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("crear", "usuario", `${nombre} (${etiquetaRol(rol)})`);
+        }
+
         alert("✅ Usuario creado con éxito.");
         document.getElementById("nombre").value = "";
         document.getElementById("email").value = "";
@@ -197,6 +201,12 @@ async function cambiarEstado(usuario_id, accion) {
         });
         if (error) throw new Error(await extraerError(error));
         if (data?.error) throw new Error(data.error);
+
+        if (typeof registrarAuditoria === "function") {
+            const u = usuariosCache.find(x => x.id === usuario_id);
+            registrarAuditoria(accion, "usuario", u ? u.nombre : usuario_id);
+        }
+
         await cargarUsuarios();
     } catch (err) {
         console.error("Error al cambiar estado:", err);
@@ -215,6 +225,12 @@ async function resetearPassword(usuario_id) {
         });
         if (error) throw new Error(await extraerError(error));
         if (data?.error) throw new Error(data.error);
+
+        if (typeof registrarAuditoria === "function") {
+            const u = usuariosCache.find(x => x.id === usuario_id);
+            registrarAuditoria("resetear_clave", "usuario", u ? u.nombre : usuario_id);
+        }
+
         alert("✅ Contraseña actualizada. Comunícasela al usuario de forma segura.");
     } catch (err) {
         console.error("Error al resetear contraseña:", err);
@@ -225,11 +241,17 @@ async function resetearPassword(usuario_id) {
 async function eliminarUsuarioPermanente(usuario_id) {
     if (!confirm("⚠️ ¿ELIMINAR esta cuenta DEFINITIVAMENTE? Esta acción no se puede deshacer.")) return;
     try {
+        const u = usuariosCache.find(x => x.id === usuario_id);
         const { data, error } = await supabaseClient.functions.invoke("gestionar-usuario", {
             body: { accion: "eliminar", usuario_id, clinica_id: clinicaID }
         });
         if (error) throw new Error(await extraerError(error));
         if (data?.error) throw new Error(data.error);
+
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("eliminar", "usuario", u ? u.nombre : usuario_id);
+        }
+
         await cargarUsuarios();
     } catch (err) {
         console.error("Error al eliminar usuario:", err);
