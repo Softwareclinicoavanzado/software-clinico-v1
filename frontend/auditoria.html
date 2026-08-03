@@ -5,6 +5,8 @@
   <title>ClinicOS | Auditoría</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./css/styles.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
@@ -144,6 +146,7 @@
                 <option value="cita" data-i18n="auditoria_entidad_cita">Citas</option>
                 <option value="nota_medica" data-i18n="auditoria_entidad_nota">Notas Médicas</option>
                 <option value="usuario" data-i18n="auditoria_entidad_usuario">Usuarios</option>
+                <option value="auditoria" data-i18n="auditoria_entidad_auditoria">Auditoría</option>
               </select>
             </div>
             <div class="filter-field">
@@ -154,6 +157,17 @@
           <button type="button" class="filter-clear-btn" onclick="limpiarFiltrosAuditoria()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
             <span data-i18n="filtro_limpiar">Limpiar Filtros</span>
+          </button>
+        </div>
+
+        <div class="excel-toolbar">
+          <button type="button" class="excel-btn" onclick="exportarAuditoriaExcel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M8 13h8M8 17h8"/></svg>
+            <span data-i18n="auditoria_exportar">Exportar Auditoría</span>
+          </button>
+          <button type="button" class="excel-btn" style="background: linear-gradient(180deg, #ef4444, #b91c1c); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);" onclick="depurarAuditoriaAntigua()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6h14Z"/></svg>
+            <span data-i18n="auditoria_depurar">Depurar Registros (+12 meses)</span>
           </button>
         </div>
 
