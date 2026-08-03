@@ -59,7 +59,8 @@ function etiquetaEntidad(entidad) {
         paciente: "auditoria_entidad_paciente",
         cita: "auditoria_entidad_cita",
         nota_medica: "auditoria_entidad_nota",
-        usuario: "auditoria_entidad_usuario"
+        usuario: "auditoria_entidad_usuario",
+        auditoria: "auditoria_entidad_auditoria"
     };
     const clave = mapa[entidad];
     return clave ? t(clave) : entidad;
@@ -216,6 +217,95 @@ function renderAuditoria(data) {
         `;
         lista.appendChild(li);
     });
+}
+
+/* =========================================================
+   EXPORTAR AUDITORÍA A EXCEL
+========================================================= */
+function exportarAuditoriaExcel() {
+    const datos = registrosAuditoria.filter(r => {
+        const texto = (document.getElementById("busquedaAuditoria").value || "").toLowerCase();
+        const accion = document.getElementById("filtroAccion") ? document.getElementById("filtroAccion").value : "";
+        const entidad = document.getElementById("filtroEntidad") ? document.getElementById("filtroEntidad").value : "";
+        const usuario = document.getElementById("filtroUsuarioAuditoria") ? document.getElementById("filtroUsuarioAuditoria").value : "";
+        const coincideTexto = !texto || (r.usuario_nombre && r.usuario_nombre.toLowerCase().includes(texto)) || (r.detalle && r.detalle.toLowerCase().includes(texto));
+        if (!coincideTexto) return false;
+        if (accion && r.accion !== accion) return false;
+        if (entidad && r.entidad !== entidad) return false;
+        if (usuario && r.usuario_nombre !== usuario) return false;
+        return true;
+    });
+
+    if (!datos.length) {
+        alert(t("auditoria_sin_registros") || "No hay registros de auditoría");
+        return;
+    }
+
+    const filas = datos.map(r => ({
+        [t("auditoria_filtro_usuario") || "Usuario"]: r.usuario_nombre || "",
+        [t("info_correo") || "Correo"]: r.usuario_email || "",
+        [t("auditoria_filtro_accion") || "Acción"]: etiquetaAccion(r.accion),
+        [t("auditoria_filtro_entidad") || "Sección"]: etiquetaEntidad(r.entidad),
+        "Detalle": r.detalle || "",
+        "Fecha": formatearFechaHora(r.creado)
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(filas);
+    ws['!cols'] = [{ wch: 22 }, { wch: 26 }, { wch: 14 }, { wch: 16 }, { wch: 40 }, { wch: 20 }];
+    ws['!freeze'] = { xSplit: 0, ySplit: 1 };
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, (t("auditoria_titulo") || "Auditoria").substring(0, 31));
+
+    const clinicaNombre = (localStorage.getItem("clinicaNombre") || "ClinicOS")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]+/g, "_");
+    const hoy = new Date();
+    const fechaArchivo = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
+
+    XLSX.writeFile(wb, `${clinicaNombre}_Auditoria_${fechaArchivo}.xlsx`);
+}
+
+/* =========================================================
+   DEPURAR REGISTROS ANTIGUOS (más de 12 meses)
+   La propia depuración queda registrada — nunca borra todo sin rastro
+========================================================= */
+async function depurarAuditoriaAntigua() {
+    const fechaLimite = new Date();
+    fechaLimite.setMonth(fechaLimite.getMonth() - 12);
+    const fechaLimiteISO = fechaLimite.toISOString();
+    const fechaLimiteLegible = formatearFechaHora(fechaLimiteISO);
+
+    const antiguos = registrosAuditoria.filter(r => new Date(r.creado) < fechaLimite);
+
+    if (antiguos.length === 0) {
+        alert(t("auditoria_sin_antiguos") || "No hay registros de más de 12 meses para depurar.");
+        return;
+    }
+
+    const confirmado = confirm(
+        `⚠️ ${t("auditoria_confirmar_depurar") || "Esto eliminará permanentemente"} ${antiguos.length} ${t("auditoria_registros_anteriores") || "registros anteriores a"} ${fechaLimiteLegible}.\n\n${t("auditoria_recomendacion_exportar") || "Recomendamos exportar antes de continuar."}\n\n${t("auditoria_continuar") || "¿Deseas continuar?"}`
+    );
+    if (!confirmado) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('auditoria')
+            .delete()
+            .eq('clinica_id', clinicaID)
+            .lt('creado', fechaLimiteISO);
+
+        if (error) throw error;
+
+        if (typeof registrarAuditoria === "function") {
+            await registrarAuditoria("eliminar", "auditoria", `Depuración: ${antiguos.length} registros anteriores a ${fechaLimiteLegible}`);
+        }
+
+        alert(`✅ ${antiguos.length} ${t("auditoria_registros_eliminados") || "registros eliminados."}`);
+        cargarAuditoria();
+    } catch (e) {
+        console.error("Error al depurar auditoría:", e);
+        alert("Error al depurar: " + e.message);
+    }
 }
 
 /* =========================================================
