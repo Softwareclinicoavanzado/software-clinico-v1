@@ -14,6 +14,7 @@ const inputs = {
     dpi: document.getElementById("dpi"),
     edad: document.getElementById("edad"),
     telefono: document.getElementById("telefono"),
+    email: document.getElementById("email"),
     fechaNacimiento: document.getElementById("fechaNacimiento"),
     sexo: document.getElementById("sexo"),
     contactoEmergencia: document.getElementById("contactoEmergencia"),
@@ -230,6 +231,7 @@ function encabezadosExcel() {
         edad: t("edad_label") || "Edad",
         sexo: t("excel_col_sexo") || "Sexo",
         telefono: t("telefono_label") || "Teléfono",
+        email: t("email_label") || "Correo electrónico",
         fechaNacimiento: (t("fecha_nacimiento") || "Fecha de Nacimiento").replace(":", ""),
         contacto: t("contacto_emergencia_label") || "Contacto de Emergencia",
         seguro: t("seguro_nombre") || "Seguro",
@@ -247,6 +249,7 @@ function construirFilaPaciente(p) {
         [h.edad]: p.edad || "",
         [h.sexo]: traducirSexo(p.sexo) || "",
         [h.telefono]: p.telefono || "",
+        [h.email]: p.email || "",
         [h.fechaNacimiento]: p.fecha_nacimiento || "",
         [h.contacto]: p.contacto_emergencia || "",
         [h.seguro]: p.aseguradora || (t("tag_particular") || "Particular"),
@@ -262,7 +265,7 @@ function generarLibroExcel(lista, tituloHoja) {
 
     ws['!cols'] = [
         { wch: 26 }, { wch: 16 }, { wch: 8 }, { wch: 10 },
-        { wch: 15 }, { wch: 16 }, { wch: 24 }, { wch: 18 },
+        { wch: 15 }, { wch: 24 }, { wch: 16 }, { wch: 24 }, { wch: 18 },
         { wch: 16 }, { wch: 20 }, { wch: 16 }
     ];
     ws['!freeze'] = { xSplit: 0, ySplit: 1 };
@@ -305,6 +308,7 @@ function exportarPacienteIndividualExcel(id) {
         [h.edad, p.edad || ""],
         [h.sexo, traducirSexo(p.sexo) || ""],
         [h.telefono, p.telefono || ""],
+        [h.email, p.email || ""],
         [h.fechaNacimiento, p.fecha_nacimiento || ""],
         [h.contacto, p.contacto_emergencia || ""],
         [h.seguro, p.aseguradora || (t("tag_particular") || "Particular")],
@@ -484,6 +488,7 @@ function editarPaciente(id) {
     if (inputs.dpi) inputs.dpi.value = p.dpi || "";
     if (inputs.edad) inputs.edad.value = p.edad || "";
     if (inputs.telefono) inputs.telefono.value = p.telefono || "";
+    if (inputs.email) inputs.email.value = p.email || "";
     if (inputs.fechaNacimiento) inputs.fechaNacimiento.value = p.fecha_nacimiento || "";
     if (inputs.sexo) inputs.sexo.value = p.sexo || "";
     if (inputs.contactoEmergencia) inputs.contactoEmergencia.value = p.contacto_emergencia || "";
@@ -506,6 +511,7 @@ async function agregarPaciente() {
         dpi: inputs.dpi.value.trim(),
         edad: inputs.edad.value ? parseInt(inputs.edad.value) : null,
         telefono: inputs.telefono.value.trim(),
+        email: inputs.email.value.trim(),
         fecha_nacimiento: inputs.fechaNacimiento.value || null,
         sexo: inputs.sexo.value,
         contacto_emergencia: inputs.contactoEmergencia.value.trim(),
