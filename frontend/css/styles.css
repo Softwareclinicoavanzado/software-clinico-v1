@@ -1530,3 +1530,71 @@ button.danger:hover {
   .search-filter-row input { flex: 1 1 100%; }
   .filter-toggle-btn { flex: 1 1 100%; justify-content: center; }
 }
+/* =========================
+   CONFIGURACIÓN DE CORREO
+========================= */
+.email-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  font-weight: 600;
+  margin-bottom: 18px;
+}
+.email-status-banner svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+.email-status-success {
+  background: rgba(34, 197, 94, 0.1);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.email-status-error {
+  background: rgba(248, 113, 113, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(248, 113, 113, 0.3);
+}
+
+.pw-toggle-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: none;
+  padding: 0;
+}
+.pw-toggle-btn svg { width: 17px; height: 17px; }
+.pw-toggle-btn:hover { color: var(--text-secondary); transform: translateY(-50%); box-shadow: none; }
+.pw-toggle-btn.active { color: var(--accent); }
+
+.instructions-card {
+  background: var(--bg-elevated);
+  border-color: var(--border-soft);
+}
+
+.instructions-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.instructions-list li {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.instructions-list li strong {
+  color: var(--text-primary);
+}
