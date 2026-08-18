@@ -1598,3 +1598,77 @@ button.danger:hover {
 .instructions-list li strong {
   color: var(--text-primary);
 }
+/* =========================
+   SELECTOR DE HORA PREMIUM (chips)
+========================= */
+.time-picker-wrapper {
+  margin-bottom: 15px;
+}
+
+.time-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+
+.time-chip {
+  padding: 10px 6px;
+  text-align: center;
+  border-radius: 10px;
+  background: var(--bg-elevated-2);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.time-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+.time-chip.selected {
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  border-color: transparent;
+  color: white;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+}
+.time-chip.periodo-label {
+  grid-column: 1 / -1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: default;
+  padding: 8px 2px 2px;
+}
+.time-chip.periodo-label:hover { transform: none; }
+
+.time-picker-custom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.time-picker-custom input {
+  margin: 0;
+  width: auto;
+  flex: 0 0 130px;
+}
