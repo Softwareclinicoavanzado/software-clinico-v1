@@ -64,6 +64,66 @@ function fechaLocalISO(dateObj) {
     return `${y}-${m}-${d}`;
 }
 
+/* =========================================================
+   SELECTOR DE HORA PREMIUM (chips)
+========================================================= */
+function generarChipsHora() {
+    const grid = document.getElementById("timePickerGrid");
+    if (!grid) return;
+
+    const periodos = [
+        { etiqueta: t("periodo_manana") || "Mañana", inicio: 6, fin: 12 },
+        { etiqueta: t("periodo_tarde") || "Tarde", inicio: 12, fin: 18 },
+        { etiqueta: t("periodo_noche") || "Noche", inicio: 18, fin: 22 }
+    ];
+
+    let html = "";
+    periodos.forEach(periodo => {
+        html += `<div class="time-chip periodo-label">${periodo.etiqueta}</div>`;
+        for (let h = periodo.inicio; h < periodo.fin; h++) {
+            [0, 30].forEach(min => {
+                const horaStr = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+                html += `<div class="time-chip" data-hora="${horaStr}" onclick="seleccionarHoraChip('${horaStr}')">${formatearHora(horaStr)}</div>`;
+            });
+        }
+    });
+
+    grid.innerHTML = html;
+}
+
+function seleccionarHoraChip(horaStr) {
+    document.getElementById("hora").value = horaStr;
+    const customInput = document.getElementById("horaCustom");
+    if (customInput) customInput.value = "";
+    document.querySelectorAll(".time-chip[data-hora]").forEach(chip => {
+        chip.classList.toggle("selected", chip.dataset.hora === horaStr);
+    });
+}
+
+function seleccionarHoraCustom() {
+    const customInput = document.getElementById("horaCustom");
+    if (!customInput || !customInput.value) return;
+    document.getElementById("hora").value = customInput.value;
+    document.querySelectorAll(".time-chip[data-hora]").forEach(chip => {
+        chip.classList.toggle("selected", chip.dataset.hora === customInput.value);
+    });
+}
+
+function marcarHoraSeleccionada(horaStr) {
+    if (!horaStr) return;
+    document.getElementById("hora").value = horaStr;
+    const chip = document.querySelector(`.time-chip[data-hora="${horaStr}"]`);
+    if (chip) {
+        document.querySelectorAll(".time-chip[data-hora]").forEach(c => c.classList.remove("selected"));
+        chip.classList.add("selected");
+    } else {
+        const customInput = document.getElementById("horaCustom");
+        if (customInput) customInput.value = horaStr;
+    }
+}
+
+/* ========================================================= */
+
 async function cargarPacientes() {
     const { data: pacientes, error } = await supabaseClient
         .from('pacientes')
@@ -425,6 +485,7 @@ function retraducirContenidoDinamico() {
         if (titulo) titulo.innerText = editandoCitaId ? t("editar_cita_titulo") : t("titulo_agendar_cita");
         const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
         if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
+        generarChipsHora();
     } else {
         render();
         if (titulo) titulo.innerText = t("titulo_ver_agenda");
@@ -489,6 +550,8 @@ async function agregarCita() {
         inputHora.value = "";
         selectPaciente.value = "";
         if (inputMotivo) inputMotivo.value = "";
+        const customInput = document.getElementById("horaCustom");
+        if (customInput) customInput.value = "";
         cambiarVista('ver');
 
     } catch (error) {
@@ -501,9 +564,9 @@ function editarCita(id, pacienteId, fecha, hora, motivo) {
     editandoCitaId = id;
     selectPaciente.value = pacienteId;
     inputFecha.value = fecha;
-    inputHora.value = hora;
     if (inputMotivo) inputMotivo.value = motivo || "";
     cambiarVista('nuevo');
+    setTimeout(() => marcarHoraSeleccionada(hora), 50);
 }
 
 async function eliminarCita(id) {
@@ -541,6 +604,13 @@ function cambiarVista(modo) {
 
         const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
         if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
+
+        generarChipsHora();
+        if (!editandoCitaId) {
+            document.getElementById("hora").value = "";
+            const customInput = document.getElementById("horaCustom");
+            if (customInput) customInput.value = "";
+        }
     } else {
         editandoCitaId = null;
         if(seccionForm) seccionForm.style.display = "none";
