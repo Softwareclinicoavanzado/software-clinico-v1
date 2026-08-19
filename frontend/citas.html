@@ -133,8 +133,17 @@
           </select>
           <label><strong data-i18n="fecha_label">Fecha</strong></label>
           <input type="date" id="fecha" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
+
           <label><strong data-i18n="hora_label">Hora</strong></label>
-          <input type="time" id="hora" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
+          <div class="time-picker-wrapper">
+            <div class="time-picker-grid" id="timePickerGrid"></div>
+            <div class="time-picker-custom">
+              <span data-i18n="hora_personalizada">¿Otra hora?</span>
+              <input type="time" id="horaCustom" onchange="seleccionarHoraCustom()">
+            </div>
+            <input type="hidden" id="hora">
+          </div>
+
           <label><strong data-i18n="motivo_label">Razón de la cita</strong></label>
           <textarea id="motivo" data-i18n-placeholder="motivo_placeholder" placeholder="Ej. Consulta de rutina, dolor de cabeza, seguimiento..." style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333; height: 90px; resize: vertical;"></textarea>
           <button type="button" onclick="agregarCita()" style="background-color: #2ecc71; width: 100%; margin-top: 10px;" data-i18n="confirmar_agendar">Confirmar y Agendar</button>
