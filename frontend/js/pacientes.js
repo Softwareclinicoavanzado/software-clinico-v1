@@ -71,6 +71,16 @@ function traducirSexo(valor) {
     return clave ? t(clave) : valor;
 }
 
+/* =========================
+   Validación de formato de email
+   (el email es opcional: si está vacío no se marca error;
+   si tiene contenido, debe tener forma de correo válido)
+========================= */
+function emailTieneFormatoValido(email) {
+    if (!email) return true;
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
 /* =========================================================
    FILTROS AVANZADOS
 ========================================================= */
@@ -506,12 +516,20 @@ function editarPaciente(id) {
 async function agregarPaciente() {
     const nombre = inputs.nombre.value.trim();
     if (!nombre) return alert("El nombre es obligatorio");
+
+    const emailValor = inputs.email.value.trim();
+    if (!emailTieneFormatoValido(emailValor)) {
+        alert("El correo electrónico no tiene un formato válido (ej: nombre@dominio.com)");
+        inputs.email.focus();
+        return;
+    }
+
     const datosPaciente = {
         nombre: nombre,
         dpi: inputs.dpi.value.trim(),
         edad: inputs.edad.value ? parseInt(inputs.edad.value) : null,
         telefono: inputs.telefono.value.trim(),
-        email: inputs.email.value.trim(),
+        email: emailValor,
         fecha_nacimiento: inputs.fechaNacimiento.value || null,
         sexo: inputs.sexo.value,
         contacto_emergencia: inputs.contactoEmergencia.value.trim(),
