@@ -467,6 +467,7 @@ function render(data = pacientes) {
             </div>
 
             <div class="patient-actions">
+                ${rol !== "recepcion" ? `
                 <button type="button" class="btn-action btn-action-primary" onclick="verHistorial(${p.id})">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8 12 14.7l-3.5-3.5L3 16.5"/></svg>
                     ${t("modificar_historial")}
@@ -474,7 +475,7 @@ function render(data = pacientes) {
                 <button type="button" class="btn-action" onclick="agregarNotaDirecta(${p.id})">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                     ${t("nueva_nota_medica")}
-                </button>
+                </button>` : ""}
                 <button type="button" class="btn-action" onclick="editarPaciente(${p.id})">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                     ${t("editar_perfil")}
