@@ -65,6 +65,16 @@ function fechaLocalISO(dateObj) {
 }
 
 /* =========================================================
+   Helper: convierte un texto a un literal JS seguro para
+   insertar dentro de un atributo onclick="..." (que usa
+   comillas dobles). Evita que comillas dentro del texto
+   (ej. el motivo de la cita) rompan el HTML del botón.
+========================================================= */
+function jsStringParaOnclick(str) {
+    return JSON.stringify(str || "").replace(/"/g, "&quot;");
+}
+
+/* =========================================================
    SELECTOR DE HORA PREMIUM (chips)
 ========================================================= */
 function generarChipsHora() {
@@ -235,7 +245,7 @@ async function render() {
             ${c.motivo ? `<p class="appt-motivo">${c.motivo}</p>` : ""}
 
             <div class="patient-actions">
-                <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${JSON.stringify(c.motivo || "")})">
+                <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${jsStringParaOnclick(c.motivo)})">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                     ${t("editar_cita_btn") || "Editar"}
                 </button>
@@ -406,7 +416,7 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                 </div>
                 ${c.motivo ? `<p class="appt-motivo">${c.motivo}</p>` : ""}
                 <div class="patient-actions">
-                    <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${JSON.stringify(c.motivo || "")})">
+                    <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${jsStringParaOnclick(c.motivo)})">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         ${t("editar_cita_btn") || "Editar"}
                     </button>
