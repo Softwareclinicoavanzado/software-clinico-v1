@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClinicOS | Confirmación de cita</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .card {
+    max-width: 420px;
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    padding: 36px 28px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .icono { font-size: 48px; margin-bottom: 12px; }
+  h1 { font-size: 20px; color: #1e293b; margin: 0 0 12px; }
+  p { font-size: 14px; color: #64748b; margin: 0; line-height: 1.5; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: girar 0.8s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="spinner"></div>
+    <h1>Procesando...</h1>
+    <p>Un momento por favor.</p>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://klaygjvawybfksmahbhd.supabase.co";
+
+    function mostrar(icono, titulo, mensaje) {
+      document.getElementById("card").innerHTML = `
+        <div class="icono">${icono}</div>
+        <h1>${titulo}</h1>
+        <p>${mensaje}</p>
+      `;
+    }
+
+    async function procesar() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      const accion = params.get("accion");
+      const token = params.get("token");
+
+      if (!id || !accion || !token) {
+        mostrar("⚠️", "Enlace inválido", "Este enlace no es válido o está incompleto.");
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/functions/v1/confirmar-cita?id=${encodeURIComponent(id)}&accion=${encodeURIComponent(accion)}&token=${encodeURIComponent(token)}`
+        );
+        const data = await res.json();
+
+        const icono = data.exito ? "✅" : "⚠️";
+        mostrar(icono, data.titulo || "Aviso", data.mensaje || "");
+      } catch (e) {
+        mostrar("⚠️", "Error de conexión", "No pudimos comunicarnos con el servidor. Verifica tu conexión a internet e intenta de nuevo, o contacta directamente a la clínica.");
+      }
+    }
+
+    procesar();
+  </script>
+</body>
+</html>
