@@ -160,7 +160,7 @@ async function archivarCitasVencidas() {
             .from('citas')
             .select('id, fecha, hora')
             .eq('clinica_id', clinicaID)
-            .eq('estado', 'programada');
+            .in('estado', ['programada', 'confirmada']);
 
         if (error || !pendientes) return;
 
@@ -190,7 +190,7 @@ async function render() {
         .from('citas')
         .select('id, fecha, hora, paciente_id, estado, motivo')
         .eq('clinica_id', clinicaID)
-        .eq('estado', 'programada')
+        .in('estado', ['programada', 'confirmada'])
         .order('fecha', { ascending: true })
         .order('hora', { ascending: true });
 
@@ -215,6 +215,7 @@ async function render() {
             : null;
         const nombrePaciente = paciente ? paciente.nombre : "Paciente no identificado";
         const hoy = esCitaHoy(c.fecha);
+        const confirmada = c.estado === "confirmada";
 
         const div = document.createElement("div");
         div.className = "appt-card";
@@ -226,7 +227,10 @@ async function render() {
                     </div>
                     <div>
                         <div class="patient-name">${nombrePaciente}</div>
-                        ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
+                        <div style="display:flex; gap:6px; margin-top:2px;">
+                            ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
+                            ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">✅ ${t("cita_confirmada_badge") || "Confirmada"}</div>` : ""}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -297,7 +301,7 @@ async function cargarCitasDelMes() {
         .from('citas')
         .select('id, fecha, hora, paciente_id, estado, motivo')
         .eq('clinica_id', clinicaID)
-        .eq('estado', 'programada')
+        .in('estado', ['programada', 'confirmada'])
         .gte('fecha', primerDia)
         .lte('fecha', ultimoDia)
         .order('hora', { ascending: true });
@@ -396,6 +400,7 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
     let html = `<div class="calendar-detalle-header">${formatearFecha(calDiaSeleccionado)}</div>`;
     citasDia.forEach(c => {
         const nombre = calPacientesMap[c.paciente_id] || "?";
+        const confirmada = c.estado === "confirmada";
         html += `
             <div class="appt-card" style="margin-bottom:10px;">
                 <div class="appt-card-top">
@@ -405,6 +410,7 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                         </div>
                         <div>
                             <div class="patient-name">${nombre}</div>
+                            ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">✅ ${t("cita_confirmada_badge") || "Confirmada"}</div>` : ""}
                         </div>
                     </div>
                 </div>
