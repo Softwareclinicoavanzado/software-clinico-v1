@@ -1,126 +1,219 @@
-// ============================================================
-// confirmar-cita | ClinicOS
-// Procesa el clic del paciente en el correo (Confirmar/Cancelar).
-// Responde en JSON con un CÓDIGO (no texto ya traducido) —
-// confirmar.html es quien traduce ese código al idioma elegido.
-// ============================================================
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-const CONFIRM_SECRET = Deno.env.get("CONFIRM_SECRET");
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-async function generarToken(citaId: string, accion: string, secret: string): Promise<string> {
-  const data = new TextEncoder().encode(`${citaId}:${accion}:${secret}`);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").substring(0, 16);
-}
-
-function respuestaJSON(obj: Record<string, unknown>, status: number): Response {
-  return new Response(JSON.stringify(obj), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
-    },
-  });
-}
-
-async function registrarAuditoria(clinicaId: string, detalle: string) {
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/auditoria`, {
-      method: "POST",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY!,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({
-        clinica_id: clinicaId,
-        usuario_id: null,
-        usuario_nombre: "Paciente (vía correo)",
-        usuario_email: null,
-        accion: "respuesta_paciente",
-        entidad: "citas",
-        detalle,
-      }),
-    });
-  } catch (_e) { /* no debe tumbar el flujo */ }
-}
-
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClinicOS | Confirmación de cita</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
   }
-
-  try {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !CONFIRM_SECRET) {
-      return respuestaJSON({ exito: false, codigo: "config" }, 500);
-    }
-
-    const url = new URL(req.url);
-    const id = url.searchParams.get("id");
-    const accion = url.searchParams.get("accion");
-    const token = url.searchParams.get("token");
-
-    if (!id || !accion || !token || !["confirmar", "cancelar"].includes(accion)) {
-      return respuestaJSON({ exito: false, codigo: "invalido" }, 400);
-    }
-
-    const tokenEsperado = await generarToken(id, accion, CONFIRM_SECRET);
-    if (token !== tokenEsperado) {
-      return respuestaJSON({ exito: false, codigo: "invalido" }, 403);
-    }
-
-    const citaRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/citas?id=eq.${id}&select=id,estado,clinica_id,fecha,hora`,
-      { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } }
-    );
-    const citaData = await citaRes.json();
-    const cita = Array.isArray(citaData) && citaData.length > 0 ? citaData[0] : null;
-
-    if (!cita) {
-      return respuestaJSON({ exito: false, codigo: "no_encontrada" }, 404);
-    }
-
-    if (cita.estado === "cancelada" || cita.estado === "completada") {
-      return respuestaJSON({ exito: false, codigo: "ya_inactiva" }, 200);
-    }
-
-    const nuevoEstado = accion === "confirmar" ? "confirmada" : "cancelada";
-
-    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/citas?id=eq.${id}`, {
-      method: "PATCH",
-      headers: {
-        apikey: SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
-        "Content-Type": "application/json",
-        Prefer: "return=minimal",
-      },
-      body: JSON.stringify({ estado: nuevoEstado }),
-    });
-
-    if (!updateRes.ok) {
-      return respuestaJSON({ exito: false, codigo: "error" }, 500);
-    }
-
-    await registrarAuditoria(
-      cita.clinica_id,
-      `Cita ${id} (${cita.fecha} ${cita.hora}) — paciente respondió: ${accion === "confirmar" ? "confirmó asistencia" : "canceló"}`
-    );
-
-    return respuestaJSON(
-      { exito: true, codigo: accion === "confirmar" ? "confirmada" : "cancelada" },
-      200
-    );
-  } catch (err) {
-    return respuestaJSON({ exito: false, codigo: "error" }, 500);
+  .card {
+    max-width: 420px;
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    padding: 28px 28px 32px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
   }
-});
+  .lang-switcher {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .lang-btn {
+    border: 1px solid #e2e8f0;
+    background: white;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    color: #64748b;
+  }
+  .lang-btn.activo {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+    font-weight: bold;
+  }
+  .icono { font-size: 48px; margin-bottom: 12px; }
+  h1 { font-size: 20px; color: #1e293b; margin: 0 0 12px; }
+  p { font-size: 14px; color: #64748b; margin: 0; line-height: 1.5; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: girar 0.8s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="lang-switcher" id="langSwitcher">
+      <button class="lang-btn" data-lang="es" onclick="cambiarIdioma('es')">🇪🇸 ES</button>
+      <button class="lang-btn" data-lang="en" onclick="cambiarIdioma('en')">🇺🇸 EN</button>
+      <button class="lang-btn" data-lang="fr" onclick="cambiarIdioma('fr')">🇫🇷 FR</button>
+    </div>
+    <div id="contenido">
+      <div class="spinner"></div>
+      <h1 id="tituloTexto">Procesando...</h1>
+      <p id="mensajeTexto">Un momento por favor.</p>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://klaygjvawybfksmahbhd.supabase.co";
+
+    const TXT = {
+      es: {
+        procesando_titulo: "Procesando...",
+        procesando_mensaje: "Un momento por favor.",
+        confirmada_titulo: "¡Cita confirmada!",
+        confirmada_mensaje: "Gracias por confirmar tu asistencia. Te esperamos en la fecha y hora programada.",
+        cancelada_titulo: "Cita cancelada",
+        cancelada_mensaje: "Tu cita ha sido cancelada. Si deseas reprogramar, contacta directamente a la clínica.",
+        ya_inactiva_titulo: "Esta cita ya no está activa",
+        ya_inactiva_mensaje: "Esta cita ya fue cancelada o marcada como completada anteriormente.",
+        no_encontrada_titulo: "Cita no encontrada",
+        no_encontrada_mensaje: "No pudimos encontrar esta cita. Puede que ya haya sido modificada.",
+        invalido_titulo: "Enlace inválido",
+        invalido_mensaje: "Este enlace no es válido, está incompleto o ya fue utilizado incorrectamente.",
+        config_titulo: "Error de configuración",
+        config_mensaje: "El sistema no está configurado correctamente. Contacta a la clínica.",
+        error_titulo: "Error inesperado",
+        error_mensaje: "Ocurrió un error. Por favor contacta a la clínica directamente.",
+        conexion_titulo: "Error de conexión",
+        conexion_mensaje: "No pudimos comunicarnos con el servidor. Verifica tu conexión a internet e intenta de nuevo, o contacta directamente a la clínica.",
+      },
+      en: {
+        procesando_titulo: "Processing...",
+        procesando_mensaje: "One moment please.",
+        confirmada_titulo: "Appointment confirmed!",
+        confirmada_mensaje: "Thank you for confirming your attendance. We'll see you at the scheduled date and time.",
+        cancelada_titulo: "Appointment cancelled",
+        cancelada_mensaje: "Your appointment has been cancelled. If you'd like to reschedule, please contact the clinic directly.",
+        ya_inactiva_titulo: "This appointment is no longer active",
+        ya_inactiva_mensaje: "This appointment was already cancelled or marked as completed previously.",
+        no_encontrada_titulo: "Appointment not found",
+        no_encontrada_mensaje: "We couldn't find this appointment. It may have already been modified.",
+        invalido_titulo: "Invalid link",
+        invalido_mensaje: "This link is invalid, incomplete, or was already used incorrectly.",
+        config_titulo: "Configuration error",
+        config_mensaje: "The system isn't configured correctly. Please contact the clinic.",
+        error_titulo: "Unexpected error",
+        error_mensaje: "Something went wrong. Please contact the clinic directly.",
+        conexion_titulo: "Connection error",
+        conexion_mensaje: "We couldn't reach the server. Check your internet connection and try again, or contact the clinic directly.",
+      },
+      fr: {
+        procesando_titulo: "Traitement en cours...",
+        procesando_mensaje: "Un instant s'il vous plaît.",
+        confirmada_titulo: "Rendez-vous confirmé !",
+        confirmada_mensaje: "Merci d'avoir confirmé votre présence. Nous vous attendons à la date et à l'heure prévues.",
+        cancelada_titulo: "Rendez-vous annulé",
+        cancelada_mensaje: "Votre rendez-vous a été annulé. Si vous souhaitez le reprogrammer, veuillez contacter directement la clinique.",
+        ya_inactiva_titulo: "Ce rendez-vous n'est plus actif",
+        ya_inactiva_mensaje: "Ce rendez-vous a déjà été annulé ou marqué comme terminé auparavant.",
+        no_encontrada_titulo: "Rendez-vous introuvable",
+        no_encontrada_mensaje: "Nous n'avons pas pu trouver ce rendez-vous. Il a peut-être déjà été modifié.",
+        invalido_titulo: "Lien invalide",
+        invalido_mensaje: "Ce lien est invalide, incomplet ou a déjà été utilisé de façon incorrecte.",
+        config_titulo: "Erreur de configuration",
+        config_mensaje: "Le système n'est pas configuré correctement. Veuillez contacter la clinique.",
+        error_titulo: "Erreur inattendue",
+        error_mensaje: "Une erreur s'est produite. Veuillez contacter directement la clinique.",
+        conexion_titulo: "Erreur de connexion",
+        conexion_mensaje: "Nous n'avons pas pu contacter le serveur. Vérifiez votre connexion internet et réessayez, ou contactez directement la clinique.",
+      },
+    };
+
+    let idiomaActual = "es";
+    let ultimoEstado = null;
+
+    function idiomaValido(l) {
+      return ["es", "en", "fr"].includes(l) ? l : "es";
+    }
+
+    function marcarBotonActivo() {
+      document.querySelectorAll("#langSwitcher .lang-btn").forEach(btn => {
+        btn.classList.toggle("activo", btn.dataset.lang === idiomaActual);
+      });
+    }
+
+    function pintar() {
+      const tx = TXT[idiomaActual];
+      const contenido = document.getElementById("contenido");
+
+      if (!ultimoEstado) {
+        contenido.innerHTML = `
+          <div class="spinner"></div>
+          <h1>${tx.procesando_titulo}</h1>
+          <p>${tx.procesando_mensaje}</p>
+        `;
+        return;
+      }
+
+      const codigo = ultimoEstado.codigo || "error";
+      const icono = ultimoEstado.exito ? "✅" : "⚠️";
+      const clave = TXT[idiomaActual][`${codigo}_titulo`] ? codigo : "error";
+
+      contenido.innerHTML = `
+        <div class="icono">${icono}</div>
+        <h1>${tx[`${clave}_titulo`]}</h1>
+        <p>${tx[`${clave}_mensaje`]}</p>
+      `;
+    }
+
+    function cambiarIdioma(lang) {
+      idiomaActual = idiomaValido(lang);
+      marcarBotonActivo();
+      pintar();
+    }
+
+    async function procesar() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      const accion = params.get("accion");
+      const token = params.get("token");
+      const langInicial = params.get("lang");
+
+      idiomaActual = idiomaValido(langInicial || "es");
+      marcarBotonActivo();
+      pintar();
+
+      if (!id || !accion || !token) {
+        ultimoEstado = { exito: false, codigo: "invalido" };
+        pintar();
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/functions/v1/confirmar-cita?id=${encodeURIComponent(id)}&accion=${encodeURIComponent(accion)}&token=${encodeURIComponent(token)}`
+        );
+        const data = await res.json();
+        ultimoEstado = { exito: !!data.exito, codigo: data.codigo || "error" };
+        pintar();
+      } catch (e) {
+        ultimoEstado = { exito: false, codigo: "conexion" };
+        pintar();
+      }
+    }
+
+    procesar();
+  </script>
+</body>
+</html>
