@@ -1,87 +1,126 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClinicOS | Confirmación de cita</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #f4f6fa;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    padding: 20px;
-  }
-  .card {
-    max-width: 420px;
-    width: 100%;
-    background: white;
-    border-radius: 16px;
-    padding: 36px 28px;
-    text-align: center;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-  }
-  .icono { font-size: 48px; margin-bottom: 12px; }
-  h1 { font-size: 20px; color: #1e293b; margin: 0 0 12px; }
-  p { font-size: 14px; color: #64748b; margin: 0; line-height: 1.5; }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 3px solid #e2e8f0;
-    border-top-color: #3b82f6;
-    border-radius: 50%;
-    margin: 0 auto 16px;
-    animation: girar 0.8s linear infinite;
-  }
-  @keyframes girar { to { transform: rotate(360deg); } }
-</style>
-</head>
-<body>
-  <div class="card" id="card">
-    <div class="spinner"></div>
-    <h1>Procesando...</h1>
-    <p>Un momento por favor.</p>
-  </div>
+// ============================================================
+// confirmar-cita | ClinicOS
+// Procesa el clic del paciente en el correo (Confirmar/Cancelar).
+// Responde en JSON con un CÓDIGO (no texto ya traducido) —
+// confirmar.html es quien traduce ese código al idioma elegido.
+// ============================================================
 
-  <script>
-    const SUPABASE_URL = "https://klaygjvawybfksmahbhd.supabase.co";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const CONFIRM_SECRET = Deno.env.get("CONFIRM_SECRET");
 
-    function mostrar(icono, titulo, mensaje) {
-      document.getElementById("card").innerHTML = `
-        <div class="icono">${icono}</div>
-        <h1>${titulo}</h1>
-        <p>${mensaje}</p>
-      `;
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+async function generarToken(citaId: string, accion: string, secret: string): Promise<string> {
+  const data = new TextEncoder().encode(`${citaId}:${accion}:${secret}`);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("").substring(0, 16);
+}
+
+function respuestaJSON(obj: Record<string, unknown>, status: number): Response {
+  return new Response(JSON.stringify(obj), {
+    status,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+    },
+  });
+}
+
+async function registrarAuditoria(clinicaId: string, detalle: string) {
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/auditoria`, {
+      method: "POST",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY!,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({
+        clinica_id: clinicaId,
+        usuario_id: null,
+        usuario_nombre: "Paciente (vía correo)",
+        usuario_email: null,
+        accion: "respuesta_paciente",
+        entidad: "citas",
+        detalle,
+      }),
+    });
+  } catch (_e) { /* no debe tumbar el flujo */ }
+}
+
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
+  try {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !CONFIRM_SECRET) {
+      return respuestaJSON({ exito: false, codigo: "config" }, 500);
     }
 
-    async function procesar() {
-      const params = new URLSearchParams(window.location.search);
-      const id = params.get("id");
-      const accion = params.get("accion");
-      const token = params.get("token");
+    const url = new URL(req.url);
+    const id = url.searchParams.get("id");
+    const accion = url.searchParams.get("accion");
+    const token = url.searchParams.get("token");
 
-      if (!id || !accion || !token) {
-        mostrar("⚠️", "Enlace inválido", "Este enlace no es válido o está incompleto.");
-        return;
-      }
-
-      try {
-        const res = await fetch(
-          `${SUPABASE_URL}/functions/v1/confirmar-cita?id=${encodeURIComponent(id)}&accion=${encodeURIComponent(accion)}&token=${encodeURIComponent(token)}`
-        );
-        const data = await res.json();
-
-        const icono = data.exito ? "✅" : "⚠️";
-        mostrar(icono, data.titulo || "Aviso", data.mensaje || "");
-      } catch (e) {
-        mostrar("⚠️", "Error de conexión", "No pudimos comunicarnos con el servidor. Verifica tu conexión a internet e intenta de nuevo, o contacta directamente a la clínica.");
-      }
+    if (!id || !accion || !token || !["confirmar", "cancelar"].includes(accion)) {
+      return respuestaJSON({ exito: false, codigo: "invalido" }, 400);
     }
 
-    procesar();
-  </script>
-</body>
-</html>
+    const tokenEsperado = await generarToken(id, accion, CONFIRM_SECRET);
+    if (token !== tokenEsperado) {
+      return respuestaJSON({ exito: false, codigo: "invalido" }, 403);
+    }
+
+    const citaRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/citas?id=eq.${id}&select=id,estado,clinica_id,fecha,hora`,
+      { headers: { apikey: SUPABASE_SERVICE_ROLE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}` } }
+    );
+    const citaData = await citaRes.json();
+    const cita = Array.isArray(citaData) && citaData.length > 0 ? citaData[0] : null;
+
+    if (!cita) {
+      return respuestaJSON({ exito: false, codigo: "no_encontrada" }, 404);
+    }
+
+    if (cita.estado === "cancelada" || cita.estado === "completada") {
+      return respuestaJSON({ exito: false, codigo: "ya_inactiva" }, 200);
+    }
+
+    const nuevoEstado = accion === "confirmar" ? "confirmada" : "cancelada";
+
+    const updateRes = await fetch(`${SUPABASE_URL}/rest/v1/citas?id=eq.${id}`, {
+      method: "PATCH",
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        "Content-Type": "application/json",
+        Prefer: "return=minimal",
+      },
+      body: JSON.stringify({ estado: nuevoEstado }),
+    });
+
+    if (!updateRes.ok) {
+      return respuestaJSON({ exito: false, codigo: "error" }, 500);
+    }
+
+    await registrarAuditoria(
+      cita.clinica_id,
+      `Cita ${id} (${cita.fecha} ${cita.hora}) — paciente respondió: ${accion === "confirmar" ? "confirmó asistencia" : "canceló"}`
+    );
+
+    return respuestaJSON(
+      { exito: true, codigo: accion === "confirmar" ? "confirmada" : "cancelada" },
+      200
+    );
+  } catch (err) {
+    return respuestaJSON({ exito: false, codigo: "error" }, 500);
+  }
+});
