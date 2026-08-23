@@ -234,8 +234,8 @@ async function render() {
                         <div class="patient-name">${nombrePaciente}</div>
                         <div style="display:flex; gap:6px; margin-top:2px;">
                             ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
-                            ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">✅ ${t("cita_confirmada_badge") || "Confirmada"}</div>` : ""}
-                            ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">❌ ${t("cita_cancelada_badge") || "CANCELADA POR EL PACIENTE"}</div>` : ""}
+                            ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">✅ Confirmada</div>` : ""}
+                            ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">❌ CANCELADA POR EL PACIENTE</div>` : ""}
                         </div>
                     </div>
                 </div>
@@ -262,7 +262,7 @@ async function render() {
                 </button>` : ""}
                 <button type="button" class="btn-action btn-action-danger" onclick="eliminarCita('${c.id}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                    ${cancelada ? (t("eliminar_de_lista_btn") || "Quitar de la lista") : (t("cancelar_cita_btn") || "Cancelar")}
+                    ${cancelada ? "Quitar de la lista" : (t("cancelar_cita_btn") || "Cancelar")}
                 </button>
             </div>
         `;
@@ -367,7 +367,15 @@ function renderCalendario() {
         let chipsHtml = "";
         citasDia.slice(0, maxVisible).forEach(c => {
             const nombre = calPacientesMap[c.paciente_id] || "?";
-            chipsHtml += `<div class="calendar-appt-chip">${formatearHora(c.hora)} · ${nombre.split(" ")[0]}</div>`;
+            const esCancelada = c.estado === "cancelada";
+            const esConfirmada = c.estado === "confirmada";
+            const estiloChip = esCancelada
+                ? ' style="background:rgba(239,68,68,0.25); color:#fca5a5; border:1px solid rgba(239,68,68,0.5);"'
+                : esConfirmada
+                    ? ' style="background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.4);"'
+                    : '';
+            const icono = esCancelada ? "❌ " : esConfirmada ? "✅ " : "";
+            chipsHtml += `<div class="calendar-appt-chip"${estiloChip}>${icono}${formatearHora(c.hora)} · ${nombre.split(" ")[0]}</div>`;
         });
         if (citasDia.length > maxVisible) {
             chipsHtml += `<div class="calendar-more-badge">+${citasDia.length - maxVisible} ${t("calendario_mas") || "más"}</div>`;
@@ -418,8 +426,8 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                         </div>
                         <div>
                             <div class="patient-name">${nombre}</div>
-                            ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">✅ ${t("cita_confirmada_badge") || "Confirmada"}</div>` : ""}
-                            ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">❌ ${t("cita_cancelada_badge") || "CANCELADA POR EL PACIENTE"}</div>` : ""}
+                            ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">✅ Confirmada</div>` : ""}
+                            ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">❌ CANCELADA POR EL PACIENTE</div>` : ""}
                         </div>
                     </div>
                 </div>
@@ -438,7 +446,7 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                     </button>` : ""}
                     <button type="button" class="btn-action btn-action-danger" onclick="eliminarCitaDesdeCalendario('${c.id}')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                        ${cancelada ? (t("eliminar_de_lista_btn") || "Quitar de la lista") : (t("cancelar_cita_btn") || "Cancelar")}
+                        ${cancelada ? "Quitar de la lista" : (t("cancelar_cita_btn") || "Cancelar")}
                     </button>
                 </div>
             </div>
