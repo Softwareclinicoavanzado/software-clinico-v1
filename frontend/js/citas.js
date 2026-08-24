@@ -19,6 +19,10 @@ const titulo = document.getElementById("tituloPagina");
 let citas = [];
 let editandoCitaId = null;
 
+// Citas activas del día seleccionado en el formulario (para detectar choques de horario)
+let citasDelDiaSeleccionado = [];
+let mapaPacientesDia = {};
+
 /* =========================
    Helpers visuales (mismos que pacientes.js, para consistencia)
 ========================= */
@@ -75,6 +79,102 @@ function jsStringParaOnclick(str) {
 }
 
 /* =========================================================
+   RESUMEN DEL DÍA + DETECCIÓN DE HORARIOS OCUPADOS
+   Se carga cada vez que se elige/cambia la fecha en el
+   formulario de agendar/editar cita.
+========================================================= */
+async function cargarResumenDia() {
+    const panel = document.getElementById("panelResumenDia");
+    const fecha = inputFecha.value;
+
+    if (!fecha) {
+        citasDelDiaSeleccionado = [];
+        mapaPacientesDia = {};
+        if (panel) panel.innerHTML = "";
+        generarChipsHora();
+        return;
+    }
+
+    try {
+        const { data: citasDia, error } = await supabaseClient
+            .from('citas')
+            .select('id, hora, motivo, paciente_id')
+            .eq('clinica_id', clinicaID)
+            .eq('fecha', fecha)
+            .in('estado', ['programada', 'confirmada']);
+
+        if (error) throw error;
+
+        // Si estamos editando una cita, la excluimos de la lista de "ocupados"
+        citasDelDiaSeleccionado = (citasDia || [])
+            .filter(c => String(c.id) !== String(editandoCitaId))
+            .sort((a, b) => a.hora.localeCompare(b.hora));
+
+        const { data: pacientesData } = await supabaseClient
+            .from('pacientes')
+            .select('id, nombre')
+            .eq('clinica_id', clinicaID);
+
+        mapaPacientesDia = {};
+        (pacientesData || []).forEach(p => { mapaPacientesDia[p.id] = p.nombre; });
+
+    } catch (e) {
+        console.warn("No se pudo cargar el resumen del día:", e);
+        citasDelDiaSeleccionado = [];
+        mapaPacientesDia = {};
+    }
+
+    renderPanelResumenDia();
+    generarChipsHora();
+}
+
+function renderPanelResumenDia() {
+    const panel = document.getElementById("panelResumenDia");
+    if (!panel) return;
+
+    if (!inputFecha.value) {
+        panel.innerHTML = "";
+        return;
+    }
+
+    if (citasDelDiaSeleccionado.length === 0) {
+        panel.innerHTML = `
+            <div style="background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.25); border-radius:10px; padding:10px 14px; font-size:13px; color:#86efac;">
+                ✅ No hay citas agendadas todavía este día.
+            </div>
+        `;
+        return;
+    }
+
+    let filas = "";
+    citasDelDiaSeleccionado.forEach(c => {
+        const nombre = mapaPacientesDia[c.paciente_id] || "Paciente";
+        filas += `
+            <div style="display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
+                <span style="color:#93c5fd; font-weight:bold; min-width:70px;">${formatearHora(c.hora)}</span>
+                <span style="flex:1; color:#e2e8f0;">${nombre}${c.motivo ? ` — <span style="opacity:0.7;">${c.motivo}</span>` : ""}</span>
+            </div>
+        `;
+    });
+
+    panel.innerHTML = `
+        <div style="background:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.2); border-radius:10px; padding:12px 14px;">
+            <div style="font-size:12px; font-weight:bold; color:#93c5fd; margin-bottom:6px;">
+                🗓️ Citas ya agendadas ese día (${citasDelDiaSeleccionado.length})
+            </div>
+            ${filas}
+        </div>
+    `;
+}
+
+function chipOcupadoClick(horaStr) {
+    const cita = citasDelDiaSeleccionado.find(c => c.hora === horaStr);
+    const nombre = cita ? (mapaPacientesDia[cita.paciente_id] || "un paciente") : "un paciente";
+    const motivo = cita && cita.motivo ? ` (${cita.motivo})` : "";
+    alert(`⚠️ Ya hay una cita a las ${formatearHora(horaStr)} con ${nombre}${motivo}.\n\nSi de verdad necesitas agendar a esta misma hora, usa el campo "¿Otra hora?" y confirma cuando el sistema te lo pregunte.`);
+}
+
+/* =========================================================
    SELECTOR DE HORA PREMIUM (chips)
 ========================================================= */
 function generarChipsHora() {
@@ -87,13 +187,22 @@ function generarChipsHora() {
         { etiqueta: t("periodo_noche") || "Noche", inicio: 18, fin: 22 }
     ];
 
+    const horaSeleccionadaActual = inputHora ? inputHora.value : "";
+
     let html = "";
     periodos.forEach(periodo => {
         html += `<div class="time-chip periodo-label">${periodo.etiqueta}</div>`;
         for (let h = periodo.inicio; h < periodo.fin; h++) {
             [0, 30].forEach(min => {
                 const horaStr = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-                html += `<div class="time-chip" data-hora="${horaStr}" onclick="seleccionarHoraChip('${horaStr}')">${formatearHora(horaStr)}</div>`;
+                const ocupado = citasDelDiaSeleccionado.some(c => c.hora === horaStr);
+                const seleccionado = horaStr === horaSeleccionadaActual;
+
+                if (ocupado) {
+                    html += `<div class="time-chip time-chip-ocupado" data-hora="${horaStr}" style="background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.5); cursor:not-allowed;" onclick="chipOcupadoClick('${horaStr}')" title="Ya ocupado">🔴 ${formatearHora(horaStr)}</div>`;
+                } else {
+                    html += `<div class="time-chip${seleccionado ? " selected" : ""}" data-hora="${horaStr}" onclick="seleccionarHoraChip('${horaStr}')">${formatearHora(horaStr)}</div>`;
+                }
             });
         }
     });
@@ -113,9 +222,24 @@ function seleccionarHoraChip(horaStr) {
 function seleccionarHoraCustom() {
     const customInput = document.getElementById("horaCustom");
     if (!customInput || !customInput.value) return;
-    document.getElementById("hora").value = customInput.value;
+
+    const horaElegida = customInput.value;
+    const ocupado = citasDelDiaSeleccionado.find(c => c.hora === horaElegida);
+
+    if (ocupado) {
+        const nombre = mapaPacientesDia[ocupado.paciente_id] || "un paciente";
+        const motivo = ocupado.motivo ? ` (${ocupado.motivo})` : "";
+        const continuar = confirm(`⚠️ Ya hay una cita a las ${formatearHora(horaElegida)} con ${nombre}${motivo}.\n\n¿Deseas agendar de todas formas a esta misma hora?`);
+        if (!continuar) {
+            customInput.value = "";
+            document.getElementById("hora").value = "";
+            return;
+        }
+    }
+
+    document.getElementById("hora").value = horaElegida;
     document.querySelectorAll(".time-chip[data-hora]").forEach(chip => {
-        chip.classList.toggle("selected", chip.dataset.hora === customInput.value);
+        chip.classList.toggle("selected", chip.dataset.hora === horaElegida);
     });
 }
 
@@ -538,6 +662,35 @@ async function agregarCita() {
         return alert("Completa todos los campos para agendar.");
     }
 
+    // Verificación final de seguridad (por si algo cambió mientras la secretaria llenaba el formulario)
+    try {
+        const { data: choque, error: errorChoque } = await supabaseClient
+            .from('citas')
+            .select('id, motivo, paciente_id')
+            .eq('clinica_id', clinicaID)
+            .eq('fecha', fecha)
+            .eq('hora', hora)
+            .in('estado', ['programada', 'confirmada']);
+
+        if (!errorChoque && choque && choque.length > 0) {
+            const otraCita = choque.find(c => String(c.id) !== String(editandoCitaId));
+            if (otraCita) {
+                const { data: pacData } = await supabaseClient
+                    .from('pacientes')
+                    .select('nombre')
+                    .eq('id', otraCita.paciente_id)
+                    .maybeSingle();
+                const nombreOcupante = pacData ? pacData.nombre : "otro paciente";
+                const continuar = confirm(
+                    `⚠️ Ya existe una cita a las ${formatearHora(hora)} el ${fecha} con ${nombreOcupante}${otraCita.motivo ? ` (${otraCita.motivo})` : ""}.\n\n¿Deseas agendar de todas formas a esta misma hora?`
+                );
+                if (!continuar) return;
+            }
+        }
+    } catch (e) {
+        console.warn("No se pudo verificar choques de horario:", e);
+    }
+
     const nombrePacienteSel = selectPaciente.options[selectPaciente.selectedIndex]
         ? selectPaciente.options[selectPaciente.selectedIndex].text
         : "";
@@ -586,6 +739,8 @@ async function agregarCita() {
         if (inputMotivo) inputMotivo.value = "";
         const customInput = document.getElementById("horaCustom");
         if (customInput) customInput.value = "";
+        citasDelDiaSeleccionado = [];
+        mapaPacientesDia = {};
         cambiarVista('ver');
 
     } catch (error) {
@@ -600,7 +755,9 @@ function editarCita(id, pacienteId, fecha, hora, motivo) {
     inputFecha.value = fecha;
     if (inputMotivo) inputMotivo.value = motivo || "";
     cambiarVista('nuevo');
-    setTimeout(() => marcarHoraSeleccionada(hora), 50);
+    cargarResumenDia().then(() => {
+        setTimeout(() => marcarHoraSeleccionada(hora), 50);
+    });
 }
 
 async function eliminarCita(id) {
@@ -644,6 +801,10 @@ function cambiarVista(modo) {
             document.getElementById("hora").value = "";
             const customInput = document.getElementById("horaCustom");
             if (customInput) customInput.value = "";
+            citasDelDiaSeleccionado = [];
+            mapaPacientesDia = {};
+            const panel = document.getElementById("panelResumenDia");
+            if (panel) panel.innerHTML = "";
         }
     } else {
         editandoCitaId = null;
@@ -662,6 +823,13 @@ async function inicializarVistaCitas() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
     await cargarPacientes();
+
+    // Cada vez que cambie la fecha en el formulario, recargamos
+    // el resumen del día y los colores de los horarios ocupados.
+    if (inputFecha) {
+        inputFecha.addEventListener("change", cargarResumenDia);
+    }
+
     if (modo === 'nuevo') {
         cambiarVista('nuevo');
     } else if (modo === 'calendario') {
