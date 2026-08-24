@@ -28,23 +28,47 @@
   .lang-switcher {
     display: flex;
     justify-content: center;
-    gap: 8px;
-    margin-bottom: 20px;
+    gap: 10px;
+    margin-bottom: 6px;
+    position: relative;
   }
   .lang-btn {
     border: 1px solid #e2e8f0;
     background: white;
     border-radius: 20px;
-    padding: 5px 12px;
+    padding: 6px 13px;
     font-size: 13px;
     cursor: pointer;
     color: #64748b;
+    animation: flotar 2.6s ease-in-out infinite;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  }
+  .lang-btn[data-lang="es"] { animation-delay: 0s; }
+  .lang-btn[data-lang="en"] { animation-delay: 0.3s; }
+  .lang-btn[data-lang="fr"] { animation-delay: 0.6s; }
+  @keyframes flotar {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
   }
   .lang-btn.activo {
     background: #3b82f6;
     color: white;
     border-color: #3b82f6;
     font-weight: bold;
+  }
+  .flecha-hint {
+    text-align: center;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 16px;
+  }
+  .flecha-arriba {
+    display: inline-block;
+    animation: rebotar 1.2s ease-in-out infinite;
+  }
+  @keyframes rebotar {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
   }
   .icono { font-size: 48px; margin-bottom: 12px; }
   h1 { font-size: 20px; color: #1e293b; margin: 0 0 12px; }
@@ -67,6 +91,7 @@
       <button class="lang-btn" data-lang="en" onclick="cambiarIdioma('en')">🇺🇸 EN</button>
       <button class="lang-btn" data-lang="fr" onclick="cambiarIdioma('fr')">🇫🇷 FR</button>
     </div>
+    <div class="flecha-hint"><span class="flecha-arriba">👆</span> Elige tu idioma / Choose your language / Choisissez votre langue</div>
     <div id="contenido">
       <div class="spinner"></div>
       <h1 id="tituloTexto">Procesando...</h1>
