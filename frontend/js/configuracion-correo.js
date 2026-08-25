@@ -17,33 +17,35 @@ if (rolActual !== "admin") {
 let configuracionExistente = null;
 
 /* =========================================================
-   PAÍS DE LA CLÍNICA → zona horaria + idioma automáticos
+   PAÍS DE LA CLÍNICA → zona horaria + idioma + código telefónico
+   El código telefónico (sin el "+") se usa para armar los links
+   de WhatsApp automáticamente sin que el usuario tenga que escribirlo.
 ========================================================= */
 const PAISES = [
-    { nombre: "Guatemala",              zona: "America/Guatemala",              idioma: "es" },
-    { nombre: "México",                 zona: "America/Mexico_City",            idioma: "es" },
-    { nombre: "El Salvador",            zona: "America/El_Salvador",            idioma: "es" },
-    { nombre: "Honduras",               zona: "America/Tegucigalpa",            idioma: "es" },
-    { nombre: "Nicaragua",              zona: "America/Managua",                idioma: "es" },
-    { nombre: "Costa Rica",             zona: "America/Costa_Rica",             idioma: "es" },
-    { nombre: "Panamá",                 zona: "America/Panama",                 idioma: "es" },
-    { nombre: "Colombia",               zona: "America/Bogota",                 idioma: "es" },
-    { nombre: "Ecuador",                zona: "America/Guayaquil",              idioma: "es" },
-    { nombre: "Perú",                   zona: "America/Lima",                   idioma: "es" },
-    { nombre: "Bolivia",                zona: "America/La_Paz",                 idioma: "es" },
-    { nombre: "Chile",                  zona: "America/Santiago",               idioma: "es" },
-    { nombre: "Argentina",              zona: "America/Argentina/Buenos_Aires", idioma: "es" },
-    { nombre: "Paraguay",               zona: "America/Asuncion",               idioma: "es" },
-    { nombre: "Uruguay",                zona: "America/Montevideo",             idioma: "es" },
-    { nombre: "Venezuela",              zona: "America/Caracas",                idioma: "es" },
-    { nombre: "República Dominicana",   zona: "America/Santo_Domingo",          idioma: "es" },
-    { nombre: "Puerto Rico",            zona: "America/Puerto_Rico",            idioma: "es" },
-    { nombre: "España",                 zona: "Europe/Madrid",                  idioma: "es" },
-    { nombre: "Estados Unidos (Este)",  zona: "America/New_York",               idioma: "en" },
-    { nombre: "Estados Unidos (Centro)",zona: "America/Chicago",                idioma: "en" },
-    { nombre: "Estados Unidos (Oeste)", zona: "America/Los_Angeles",            idioma: "en" },
-    { nombre: "Francia",                zona: "Europe/Paris",                   idioma: "fr" },
-    { nombre: "Canadá (Quebec)",        zona: "America/Toronto",                idioma: "fr" },
+    { nombre: "Guatemala",              zona: "America/Guatemala",              idioma: "es", codigoTel: "502" },
+    { nombre: "México",                 zona: "America/Mexico_City",            idioma: "es", codigoTel: "52" },
+    { nombre: "El Salvador",            zona: "America/El_Salvador",            idioma: "es", codigoTel: "503" },
+    { nombre: "Honduras",               zona: "America/Tegucigalpa",            idioma: "es", codigoTel: "504" },
+    { nombre: "Nicaragua",              zona: "America/Managua",                idioma: "es", codigoTel: "505" },
+    { nombre: "Costa Rica",             zona: "America/Costa_Rica",             idioma: "es", codigoTel: "506" },
+    { nombre: "Panamá",                 zona: "America/Panama",                 idioma: "es", codigoTel: "507" },
+    { nombre: "Colombia",               zona: "America/Bogota",                 idioma: "es", codigoTel: "57" },
+    { nombre: "Ecuador",                zona: "America/Guayaquil",              idioma: "es", codigoTel: "593" },
+    { nombre: "Perú",                   zona: "America/Lima",                   idioma: "es", codigoTel: "51" },
+    { nombre: "Bolivia",                zona: "America/La_Paz",                 idioma: "es", codigoTel: "591" },
+    { nombre: "Chile",                  zona: "America/Santiago",               idioma: "es", codigoTel: "56" },
+    { nombre: "Argentina",              zona: "America/Argentina/Buenos_Aires", idioma: "es", codigoTel: "54" },
+    { nombre: "Paraguay",               zona: "America/Asuncion",               idioma: "es", codigoTel: "595" },
+    { nombre: "Uruguay",                zona: "America/Montevideo",             idioma: "es", codigoTel: "598" },
+    { nombre: "Venezuela",              zona: "America/Caracas",                idioma: "es", codigoTel: "58" },
+    { nombre: "República Dominicana",   zona: "America/Santo_Domingo",          idioma: "es", codigoTel: "1" },
+    { nombre: "Puerto Rico",            zona: "America/Puerto_Rico",            idioma: "es", codigoTel: "1" },
+    { nombre: "España",                 zona: "Europe/Madrid",                  idioma: "es", codigoTel: "34" },
+    { nombre: "Estados Unidos (Este)",  zona: "America/New_York",               idioma: "en", codigoTel: "1" },
+    { nombre: "Estados Unidos (Centro)",zona: "America/Chicago",                idioma: "en", codigoTel: "1" },
+    { nombre: "Estados Unidos (Oeste)", zona: "America/Los_Angeles",            idioma: "en", codigoTel: "1" },
+    { nombre: "Francia",                zona: "Europe/Paris",                   idioma: "fr", codigoTel: "33" },
+    { nombre: "Canadá (Quebec)",        zona: "America/Toronto",                idioma: "fr", codigoTel: "1" },
 ];
 
 function poblarSelectPaises() {
@@ -65,14 +67,19 @@ async function cargarPaisClinica() {
     try {
         const { data, error } = await supabaseClient
             .from('clinicas')
-            .select('zona_horaria, idioma')
+            .select('zona_horaria, idioma, codigo_pais')
             .eq('id', clinicaID)
             .maybeSingle();
 
         if (error) throw error;
 
         if (data) {
-            const idx = PAISES.findIndex(p => p.zona === data.zona_horaria && p.idioma === data.idioma);
+            // Preferimos hacer match exacto con el código telefónico guardado
+            // (así distinguimos entre países que comparten idioma/zona parecida).
+            let idx = PAISES.findIndex(p => p.zona === data.zona_horaria && p.idioma === data.idioma && p.codigoTel === data.codigo_pais);
+            if (idx === -1) {
+                idx = PAISES.findIndex(p => p.zona === data.zona_horaria && p.idioma === data.idioma);
+            }
             if (idx !== -1) select.value = String(idx);
         }
     } catch (e) {
@@ -90,7 +97,7 @@ async function guardarPaisClinica() {
     try {
         const { error } = await supabaseClient
             .from('clinicas')
-            .update({ zona_horaria: pais.zona, idioma: pais.idioma })
+            .update({ zona_horaria: pais.zona, idioma: pais.idioma, codigo_pais: pais.codigoTel })
             .eq('id', clinicaID);
 
         if (error) throw error;
@@ -99,7 +106,7 @@ async function guardarPaisClinica() {
             registrarAuditoria("editar", "clinica_pais", pais.nombre);
         }
 
-        alert(`✅ País actualizado a ${pais.nombre}. Los recordatorios ahora usarán su horario e idioma.`);
+        alert(`✅ País actualizado a ${pais.nombre}. Los recordatorios y los mensajes de WhatsApp ahora usarán su horario, idioma y código telefónico correctos.`);
     } catch (e) {
         console.error("Error al guardar país:", e);
         alert("Error: " + e.message);
