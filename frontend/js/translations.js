@@ -106,6 +106,9 @@ const translations = {
         calendario_titulo: "Calendario",
         calendario_mas: "más",
         calendario_selecciona_dia: "Selecciona un día para ver las citas",
+        cita_confirmada_badge: "✅ Confirmada",
+        cita_cancelada_badge: "❌ CANCELADA POR EL PACIENTE",
+        eliminar_de_lista_btn: "🗑️ Quitar de la lista",
 
         historial_titulo: "Historial Clínico",
         historial_nueva_nota: "📝 Redactar Nota Médica",
@@ -317,6 +320,9 @@ const translations = {
         calendario_titulo: "Calendar",
         calendario_mas: "more",
         calendario_selecciona_dia: "Select a day to view appointments",
+        cita_confirmada_badge: "✅ Confirmed",
+        cita_cancelada_badge: "❌ CANCELED BY PATIENT",
+        eliminar_de_lista_btn: "🗑️ Remove from list",
 
         historial_titulo: "Clinical Record",
         historial_nueva_nota: "📝 Write Medical Note",
@@ -528,6 +534,9 @@ const translations = {
         calendario_titulo: "Calendrier",
         calendario_mas: "plus",
         calendario_selecciona_dia: "Sélectionnez un jour pour voir les rendez-vous",
+        cita_confirmada_badge: "✅ Confirmé",
+        cita_cancelada_badge: "❌ ANNULÉ PAR LE PATIENT",
+        eliminar_de_lista_btn: "🗑️ Retirer de la liste",
 
         historial_titulo: "Dossier Médical",
         historial_nueva_nota: "📝 Rédiger une Note Médicale",
