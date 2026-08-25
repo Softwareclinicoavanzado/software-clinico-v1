@@ -109,6 +109,9 @@ const translations = {
         cita_confirmada_badge: "✅ Confirmada",
         cita_cancelada_badge: "❌ CANCELADA POR EL PACIENTE",
         eliminar_de_lista_btn: "🗑️ Quitar de la lista",
+        whatsapp_btn: "📲 WhatsApp",
+        whatsapp_sin_telefono: "Este paciente no tiene teléfono registrado.",
+        whatsapp_mensaje: "Hola {nombre} 👋, te recordamos tu cita médica el {fecha} a las {hora}. Si necesitas reprogramarla, contáctanos. ¡Te esperamos!",
 
         historial_titulo: "Historial Clínico",
         historial_nueva_nota: "📝 Redactar Nota Médica",
@@ -323,6 +326,9 @@ const translations = {
         cita_confirmada_badge: "✅ Confirmed",
         cita_cancelada_badge: "❌ CANCELED BY PATIENT",
         eliminar_de_lista_btn: "🗑️ Remove from list",
+        whatsapp_btn: "📲 WhatsApp",
+        whatsapp_sin_telefono: "This patient has no phone number on file.",
+        whatsapp_mensaje: "Hi {nombre} 👋, this is a reminder of your medical appointment on {fecha} at {hora}. If you need to reschedule, please contact us. See you soon!",
 
         historial_titulo: "Clinical Record",
         historial_nueva_nota: "📝 Write Medical Note",
@@ -537,6 +543,9 @@ const translations = {
         cita_confirmada_badge: "✅ Confirmé",
         cita_cancelada_badge: "❌ ANNULÉ PAR LE PATIENT",
         eliminar_de_lista_btn: "🗑️ Retirer de la liste",
+        whatsapp_btn: "📲 WhatsApp",
+        whatsapp_sin_telefono: "Ce patient n'a pas de numéro de téléphone enregistré.",
+        whatsapp_mensaje: "Bonjour {nombre} 👋, nous vous rappelons votre rendez-vous médical le {fecha} à {hora}. Si vous devez le reporter, contactez-nous. À bientôt !",
 
         historial_titulo: "Dossier Médical",
         historial_nueva_nota: "📝 Rédiger une Note Médicale",
