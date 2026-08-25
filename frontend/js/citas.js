@@ -18,10 +18,27 @@ const titulo = document.getElementById("tituloPagina");
 
 let citas = [];
 let editandoCitaId = null;
+let codigoTelPaisClinica = "502"; // valor por defecto mientras carga desde la base de datos
 
 // Citas activas del día seleccionado en el formulario (para detectar choques de horario)
 let citasDelDiaSeleccionado = [];
 let mapaPacientesDia = {};
+
+async function cargarCodigoTelClinica() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('clinicas')
+            .select('codigo_pais')
+            .eq('id', clinicaID)
+            .maybeSingle();
+
+        if (!error && data && data.codigo_pais) {
+            codigoTelPaisClinica = data.codigo_pais;
+        }
+    } catch (e) {
+        console.warn("No se pudo cargar el código telefónico de la clínica, usando valor por defecto:", e);
+    }
+}
 
 /* =========================
    Helpers visuales (mismos que pacientes.js, para consistencia)
@@ -91,9 +108,10 @@ function enviarWhatsAppRecordatorio(telefono, nombrePaciente, fechaISO, horaStr)
     // Dejamos solo los dígitos del número
     let numeroLimpio = telefono.replace(/[^\d]/g, "");
 
-    // Si parece un número local de 8 dígitos (formato Guatemala), le agregamos el código de país
-    if (numeroLimpio.length === 8) {
-        numeroLimpio = "502" + numeroLimpio;
+    // Si el número no trae ya el código de país al inicio, se lo agregamos
+    // usando el código telefónico configurado para esta clínica.
+    if (!numeroLimpio.startsWith(codigoTelPaisClinica)) {
+        numeroLimpio = codigoTelPaisClinica + numeroLimpio;
     }
 
     const mensaje = t("whatsapp_mensaje")
@@ -862,6 +880,7 @@ async function inicializarVistaCitas() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
     await cargarPacientes();
+    await cargarCodigoTelClinica();
 
     // Cada vez que cambie la fecha en el formulario, recargamos
     // el resumen del día y los colores de los horarios ocupados.
