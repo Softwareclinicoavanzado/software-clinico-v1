@@ -78,6 +78,12 @@ function esCitaHoy(fechaISO) {
     return fechaISO === hoyStr;
 }
 
+function esCitaManana(fechaISO) {
+    const manana = new Date();
+    manana.setDate(manana.getDate() + 1);
+    return fechaISO === fechaLocalISO(manana);
+}
+
 function fechaLocalISO(dateObj) {
     const y = dateObj.getFullYear();
     const m = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -97,9 +103,10 @@ function jsStringParaOnclick(str) {
 
 /* =========================================================
    RECORDATORIO POR WHATSAPP (1 clic, sin API, gratis)
-   Abre WhatsApp con el mensaje ya escrito, listo para enviar.
+   Abre WhatsApp con el mensaje ya escrito, listo para enviar,
+   y marca la cita como "whatsapp_enviado" para seguimiento.
 ========================================================= */
-function enviarWhatsAppRecordatorio(telefono, nombrePaciente, fechaISO, horaStr) {
+async function enviarWhatsAppRecordatorio(citaId, telefono, nombrePaciente, fechaISO, horaStr) {
     if (!telefono) {
         alert(t("whatsapp_sin_telefono"));
         return;
@@ -121,6 +128,24 @@ function enviarWhatsAppRecordatorio(telefono, nombrePaciente, fechaISO, horaStr)
 
     const url = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, "_blank");
+
+    // Marcamos la cita como "WhatsApp enviado" para llevar seguimiento
+    try {
+        await supabaseClient
+            .from('citas')
+            .update({ whatsapp_enviado: true })
+            .eq('id', citaId);
+    } catch (e) {
+        console.warn("No se pudo marcar el WhatsApp como enviado:", e);
+    }
+
+    // Refrescamos la vista actual para reflejar el cambio
+    if (seccionCal && seccionCal.style.display === "block") {
+        await cargarCitasDelMes();
+        renderCalendario();
+    } else {
+        render();
+    }
 }
 
 /* =========================================================
@@ -357,7 +382,7 @@ async function render() {
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, paciente_id, estado, motivo')
+        .select('id, fecha, hora, paciente_id, estado, motivo, whatsapp_enviado')
         .eq('clinica_id', clinicaID)
         .in('estado', ['programada', 'confirmada', 'cancelada'])
         .order('fecha', { ascending: true })
@@ -371,6 +396,15 @@ async function render() {
     if (!citasCloud || citasCloud.length === 0) {
         listaCitas.innerHTML = `<div class='card'><p style='text-align:center; opacity:0.6;'>${t("sin_citas")}</p></div>`;
         return;
+    }
+
+    // Aviso de citas de mañana que aún no tienen WhatsApp enviado
+    const pendientesManana = citasCloud.filter(c => esCitaManana(c.fecha) && !c.whatsapp_enviado && c.estado !== 'cancelada');
+    if (pendientesManana.length > 0) {
+        const banner = document.createElement("div");
+        banner.style.cssText = "background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.35); border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:13px; color:#fbbf24; font-weight:600;";
+        banner.innerHTML = `⚠️ ${t("whatsapp_pendiente_banner").replace("{n}", pendientesManana.length)}`;
+        listaCitas.appendChild(banner);
     }
 
     const { data: pacientesData } = await supabaseClient
@@ -401,10 +435,12 @@ async function render() {
                     </div>
                     <div>
                         <div class="patient-name">${nombrePaciente}</div>
-                        <div style="display:flex; gap:6px; margin-top:2px;">
+                        <div style="display:flex; gap:6px; margin-top:2px; flex-wrap:wrap;">
                             ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
                             ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
                             ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
+                            ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
+                            ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
                         </div>
                     </div>
                 </div>
@@ -425,9 +461,9 @@ async function render() {
 
             <div class="patient-actions">
                 ${!cancelada ? `
-                <button type="button" class="btn-action" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);" onclick="enviarWhatsAppRecordatorio('${(paciente && paciente.telefono) || ''}', ${jsStringParaOnclick(nombrePaciente)}, '${c.fecha}', '${c.hora}')">
+                <button type="button" class="btn-action" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);" onclick="enviarWhatsAppRecordatorio('${c.id}', '${(paciente && paciente.telefono) || ''}', ${jsStringParaOnclick(nombrePaciente)}, '${c.fecha}', '${c.hora}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    ${t("whatsapp_btn")}
+                    ${c.whatsapp_enviado ? t("whatsapp_reenviar_btn") : t("whatsapp_btn")}
                 </button>` : ""}
                 ${!cancelada ? `
                 <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${jsStringParaOnclick(c.motivo)})">
@@ -480,7 +516,7 @@ async function cargarCitasDelMes() {
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, paciente_id, estado, motivo')
+        .select('id, fecha, hora, paciente_id, estado, motivo, whatsapp_enviado')
         .eq('clinica_id', clinicaID)
         .in('estado', ['programada', 'confirmada', 'cancelada'])
         .gte('fecha', primerDia)
@@ -602,8 +638,12 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                         </div>
                         <div>
                             <div class="patient-name">${nombre}</div>
-                            ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
-                            ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
+                            <div style="display:flex; gap:6px; margin-top:2px; flex-wrap:wrap;">
+                                ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
+                                ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
+                                ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
+                                ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -616,9 +656,9 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                 ${c.motivo ? `<p class="appt-motivo">${c.motivo}</p>` : ""}
                 <div class="patient-actions">
                     ${!cancelada ? `
-                    <button type="button" class="btn-action" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);" onclick="enviarWhatsAppRecordatorio('${telefonoPaciente}', ${jsStringParaOnclick(nombre)}, '${c.fecha}', '${c.hora}')">
+                    <button type="button" class="btn-action" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);" onclick="enviarWhatsAppRecordatorio('${c.id}', '${telefonoPaciente}', ${jsStringParaOnclick(nombre)}, '${c.fecha}', '${c.hora}')">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                        ${t("whatsapp_btn")}
+                        ${c.whatsapp_enviado ? t("whatsapp_reenviar_btn") : t("whatsapp_btn")}
                     </button>` : ""}
                     ${!cancelada ? `
                     <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${jsStringParaOnclick(c.motivo)})">
