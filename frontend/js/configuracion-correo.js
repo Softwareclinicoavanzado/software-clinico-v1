@@ -153,6 +153,8 @@ async function cargarConfiguracion() {
             configuracionExistente = data;
             document.getElementById("gmailEmail").value = data.gmail_email || "";
             document.getElementById("nombreRemitente").value = data.nombre_remitente || "";
+            const inputNotif = document.getElementById("correoNotificaciones");
+            if (inputNotif) inputNotif.value = data.correo_notificaciones || "";
             document.getElementById("gmailAppPassword").placeholder = t("config_correo_password_guardada") || "•••• •••• •••• •••• (guardada — deja en blanco para no cambiarla)";
             const btnPrueba = document.getElementById("btnPrueba");
             if (btnPrueba) btnPrueba.disabled = false;
@@ -247,6 +249,38 @@ async function enviarCorreoPrueba() {
             btnPrueba.disabled = false;
             btnPrueba.innerHTML = `<span data-i18n="config_correo_prueba_btn">📨 Enviar Correo de Prueba</span>`;
         }
+    }
+}
+
+/* =========================================================
+   CORREO DE AVISOS INTERNOS (secretaria) — para el aviso
+   diario de citas de mañana sin WhatsApp enviado.
+========================================================= */
+async function guardarCorreoNotificaciones() {
+    const correoNotif = document.getElementById("correoNotificaciones").value.trim();
+
+    if (!configuracionExistente) {
+        alert("Primero guarda tu configuración de correo de Gmail (arriba). Después podrás guardar el correo de avisos internos.");
+        return;
+    }
+
+    try {
+        const { error } = await supabaseClient
+            .from('configuracion_correo')
+            .update({ correo_notificaciones: correoNotif || null })
+            .eq('clinica_id', clinicaID);
+
+        if (error) throw error;
+
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("editar", "correo_notificaciones", correoNotif || "(vacío)");
+        }
+
+        alert("✅ Correo de avisos internos guardado.");
+        await cargarConfiguracion();
+    } catch (e) {
+        console.error("Error al guardar correo de notificaciones:", e);
+        alert("Error: " + e.message);
     }
 }
 
