@@ -144,9 +144,23 @@
         </div>
 
         <div class="card">
+          <h3 style="color: #f59e0b; margin-bottom: 6px;">📋 Avisos internos para tu equipo</h3>
+          <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">
+            Una vez al día (por la mañana) se enviará un correo a esta dirección con la lista de citas de <strong>mañana</strong> que todavía no tienen un WhatsApp de recordatorio enviado, para que nadie se le olvide contactar al paciente.
+          </p>
+
+          <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); display:block; margin-bottom:6px;">Correo de la secretaria / persona encargada</label>
+          <input type="email" id="correoNotificaciones" placeholder="secretaria@tuclinica.com">
+
+          <button type="button" class="btn-primary" style="margin-top:18px;" onclick="guardarCorreoNotificaciones()">
+            💾 Guardar Correo de Avisos
+          </button>
+        </div>
+
+        <div class="card">
           <h3 style="color: #93c5fd; margin-bottom: 6px;">🌍 País de la clínica</h3>
           <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 18px;">
-            Esto determina automáticamente el huso horario y el idioma en el que se envían los correos de recordatorio a tus pacientes.
+            Esto determina automáticamente el huso horario, el idioma y el código telefónico (para WhatsApp) que se usan para tus pacientes.
           </p>
 
           <label style="font-size: 13px; font-weight: 600; color: var(--text-secondary); display:block; margin-bottom:6px;">País</label>
