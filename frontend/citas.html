@@ -58,6 +58,13 @@
             <span data-i18n="agendar_cita_link">Agendar Cita</span>
           </button>
         </li>
+        <li>
+          <button class="sidebar-link" type="button" onclick="cambiarVista('solicitudes'); history.replaceState(null,'','citas.html?mode=solicitudes'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" data-nav="citas-solicitudes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>
+            <span data-i18n="solicitudes_link">Solicitudes</span>
+            <span id="badgeSolicitudes" style="display:none; background:#f59e0b; color:#1e1409; font-size:11px; font-weight:bold; border-radius:999px; padding:1px 7px; margin-left:6px;">0</span>
+          </button>
+        </li>
         <li id="liUsuarios" style="display:none;">
           <button class="sidebar-link" type="button" onclick="irUsuarios()" data-nav="usuarios">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
@@ -112,15 +119,19 @@
 
       <div class="content-area">
 
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-          <button type="button" onclick="cambiarVista('ver'); history.replaceState(null,'','citas.html?mode=ver'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #3498db; flex: 1;">
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+          <button type="button" onclick="cambiarVista('ver'); history.replaceState(null,'','citas.html?mode=ver'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #3498db; flex: 1; min-width:140px;">
             <span data-i18n="ver_agenda">📅 Ver Agenda</span>
           </button>
-          <button type="button" onclick="cambiarVista('calendario'); history.replaceState(null,'','citas.html?mode=calendario'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #8b5cf6; flex: 1;">
+          <button type="button" onclick="cambiarVista('calendario'); history.replaceState(null,'','citas.html?mode=calendario'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #8b5cf6; flex: 1; min-width:140px;">
             <span data-i18n="calendario_btn">🗓️ Calendario</span>
           </button>
-          <button type="button" onclick="cambiarVista('nuevo'); history.replaceState(null,'','citas.html?mode=nuevo'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #2ecc71; flex: 1;">
+          <button type="button" onclick="cambiarVista('nuevo'); history.replaceState(null,'','citas.html?mode=nuevo'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #2ecc71; flex: 1; min-width:140px;">
             <span data-i18n="nueva_cita">➕ Nueva Cita</span>
+          </button>
+          <button type="button" onclick="cambiarVista('solicitudes'); history.replaceState(null,'','citas.html?mode=solicitudes'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #f59e0b; flex: 1; min-width:140px; position:relative;">
+            <span data-i18n="solicitudes_link">📥 Solicitudes</span>
+            <span id="badgeSolicitudesBtn" style="display:none; position:absolute; top:-6px; right:-6px; background:#ef4444; color:white; font-size:11px; font-weight:bold; border-radius:999px; padding:2px 7px;">0</span>
           </button>
         </div>
 
@@ -170,6 +181,14 @@
           <div id="calendarGrid" class="calendar-grid"></div>
 
           <div id="calendarDetallePanel" class="calendar-detalle-panel"></div>
+        </div>
+
+        <div id="seccionSolicitudes" style="display: none;">
+          <h2 style="color: #f59e0b; margin-bottom: 15px;" data-i18n="solicitudes_pendientes_titulo">📥 Solicitudes Pendientes</h2>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:16px;" data-i18n="solicitudes_pendientes_desc">
+            Estas citas fueron pedidas por pacientes desde el link público. No están agendadas todavía — apruébalas o recházalas.
+          </p>
+          <div id="listaSolicitudes"></div>
         </div>
 
       </div>
