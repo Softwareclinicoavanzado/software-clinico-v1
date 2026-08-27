@@ -439,6 +439,7 @@ async function render() {
                             ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
                             ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
                             ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
+                            ${!confirmada && !cancelada ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("cita_pendiente_badge")}</div>` : ""}
                             ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
                             ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
                         </div>
@@ -641,6 +642,7 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                             <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px; align-items:flex-start;">
                                 ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
                                 ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
+                                ${!confirmada && !cancelada ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("cita_pendiente_badge")}</div>` : ""}
                                 ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
                                 ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
                             </div>
