@@ -171,7 +171,7 @@ async function cargarResumenDia() {
             .select('id, hora, motivo, paciente_id')
             .eq('clinica_id', clinicaID)
             .eq('fecha', fecha)
-            .in('estado', ['programada', 'confirmada']);
+            .in('estado', ['programada', 'confirmada', 'solicitud']);
 
         if (error) throw error;
 
@@ -769,7 +769,7 @@ async function agregarCita() {
             .eq('clinica_id', clinicaID)
             .eq('fecha', fecha)
             .eq('hora', hora)
-            .in('estado', ['programada', 'confirmada']);
+            .in('estado', ['programada', 'confirmada', 'solicitud']);
 
         if (!errorChoque && choque && choque.length > 0) {
             const otraCita = choque.find(c => String(c.id) !== String(editandoCitaId));
