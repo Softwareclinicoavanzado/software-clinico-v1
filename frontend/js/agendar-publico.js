@@ -12,6 +12,43 @@ let horaSeleccionadaPublico = "";
 let horasOcupadasPublico = [];
 let codigoTelPaisPublico = "502"; // valor por defecto mientras carga desde la base de datos
 
+const PAISES_TEL_PUBLICO = [
+    { nombre: "Guatemala", bandera: "🇬🇹", codigo: "502" },
+    { nombre: "México", bandera: "🇲🇽", codigo: "52" },
+    { nombre: "El Salvador", bandera: "🇸🇻", codigo: "503" },
+    { nombre: "Honduras", bandera: "🇭🇳", codigo: "504" },
+    { nombre: "Nicaragua", bandera: "🇳🇮", codigo: "505" },
+    { nombre: "Costa Rica", bandera: "🇨🇷", codigo: "506" },
+    { nombre: "Panamá", bandera: "🇵🇦", codigo: "507" },
+    { nombre: "Colombia", bandera: "🇨🇴", codigo: "57" },
+    { nombre: "Ecuador", bandera: "🇪🇨", codigo: "593" },
+    { nombre: "Perú", bandera: "🇵🇪", codigo: "51" },
+    { nombre: "Bolivia", bandera: "🇧🇴", codigo: "591" },
+    { nombre: "Chile", bandera: "🇨🇱", codigo: "56" },
+    { nombre: "Argentina", bandera: "🇦🇷", codigo: "54" },
+    { nombre: "Paraguay", bandera: "🇵🇾", codigo: "595" },
+    { nombre: "Uruguay", bandera: "🇺🇾", codigo: "598" },
+    { nombre: "Venezuela", bandera: "🇻🇪", codigo: "58" },
+    { nombre: "República Dominicana", bandera: "🇩🇴", codigo: "1" },
+    { nombre: "Puerto Rico", bandera: "🇵🇷", codigo: "1" },
+    { nombre: "España", bandera: "🇪🇸", codigo: "34" },
+    { nombre: "Estados Unidos", bandera: "🇺🇸", codigo: "1" },
+    { nombre: "Francia", bandera: "🇫🇷", codigo: "33" },
+    { nombre: "Canadá", bandera: "🇨🇦", codigo: "1" },
+];
+
+function poblarSelectCodigoPaisPublico() {
+    const select = document.getElementById("pubCodigoPais");
+    if (!select) return;
+    select.innerHTML = "";
+    PAISES_TEL_PUBLICO.forEach((p, i) => {
+        const op = document.createElement("option");
+        op.value = p.codigo;
+        op.textContent = `${p.bandera} +${p.codigo}`;
+        select.appendChild(op);
+    });
+}
+
 async function cargarCodigoTelPublico() {
     try {
         const { data, error } = await supabaseClient.rpc("clinica_codigo_pais_publico", {
@@ -23,6 +60,9 @@ async function cargarCodigoTelPublico() {
     } catch (e) {
         console.warn("No se pudo cargar el código de país de la clínica:", e);
     }
+
+    const select = document.getElementById("pubCodigoPais");
+    if (select) select.value = codigoTelPaisPublico;
 }
 
 function formatearHoraPublico(horaStr) {
@@ -170,12 +210,13 @@ async function enviarSolicitudPublico() {
         return;
     }
 
-    // Igual que en la agenda interna: si el número no trae ya el
-    // código de país, se lo agregamos usando el código configurado
-    // para esta clínica, así queda guardado completo desde el inicio.
+    // Usamos el código de país que el paciente eligió en el selector
+    // (por defecto viene precargado con el país de la clínica, pero
+    // el paciente puede cambiarlo si es de otro país).
+    const codigoPaisElegido = document.getElementById("pubCodigoPais").value || codigoTelPaisPublico;
     let telefonoCompleto = telefono.replace(/[^\d]/g, "");
-    if (!telefonoCompleto.startsWith(codigoTelPaisPublico)) {
-        telefonoCompleto = codigoTelPaisPublico + telefonoCompleto;
+    if (!telefonoCompleto.startsWith(codigoPaisElegido)) {
+        telefonoCompleto = codigoPaisElegido + telefonoCompleto;
     }
 
     const btn = document.getElementById("btnEnviarSolicitud");
@@ -221,6 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("vistaFormulario").style.display = "block";
     aplicarTextosPublico();
+    poblarSelectCodigoPaisPublico();
     cargarCodigoTelPublico();
 
     const hoyStr = new Date().toISOString().split("T")[0];
