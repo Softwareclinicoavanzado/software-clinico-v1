@@ -175,6 +175,20 @@
             <span data-i18n="auditoria_link">Auditoría</span>
           </button>
         </div>
+
+        <!-- Aviso discreto de WhatsApp pendiente (solo aparece si hay citas de mañana sin enviar) -->
+        <div class="card" id="whatsappPendienteWidget" style="display:none; margin-top:20px; background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.3);">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <span style="font-size:20px;">⚠️</span>
+              <span id="whatsappPendienteTexto" style="font-size:14px; color:#fbbf24; font-weight:600;"></span>
+            </div>
+            <button type="button" class="secondary" onclick="irCitas('ver')" style="white-space:nowrap;">
+              📲 Ver agenda
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
