@@ -52,6 +52,49 @@ async function actualizarEstadisticas(clinicaID) {
     }
 }
 
+/* =========================================================
+   AVISO DISCRETO: citas de mañana sin WhatsApp enviado
+   Solo se muestra si hay al menos 1 pendiente. No afecta
+   ninguna otra parte del dashboard.
+========================================================= */
+let citasPendientesWhatsappManana = 0;
+
+async function cargarWidgetWhatsappPendiente(clinicaID) {
+    const widget = document.getElementById("whatsappPendienteWidget");
+    const texto = document.getElementById("whatsappPendienteTexto");
+    if (!widget || !texto) return;
+
+    try {
+        const manana = new Date();
+        manana.setDate(manana.getDate() + 1);
+        const y = manana.getFullYear();
+        const m = String(manana.getMonth() + 1).padStart(2, "0");
+        const d = String(manana.getDate()).padStart(2, "0");
+        const mananaStr = `${y}-${m}-${d}`;
+
+        const { count, error } = await supabaseClient
+            .from('citas')
+            .select('id', { count: 'exact', head: true })
+            .eq('clinica_id', clinicaID)
+            .eq('fecha', mananaStr)
+            .eq('whatsapp_enviado', false)
+            .in('estado', ['programada', 'confirmada']);
+
+        if (error) throw error;
+
+        citasPendientesWhatsappManana = count || 0;
+
+        if (citasPendientesWhatsappManana > 0) {
+            texto.innerText = t("whatsapp_pendiente_banner").replace("{n}", citasPendientesWhatsappManana);
+            widget.style.display = "block";
+        } else {
+            widget.style.display = "none";
+        }
+    } catch (e) {
+        console.warn("No se pudo cargar el aviso de WhatsApp pendiente:", e);
+    }
+}
+
 function retraducirContenidoDinamico() {
     const clinicaElem = document.getElementById("clinica");
     const usuarioElem = document.getElementById("usuarioInfo");
@@ -60,6 +103,11 @@ function retraducirContenidoDinamico() {
     const rol = localStorage.getItem("rol") || "";
     if (clinicaElem) clinicaElem.innerText = clinicaNombre ? `${t("bienvenido_a")} ${clinicaNombre}` : "ClinicOS";
     if (usuarioElem) usuarioElem.innerText = `${usuario || ""} · ${t("rol_prefix")}: ${rol.toUpperCase()}`;
+
+    const textoWhatsapp = document.getElementById("whatsappPendienteTexto");
+    if (textoWhatsapp && citasPendientesWhatsappManana > 0) {
+        textoWhatsapp.innerText = t("whatsapp_pendiente_banner").replace("{n}", citasPendientesWhatsappManana);
+    }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -77,4 +125,5 @@ document.addEventListener("DOMContentLoaded", () => {
         if (cardAuditoria) cardAuditoria.style.display = "flex";
     }
     actualizarEstadisticas(clinicaID);
+    cargarWidgetWhatsappPendiente(clinicaID);
 });
