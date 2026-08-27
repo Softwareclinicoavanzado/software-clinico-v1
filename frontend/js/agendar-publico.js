@@ -10,6 +10,20 @@ const clinicaIdPublico = params.get("clinica");
 
 let horaSeleccionadaPublico = "";
 let horasOcupadasPublico = [];
+let codigoTelPaisPublico = "502"; // valor por defecto mientras carga desde la base de datos
+
+async function cargarCodigoTelPublico() {
+    try {
+        const { data, error } = await supabaseClient.rpc("clinica_codigo_pais_publico", {
+            p_clinica_id: clinicaIdPublico,
+        });
+        if (!error && data) {
+            codigoTelPaisPublico = data;
+        }
+    } catch (e) {
+        console.warn("No se pudo cargar el código de país de la clínica:", e);
+    }
+}
 
 function formatearHoraPublico(horaStr) {
     if (!horaStr) return "";
@@ -156,6 +170,14 @@ async function enviarSolicitudPublico() {
         return;
     }
 
+    // Igual que en la agenda interna: si el número no trae ya el
+    // código de país, se lo agregamos usando el código configurado
+    // para esta clínica, así queda guardado completo desde el inicio.
+    let telefonoCompleto = telefono.replace(/[^\d]/g, "");
+    if (!telefonoCompleto.startsWith(codigoTelPaisPublico)) {
+        telefonoCompleto = codigoTelPaisPublico + telefonoCompleto;
+    }
+
     const btn = document.getElementById("btnEnviarSolicitud");
     const txtBtn = document.getElementById("txtBtnEnviar");
     btn.disabled = true;
@@ -165,7 +187,7 @@ async function enviarSolicitudPublico() {
         const { error } = await supabaseClient.rpc("crear_solicitud_publico", {
             p_clinica_id: clinicaIdPublico,
             p_nombre: nombre,
-            p_telefono: telefono,
+            p_telefono: telefonoCompleto,
             p_email: email,
             p_fecha: fecha,
             p_hora: horaSeleccionadaPublico,
@@ -199,6 +221,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("vistaFormulario").style.display = "block";
     aplicarTextosPublico();
+    cargarCodigoTelPublico();
 
     const hoyStr = new Date().toISOString().split("T")[0];
     const inputFecha = document.getElementById("pubFecha");
