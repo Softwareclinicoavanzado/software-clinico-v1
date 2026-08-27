@@ -131,6 +131,9 @@ const translations = {
         publico_elige_fecha: "Elige una fecha para ver los horarios disponibles",
         publico_sin_horarios: "No hay horarios disponibles para esta fecha, intenta con otro día.",
         publico_email_label: "Correo electrónico (opcional)",
+        periodo_manana: "Mañana",
+        periodo_tarde: "Tarde",
+        periodo_noche: "Noche",
 
         historial_titulo: "Historial Clínico",
         historial_nueva_nota: "📝 Redactar Nota Médica",
@@ -367,6 +370,9 @@ const translations = {
         publico_elige_fecha: "Choose a date to see available times",
         publico_sin_horarios: "No available times for this date, try another day.",
         publico_email_label: "Email (optional)",
+        periodo_manana: "Morning",
+        periodo_tarde: "Afternoon",
+        periodo_noche: "Evening",
 
         historial_titulo: "Clinical Record",
         historial_nueva_nota: "📝 Write Medical Note",
@@ -603,6 +609,9 @@ const translations = {
         publico_elige_fecha: "Choisissez une date pour voir les horaires disponibles",
         publico_sin_horarios: "Aucun horaire disponible pour cette date, essayez un autre jour.",
         publico_email_label: "E-mail (optionnel)",
+        periodo_manana: "Matin",
+        periodo_tarde: "Après-midi",
+        periodo_noche: "Soir",
 
         historial_titulo: "Dossier Médical",
         historial_nueva_nota: "📝 Rédiger une Note Médicale",
