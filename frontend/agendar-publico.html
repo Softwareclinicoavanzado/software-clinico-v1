@@ -43,7 +43,10 @@
         <input type="text" id="pubNombre" placeholder="Ej. Juan Pérez">
 
         <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" id="lblTelefono">Teléfono</label>
-        <input type="tel" id="pubTelefono" placeholder="Ej. 5555 5555">
+        <div style="display:flex; gap:8px;">
+          <select id="pubCodigoPais" style="flex:0 0 110px; padding:12px 8px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155);"></select>
+          <input type="tel" id="pubTelefono" placeholder="Ej. 5555 5555" style="flex:1;">
+        </div>
 
         <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" id="lblEmail">Correo electrónico (opcional)</label>
         <input type="email" id="pubEmail" placeholder="tucorreo@ejemplo.com">
