@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Agendar Cita | ClinicOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body style="display:flex; align-items:flex-start; justify-content:center; min-height:100vh; padding:24px 16px;">
+
+  <div style="width:100%; max-width:480px;">
+
+    <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+      <div class="lang-switcher">
+        <button class="lang-btn" type="button" id="langMainBtn" onclick="toggleLangDropdown()">
+          <span class="lang-flag-current" id="langFlagActual">🇲🇽</span>
+          <span id="langBtnTexto">ES</span>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+          <button class="lang-option" data-lang="es" onclick="seleccionarIdiomaPublico('es')"><span class="flag">🇲🇽</span> Español</button>
+          <button class="lang-option" data-lang="en" onclick="seleccionarIdiomaPublico('en')"><span class="flag">🇺🇸</span> English</button>
+          <button class="lang-option" data-lang="fr" onclick="seleccionarIdiomaPublico('fr')"><span class="flag">🇫🇷</span> Français</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista: enlace inválido -->
+    <div class="card" id="vistaLinkInvalido" style="display:none; text-align:center;">
+      <p style="font-size:15px; color:#f87171;" id="txtLinkInvalido">⚠️ Este enlace no es válido.</p>
+    </div>
+
+    <!-- Vista: formulario -->
+    <div id="vistaFormulario" style="display:none;">
+      <div class="card">
+        <h2 style="margin-bottom:4px;" id="txtTitulo">Agenda tu cita</h2>
+        <p style="font-size:13px; color:var(--text-muted); margin-bottom:20px;" id="txtSubtitulo">
+          Completa el formulario y la clínica confirmará tu cita lo antes posible.
+        </p>
+
+        <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;" id="lblNombre">Nombre completo</label>
+        <input type="text" id="pubNombre" placeholder="Ej. Juan Pérez">
+
+        <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" id="lblTelefono">Teléfono</label>
+        <input type="tel" id="pubTelefono" placeholder="Ej. 5555 5555">
+
+        <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" id="lblEmail">Correo electrónico (opcional)</label>
+        <input type="email" id="pubEmail" placeholder="tucorreo@ejemplo.com">
+
+        <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" id="lblFecha">Fecha</label>
+        <input type="date" id="pubFecha">
+
+        <div id="pubPanelHoras" style="margin-top:14px;"></div>
+
+        <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" id="lblMotivo">Razón de la cita (opcional)</label>
+        <textarea id="pubMotivo" rows="3" style="width:100%; padding:12px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155); resize:vertical;" placeholder="Ej. Consulta de rutina, dolor de cabeza, seguimiento..."></textarea>
+
+        <button type="button" class="btn-primary" style="margin-top:20px;" id="btnEnviarSolicitud" onclick="enviarSolicitudPublico()">
+          <span id="txtBtnEnviar">📩 Enviar solicitud</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Vista: éxito -->
+    <div class="card" id="vistaExito" style="display:none; text-align:center;">
+      <h2 style="color:#22c55e; margin-bottom:10px;" id="txtExitoTitulo">✅ ¡Solicitud enviada!</h2>
+      <p style="font-size:14px; color:var(--text-secondary);" id="txtExitoTexto">
+        La clínica revisará tu solicitud y se pondrá en contacto contigo pronto para confirmar tu cita.
+      </p>
+    </div>
+
+  </div>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/agendar-publico.js"></script>
+</body>
+</html>
