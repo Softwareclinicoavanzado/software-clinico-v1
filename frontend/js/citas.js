@@ -14,6 +14,8 @@ const inputMotivo = document.getElementById("motivo");
 const seccionForm = document.getElementById("seccionFormulario");
 const seccionVer = document.getElementById("seccionLista");
 const seccionCal = document.getElementById("seccionCalendario");
+const seccionSolicitudes = document.getElementById("seccionSolicitudes");
+const listaSolicitudes = document.getElementById("listaSolicitudes");
 const titulo = document.getElementById("tituloPagina");
 
 let citas = [];
@@ -482,6 +484,169 @@ async function render() {
 }
 
 /* =========================================================
+   SOLICITUDES PENDIENTES (agendadas desde el link público)
+   No son citas reales todavía — hay que aprobarlas o
+   rechazarlas antes de que entren a la agenda de verdad.
+========================================================= */
+async function actualizarBadgeSolicitudes() {
+    try {
+        const { count, error } = await supabaseClient
+            .from('citas')
+            .select('id', { count: 'exact', head: true })
+            .eq('clinica_id', clinicaID)
+            .eq('estado', 'solicitud');
+
+        if (error) throw error;
+
+        const n = count || 0;
+        const badgeSidebar = document.getElementById("badgeSolicitudes");
+        const badgeBtn = document.getElementById("badgeSolicitudesBtn");
+        [badgeSidebar, badgeBtn].forEach(badge => {
+            if (!badge) return;
+            if (n > 0) {
+                badge.innerText = n;
+                badge.style.display = "inline-block";
+            } else {
+                badge.style.display = "none";
+            }
+        });
+    } catch (e) {
+        console.warn("No se pudo actualizar el contador de solicitudes:", e);
+    }
+}
+
+async function renderSolicitudes() {
+    if (!listaSolicitudes) return;
+    listaSolicitudes.innerHTML = "";
+
+    const { data: solicitudes, error } = await supabaseClient
+        .from('citas')
+        .select('id, fecha, hora, paciente_id, motivo')
+        .eq('clinica_id', clinicaID)
+        .eq('estado', 'solicitud')
+        .order('fecha', { ascending: true })
+        .order('hora', { ascending: true });
+
+    if (error) {
+        console.error("Error cargando solicitudes:", error);
+        return;
+    }
+
+    if (!solicitudes || solicitudes.length === 0) {
+        listaSolicitudes.innerHTML = `<div class='card'><p style='text-align:center; opacity:0.6;'>${t("sin_solicitudes")}</p></div>`;
+        return;
+    }
+
+    const idsPacientes = [...new Set(solicitudes.map(s => s.paciente_id))];
+    const { data: pacientesData } = await supabaseClient
+        .from('pacientes')
+        .select('id, nombre, telefono, email')
+        .in('id', idsPacientes);
+
+    solicitudes.forEach((s) => {
+        const paciente = pacientesData ? pacientesData.find(p => Number(p.id) === Number(s.paciente_id)) : null;
+        const nombrePaciente = paciente ? paciente.nombre : "Paciente";
+        const telefonoPaciente = paciente ? paciente.telefono : "";
+        const emailPaciente = paciente ? paciente.email : "";
+
+        const div = document.createElement("div");
+        div.className = "appt-card";
+        div.style.border = "2px solid #f59e0b";
+        div.style.background = "rgba(245,158,11,0.06)";
+        div.innerHTML = `
+            <div class="appt-card-top">
+                <div class="patient-identity">
+                    <div class="patient-avatar" style="background:${colorAvatar(nombrePaciente)}20; color:${colorAvatar(nombrePaciente)}; border-color:${colorAvatar(nombrePaciente)}40;">
+                        ${iniciales(nombrePaciente)}
+                    </div>
+                    <div>
+                        <div class="patient-name">${nombrePaciente}</div>
+                        <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px; align-items:flex-start;">
+                            <div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("solicitud_origen_publico")}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="appt-tags">
+                <span class="appt-chip appt-chip-date">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    ${formatearFecha(s.fecha)}
+                </span>
+                <span class="appt-chip appt-chip-time">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    ${formatearHora(s.hora)}
+                </span>
+            </div>
+
+            ${telefonoPaciente ? `<p class="appt-motivo">📞 ${telefonoPaciente}</p>` : ""}
+            ${emailPaciente ? `<p class="appt-motivo">✉️ ${emailPaciente}</p>` : ""}
+            ${s.motivo ? `<p class="appt-motivo">${s.motivo}</p>` : ""}
+
+            <div class="patient-actions">
+                <button type="button" class="btn-action" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.35);" onclick="aprobarSolicitud('${s.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    ${t("aprobar_btn")}
+                </button>
+                <button type="button" class="btn-action btn-action-danger" onclick="rechazarSolicitud('${s.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    ${t("rechazar_btn")}
+                </button>
+            </div>
+        `;
+        listaSolicitudes.appendChild(div);
+    });
+}
+
+async function aprobarSolicitud(id) {
+    try {
+        const { error } = await supabaseClient
+            .from('citas')
+            .update({ estado: 'programada' })
+            .eq('id', id)
+            .eq('estado', 'solicitud');
+
+        if (error) throw error;
+
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("editar", "solicitud_cita", `Solicitud ${id} aprobada`);
+        }
+
+        alert(t("solicitud_aprobada_msg"));
+        renderSolicitudes();
+        actualizarBadgeSolicitudes();
+    } catch (e) {
+        console.error("Error al aprobar solicitud:", e);
+        alert("Error al aprobar la solicitud.");
+    }
+}
+
+async function rechazarSolicitud(id) {
+    if (!confirm(t("confirmar_rechazar_solicitud"))) return;
+
+    try {
+        const { error } = await supabaseClient
+            .from('citas')
+            .update({ estado: 'cancelada' })
+            .eq('id', id)
+            .eq('estado', 'solicitud');
+
+        if (error) throw error;
+
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("editar", "solicitud_cita", `Solicitud ${id} rechazada`);
+        }
+
+        alert(t("solicitud_rechazada_msg"));
+        renderSolicitudes();
+        actualizarBadgeSolicitudes();
+    } catch (e) {
+        console.error("Error al rechazar solicitud:", e);
+        alert("Error al rechazar la solicitud.");
+    }
+}
+
+/* =========================================================
    CALENDARIO VISUAL (vista de mes)
 ========================================================= */
 let calFecha = new Date();
@@ -738,6 +903,9 @@ function retraducirContenidoDinamico() {
     if (seccionCal && seccionCal.style.display === "block") {
         renderCalendario();
         if (titulo) titulo.innerText = t("calendario_titulo");
+    } else if (seccionSolicitudes && seccionSolicitudes.style.display === "block") {
+        renderSolicitudes();
+        if (titulo) titulo.innerText = t("solicitudes_pendientes_titulo");
     } else if (seccionForm && seccionForm.style.display === "block") {
         if (titulo) titulo.innerText = editandoCitaId ? t("editar_cita_titulo") : t("titulo_agendar_cita");
         const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
@@ -881,11 +1049,23 @@ function cambiarVista(modo) {
     if (modo === 'calendario') {
         if(seccionForm) seccionForm.style.display = "none";
         if(seccionVer) seccionVer.style.display = "none";
+        if(seccionSolicitudes) seccionSolicitudes.style.display = "none";
         abrirCalendario();
         return;
     }
 
+    if (modo === 'solicitudes') {
+        if(seccionForm) seccionForm.style.display = "none";
+        if(seccionVer) seccionVer.style.display = "none";
+        if(seccionCal) seccionCal.style.display = "none";
+        if(seccionSolicitudes) seccionSolicitudes.style.display = "block";
+        if(titulo) titulo.innerText = t("solicitudes_pendientes_titulo");
+        renderSolicitudes();
+        return;
+    }
+
     if (seccionCal) seccionCal.style.display = "none";
+    if (seccionSolicitudes) seccionSolicitudes.style.display = "none";
 
     if (modo === 'nuevo') {
         if(seccionForm) seccionForm.style.display = "block";
@@ -934,9 +1114,13 @@ async function inicializarVistaCitas() {
         cambiarVista('nuevo');
     } else if (modo === 'calendario') {
         cambiarVista('calendario');
+    } else if (modo === 'solicitudes') {
+        cambiarVista('solicitudes');
     } else {
         cambiarVista('ver');
     }
+
+    actualizarBadgeSolicitudes();
 }
 
 inicializarVistaCitas();
