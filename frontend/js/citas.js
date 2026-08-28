@@ -291,8 +291,9 @@ async function cargarResumenDia() {
         citasDelDiaSeleccionado = [];
         mapaPacientesDia = {};
         if (panel) panel.innerHTML = "";
-        generarChipsHora();
-        generarChipsHoraFin();
+        inicializarSlidersHora();
+        establecerHoraSlider(inputHora.value);
+        establecerHoraFinSlider(document.getElementById("horaFin") ? document.getElementById("horaFin").value : "");
         return;
     }
 
@@ -326,8 +327,9 @@ async function cargarResumenDia() {
     }
 
     renderPanelResumenDia();
-    generarChipsHora();
-    generarChipsHoraFin();
+    inicializarSlidersHora();
+    establecerHoraSlider(inputHora.value);
+    establecerHoraFinSlider(document.getElementById("horaFin") ? document.getElementById("horaFin").value : "");
 }
 
 function renderPanelResumenDia() {
@@ -378,150 +380,93 @@ function chipOcupadoClick(horaStr) {
 }
 
 /* =========================================================
-   SELECTOR DE HORA PREMIUM (chips)
+   BARRAS DESLIZABLES DE HORA (arrastrar para elegir cualquier
+   hora exacta, en vez de bloques fijos)
 ========================================================= */
-function generarChipsHora() {
-    const grid = document.getElementById("timePickerGrid");
-    if (!grid) return;
-
-    const periodos = [
-        { etiqueta: t("periodo_manana") || "Mañana", inicio: 6, fin: 12 },
-        { etiqueta: t("periodo_tarde") || "Tarde", inicio: 12, fin: 18 },
-        { etiqueta: t("periodo_noche") || "Noche", inicio: 18, fin: 22 }
-    ];
-
-    const horaSeleccionadaActual = inputHora ? inputHora.value : "";
-
-    let html = "";
-    periodos.forEach(periodo => {
-        html += `<div class="time-chip periodo-label">${periodo.etiqueta}</div>`;
-        for (let h = periodo.inicio; h < periodo.fin; h++) {
-            [0, 30].forEach(min => {
-                const horaStr = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-                const ocupado = !!estaEnRangoOcupado(horaStr);
-                const seleccionado = horaStr === horaSeleccionadaActual;
-
-                if (ocupado) {
-                    html += `<div class="time-chip time-chip-ocupado" data-hora="${horaStr}" style="background:rgba(239,68,68,0.18); color:#fca5a5; border:1px solid rgba(239,68,68,0.5); cursor:not-allowed;" onclick="chipOcupadoClick('${horaStr}')" title="Ya ocupado">🔴 ${formatearHora(horaStr)}</div>`;
-                } else {
-                    html += `<div class="time-chip${seleccionado ? " selected" : ""}" data-hora="${horaStr}" onclick="seleccionarHoraChip('${horaStr}')">${formatearHora(horaStr)}</div>`;
-                }
-            });
-        }
-    });
-
-    grid.innerHTML = html;
+function minutosAHoraStr(mins) {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-function seleccionarHoraChip(horaStr) {
-    document.getElementById("hora").value = horaStr;
-    const customInput = document.getElementById("horaCustom");
-    if (customInput) customInput.value = "";
-    document.querySelectorAll(".time-chip[data-hora]").forEach(chip => {
-        chip.classList.toggle("selected", chip.dataset.hora === horaStr);
-    });
-    enfocarHoraFin();
-}
+function actualizarHoraDesdeSlider() {
+    const slider = document.getElementById("horaSlider");
+    const valorTexto = document.getElementById("horaSliderValor");
+    const aviso = document.getElementById("horaSliderAviso");
+    if (!slider) return;
 
-// Después de elegir la hora de inicio, generamos y mostramos los
-// chips de hora de fin (con las horas anteriores al inicio bloqueadas).
-function enfocarHoraFin() {
-    generarChipsHoraFin();
-    const grid = document.getElementById("timePickerGridFin");
-    if (grid) grid.scrollIntoView({ behavior: "smooth", block: "center" });
-}
+    const horaStr = minutosAHoraStr(parseInt(slider.value, 10));
+    if (inputHora) inputHora.value = horaStr;
+    if (valorTexto) valorTexto.innerText = formatearHora(horaStr);
 
-/* =========================================================
-   SELECTOR DE HORA DE FIN (mismos chips que la hora de inicio,
-   pero sin marcar ocupado — solo bloquea horas antes del inicio)
-========================================================= */
-function generarChipsHoraFin() {
-    const grid = document.getElementById("timePickerGridFin");
-    if (!grid) return;
-
-    const horaInicio = inputHora ? inputHora.value : "";
-    const horaFinInput = document.getElementById("horaFin");
-    const horaFinSeleccionadaActual = horaFinInput ? horaFinInput.value : "";
-
-    const periodos = [
-        { etiqueta: t("periodo_manana") || "Mañana", inicio: 6, fin: 12 },
-        { etiqueta: t("periodo_tarde") || "Tarde", inicio: 12, fin: 18 },
-        { etiqueta: t("periodo_noche") || "Noche", inicio: 18, fin: 22 }
-    ];
-
-    let html = "";
-    periodos.forEach(periodo => {
-        html += `<div class="time-chip periodo-label">${periodo.etiqueta}</div>`;
-        for (let h = periodo.inicio; h < periodo.fin; h++) {
-            [0, 30].forEach(min => {
-                const horaStr = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-                const antesDelInicio = horaInicio && horaAMinutos(horaStr) <= horaAMinutos(horaInicio);
-                const seleccionado = horaStr === horaFinSeleccionadaActual;
-
-                if (antesDelInicio) {
-                    html += `<div class="time-chip" style="opacity:0.3; cursor:not-allowed;" title="Debe ser después de la hora de inicio">${formatearHora(horaStr)}</div>`;
-                } else {
-                    html += `<div class="time-chip${seleccionado ? " selected" : ""}" data-hora-fin="${horaStr}" onclick="seleccionarHoraChipFin('${horaStr}')">${formatearHora(horaStr)}</div>`;
-                }
-            });
-        }
-    });
-
-    grid.innerHTML = html;
-}
-
-function seleccionarHoraChipFin(horaStr) {
-    const horaFinInput = document.getElementById("horaFin");
-    if (horaFinInput) horaFinInput.value = horaStr;
-    const customInput = document.getElementById("horaFinCustom");
-    if (customInput) customInput.value = "";
-    generarChipsHoraFin();
-}
-
-function seleccionarHoraFinCustom() {
-    const customInput = document.getElementById("horaFinCustom");
-    if (!customInput || !customInput.value) return;
-    const horaFinInput = document.getElementById("horaFin");
-    if (horaFinInput) horaFinInput.value = customInput.value;
-    generarChipsHoraFin();
-}
-
-function seleccionarHoraCustom() {
-    const customInput = document.getElementById("horaCustom");
-    if (!customInput || !customInput.value) return;
-
-    const horaElegida = customInput.value;
-    const ocupado = estaEnRangoOcupado(horaElegida);
-
-    if (ocupado) {
-        const nombre = mapaPacientesDia[ocupado.paciente_id] || "un paciente";
-        const motivo = ocupado.motivo ? ` (${ocupado.motivo})` : "";
-        const rango = formatearRangoHora(ocupado.hora, ocupado.hora_fin);
-        const continuar = confirm(`⚠️ Ya hay una cita de ${rango} con ${nombre}${motivo}.\n\n¿Deseas agendar de todas formas a esta misma hora?`);
-        if (!continuar) {
-            customInput.value = "";
-            document.getElementById("hora").value = "";
-            return;
+    if (aviso) {
+        const ocupado = estaEnRangoOcupado(horaStr);
+        if (ocupado) {
+            const nombre = mapaPacientesDia[ocupado.paciente_id] || "un paciente";
+            aviso.innerText = `⚠️ Ya hay una cita en este horario con ${nombre}`;
+        } else {
+            aviso.innerText = "";
         }
     }
-
-    document.getElementById("hora").value = horaElegida;
-    document.querySelectorAll(".time-chip[data-hora]").forEach(chip => {
-        chip.classList.toggle("selected", chip.dataset.hora === horaElegida);
-    });
-    enfocarHoraFin();
 }
 
-function marcarHoraSeleccionada(horaStr) {
-    if (!horaStr) return;
-    document.getElementById("hora").value = horaStr;
-    const chip = document.querySelector(`.time-chip[data-hora="${horaStr}"]`);
-    if (chip) {
-        document.querySelectorAll(".time-chip[data-hora]").forEach(c => c.classList.remove("selected"));
-        chip.classList.add("selected");
-    } else {
-        const customInput = document.getElementById("horaCustom");
-        if (customInput) customInput.value = horaStr;
+function actualizarHoraFinDesdeSlider() {
+    const slider = document.getElementById("horaFinSlider");
+    const valorTexto = document.getElementById("horaFinSliderValor");
+    const horaFinInput = document.getElementById("horaFin");
+    const aviso = document.getElementById("horaFinSliderAviso");
+    if (!slider) return;
+
+    const horaStr = minutosAHoraStr(parseInt(slider.value, 10));
+    if (horaFinInput) horaFinInput.value = horaStr;
+    if (valorTexto) valorTexto.innerText = formatearHora(horaStr);
+
+    if (aviso) {
+        if (inputHora && inputHora.value && horaAMinutos(horaStr) <= horaAMinutos(inputHora.value)) {
+            aviso.innerText = "⚠️ Debe ser después de la hora de inicio";
+        } else {
+            aviso.innerText = "";
+        }
+    }
+}
+
+function establecerHoraSlider(horaStr) {
+    const slider = document.getElementById("horaSlider");
+    const valorTexto = document.getElementById("horaSliderValor");
+    if (!slider) return;
+    const mins = horaStr ? horaAMinutos(horaStr) : 480; // 8:00 AM por defecto
+    slider.value = mins;
+    const horaFinal = horaStr || minutosAHoraStr(mins);
+    if (inputHora) inputHora.value = horaFinal;
+    if (valorTexto) valorTexto.innerText = formatearHora(horaFinal);
+    const aviso = document.getElementById("horaSliderAviso");
+    if (aviso) aviso.innerText = "";
+}
+
+function establecerHoraFinSlider(horaStr) {
+    const slider = document.getElementById("horaFinSlider");
+    const valorTexto = document.getElementById("horaFinSliderValor");
+    const horaFinInput = document.getElementById("horaFin");
+    if (!slider) return;
+    const mins = horaStr ? horaAMinutos(horaStr) : 510; // 8:30 AM por defecto
+    slider.value = mins;
+    const horaFinal = horaStr || minutosAHoraStr(mins);
+    if (horaFinInput) horaFinInput.value = horaFinal;
+    if (valorTexto) valorTexto.innerText = formatearHora(horaFinal);
+    const aviso = document.getElementById("horaFinSliderAviso");
+    if (aviso) aviso.innerText = "";
+}
+
+function inicializarSlidersHora() {
+    const sliderInicio = document.getElementById("horaSlider");
+    const sliderFin = document.getElementById("horaFinSlider");
+    if (sliderInicio && !sliderInicio.dataset.listo) {
+        sliderInicio.addEventListener("input", actualizarHoraDesdeSlider);
+        sliderInicio.dataset.listo = "1";
+    }
+    if (sliderFin && !sliderFin.dataset.listo) {
+        sliderFin.addEventListener("input", actualizarHoraFinDesdeSlider);
+        sliderFin.dataset.listo = "1";
     }
 }
 
@@ -1107,8 +1052,9 @@ function retraducirContenidoDinamico() {
         if (titulo) titulo.innerText = editandoCitaId ? t("editar_cita_titulo") : t("titulo_agendar_cita");
         const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
         if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
-        generarChipsHora();
-        generarChipsHoraFin();
+        inicializarSlidersHora();
+        establecerHoraSlider(inputHora.value);
+        establecerHoraFinSlider(document.getElementById("horaFin") ? document.getElementById("horaFin").value : "");
     } else {
         render();
         if (titulo) titulo.innerText = t("titulo_ver_agenda");
@@ -1210,8 +1156,6 @@ async function agregarCita() {
         if (inputMotivo) inputMotivo.value = "";
         const horaFinInput = document.getElementById("horaFin");
         if (horaFinInput) horaFinInput.value = "";
-        const customInput = document.getElementById("horaCustom");
-        if (customInput) customInput.value = "";
         citasDelDiaSeleccionado = [];
         mapaPacientesDia = {};
         cambiarVista('ver');
@@ -1227,13 +1171,12 @@ function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
     selectPaciente.value = pacienteId;
     establecerSelectsFecha(fecha);
     if (inputMotivo) inputMotivo.value = motivo || "";
-    const horaFinInput = document.getElementById("horaFin");
-    if (horaFinInput) horaFinInput.value = horaFin || "";
     cambiarVista('nuevo');
     cargarResumenDia().then(() => {
         setTimeout(() => {
-            marcarHoraSeleccionada(hora);
-            generarChipsHoraFin();
+            inicializarSlidersHora();
+            establecerHoraSlider(hora);
+            establecerHoraFinSlider(horaFin);
         }, 50);
     });
 }
@@ -1286,16 +1229,10 @@ function cambiarVista(modo) {
         const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
         if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
 
-        generarChipsHora();
-        generarChipsHoraFin();
+        inicializarSlidersHora();
         if (!editandoCitaId) {
-            document.getElementById("hora").value = "";
-            const customInput = document.getElementById("horaCustom");
-            if (customInput) customInput.value = "";
-            const horaFinInput = document.getElementById("horaFin");
-            if (horaFinInput) horaFinInput.value = "";
-            const horaFinCustomInput = document.getElementById("horaFinCustom");
-            if (horaFinCustomInput) horaFinCustomInput.value = "";
+            establecerHoraSlider("");
+            establecerHoraFinSlider("");
             citasDelDiaSeleccionado = [];
             mapaPacientesDia = {};
             const panel = document.getElementById("panelResumenDia");
