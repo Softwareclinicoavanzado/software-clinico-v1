@@ -332,6 +332,18 @@ function seleccionarHoraChip(horaStr) {
     document.querySelectorAll(".time-chip[data-hora]").forEach(chip => {
         chip.classList.toggle("selected", chip.dataset.hora === horaStr);
     });
+    enfocarHoraFin();
+}
+
+// Después de elegir la hora de inicio, abrimos automáticamente el
+// selector de hora de fin para que sea un flujo continuo (inicio → fin).
+function enfocarHoraFin() {
+    const horaFinInput = document.getElementById("horaFin");
+    if (!horaFinInput) return;
+    horaFinInput.focus();
+    if (typeof horaFinInput.showPicker === "function") {
+        try { horaFinInput.showPicker(); } catch (_e) { /* algunos navegadores restringen showPicker(), no pasa nada */ }
+    }
 }
 
 function seleccionarHoraCustom() {
@@ -357,6 +369,7 @@ function seleccionarHoraCustom() {
     document.querySelectorAll(".time-chip[data-hora]").forEach(chip => {
         chip.classList.toggle("selected", chip.dataset.hora === horaElegida);
     });
+    enfocarHoraFin();
 }
 
 function marcarHoraSeleccionada(horaStr) {
