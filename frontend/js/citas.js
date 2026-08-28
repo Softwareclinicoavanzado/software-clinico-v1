@@ -87,6 +87,92 @@ function esCitaManana(fechaISO) {
 }
 
 /* =========================================================
+   SELECTORES DE FECHA (día / mes / año) — reemplazan el
+   input nativo type="date" para que sea más fácil de usar
+   sin necesitar teclado ni flechas.
+========================================================= */
+function poblarSelectoresFecha() {
+    const selDia = document.getElementById("fechaDia");
+    const selMes = document.getElementById("fechaMes");
+    const selAnio = document.getElementById("fechaAnio");
+    if (!selDia || !selMes || !selAnio) return;
+
+    selMes.innerHTML = "";
+    nombresMeses().forEach((nombre, i) => {
+        const op = document.createElement("option");
+        op.value = String(i + 1).padStart(2, "0");
+        op.textContent = nombre;
+        selMes.appendChild(op);
+    });
+
+    const anioActual = new Date().getFullYear();
+    selAnio.innerHTML = "";
+    for (let a = anioActual; a <= anioActual + 2; a++) {
+        const op = document.createElement("option");
+        op.value = String(a);
+        op.textContent = String(a);
+        selAnio.appendChild(op);
+    }
+
+    const hoy = new Date();
+    selMes.value = String(hoy.getMonth() + 1).padStart(2, "0");
+    selAnio.value = String(hoy.getFullYear());
+    actualizarDiasDisponibles();
+    selDia.value = String(hoy.getDate()).padStart(2, "0");
+    actualizarFechaCombinada();
+}
+
+// Recalcula cuántos días tiene el mes/año elegido (ej. no dejar
+// escoger "31 de febrero") y regenera el selector de día.
+function actualizarDiasDisponibles() {
+    const selDia = document.getElementById("fechaDia");
+    const selMes = document.getElementById("fechaMes");
+    const selAnio = document.getElementById("fechaAnio");
+    if (!selDia || !selMes || !selAnio) return;
+
+    const mes = parseInt(selMes.value || "1", 10);
+    const anio = parseInt(selAnio.value || String(new Date().getFullYear()), 10);
+    const diasEnMes = new Date(anio, mes, 0).getDate();
+
+    const diaPrevio = selDia.value ? parseInt(selDia.value, 10) : 1;
+    selDia.innerHTML = "";
+    for (let d = 1; d <= diasEnMes; d++) {
+        const op = document.createElement("option");
+        op.value = String(d).padStart(2, "0");
+        op.textContent = String(d);
+        selDia.appendChild(op);
+    }
+    selDia.value = String(Math.min(diaPrevio, diasEnMes)).padStart(2, "0");
+}
+
+function actualizarFechaCombinada() {
+    const selDia = document.getElementById("fechaDia");
+    const selMes = document.getElementById("fechaMes");
+    const selAnio = document.getElementById("fechaAnio");
+    if (!selDia || !selMes || !selAnio || !inputFecha) return;
+
+    inputFecha.value = `${selAnio.value}-${selMes.value}-${selDia.value}`;
+    cargarResumenDia();
+}
+
+// Usado al editar una cita existente, para que los 3 selectores
+// muestren la fecha real que ya tenía guardada esa cita.
+function establecerSelectsFecha(fechaISO) {
+    if (!fechaISO) return;
+    const [y, m, d] = fechaISO.split("-");
+    const selDia = document.getElementById("fechaDia");
+    const selMes = document.getElementById("fechaMes");
+    const selAnio = document.getElementById("fechaAnio");
+    if (!selDia || !selMes || !selAnio) return;
+
+    selAnio.value = y;
+    selMes.value = m;
+    actualizarDiasDisponibles();
+    selDia.value = d;
+    if (inputFecha) inputFecha.value = fechaISO;
+}
+
+/* =========================================================
    Helpers de rango de horario (para detectar choques reales
    entre citas con duración, no solo un punto exacto)
 ========================================================= */
@@ -206,6 +292,7 @@ async function cargarResumenDia() {
         mapaPacientesDia = {};
         if (panel) panel.innerHTML = "";
         generarChipsHora();
+        generarChipsHoraFin();
         return;
     }
 
@@ -240,6 +327,7 @@ async function cargarResumenDia() {
 
     renderPanelResumenDia();
     generarChipsHora();
+    generarChipsHoraFin();
 }
 
 function renderPanelResumenDia() {
@@ -335,15 +423,67 @@ function seleccionarHoraChip(horaStr) {
     enfocarHoraFin();
 }
 
-// Después de elegir la hora de inicio, abrimos automáticamente el
-// selector de hora de fin para que sea un flujo continuo (inicio → fin).
+// Después de elegir la hora de inicio, generamos y mostramos los
+// chips de hora de fin (con las horas anteriores al inicio bloqueadas).
 function enfocarHoraFin() {
+    generarChipsHoraFin();
+    const grid = document.getElementById("timePickerGridFin");
+    if (grid) grid.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+/* =========================================================
+   SELECTOR DE HORA DE FIN (mismos chips que la hora de inicio,
+   pero sin marcar ocupado — solo bloquea horas antes del inicio)
+========================================================= */
+function generarChipsHoraFin() {
+    const grid = document.getElementById("timePickerGridFin");
+    if (!grid) return;
+
+    const horaInicio = inputHora ? inputHora.value : "";
     const horaFinInput = document.getElementById("horaFin");
-    if (!horaFinInput) return;
-    horaFinInput.focus();
-    if (typeof horaFinInput.showPicker === "function") {
-        try { horaFinInput.showPicker(); } catch (_e) { /* algunos navegadores restringen showPicker(), no pasa nada */ }
-    }
+    const horaFinSeleccionadaActual = horaFinInput ? horaFinInput.value : "";
+
+    const periodos = [
+        { etiqueta: t("periodo_manana") || "Mañana", inicio: 6, fin: 12 },
+        { etiqueta: t("periodo_tarde") || "Tarde", inicio: 12, fin: 18 },
+        { etiqueta: t("periodo_noche") || "Noche", inicio: 18, fin: 22 }
+    ];
+
+    let html = "";
+    periodos.forEach(periodo => {
+        html += `<div class="time-chip periodo-label">${periodo.etiqueta}</div>`;
+        for (let h = periodo.inicio; h < periodo.fin; h++) {
+            [0, 30].forEach(min => {
+                const horaStr = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
+                const antesDelInicio = horaInicio && horaAMinutos(horaStr) <= horaAMinutos(horaInicio);
+                const seleccionado = horaStr === horaFinSeleccionadaActual;
+
+                if (antesDelInicio) {
+                    html += `<div class="time-chip" style="opacity:0.3; cursor:not-allowed;" title="Debe ser después de la hora de inicio">${formatearHora(horaStr)}</div>`;
+                } else {
+                    html += `<div class="time-chip${seleccionado ? " selected" : ""}" data-hora-fin="${horaStr}" onclick="seleccionarHoraChipFin('${horaStr}')">${formatearHora(horaStr)}</div>`;
+                }
+            });
+        }
+    });
+
+    grid.innerHTML = html;
+}
+
+function seleccionarHoraChipFin(horaStr) {
+    const horaFinInput = document.getElementById("horaFin");
+    if (horaFinInput) horaFinInput.value = horaStr;
+    const customInput = document.getElementById("horaFinCustom");
+    if (customInput) customInput.value = "";
+    generarChipsHoraFin();
+}
+
+function seleccionarHoraFinCustom() {
+    const customInput = document.getElementById("horaFinCustom");
+    if (!customInput || !customInput.value) return;
+    const horaFinInput = document.getElementById("horaFin");
+    if (horaFinInput) horaFinInput.value = customInput.value;
+    generarChipsHoraFin();
 }
 
 function seleccionarHoraCustom() {
@@ -968,6 +1108,7 @@ function retraducirContenidoDinamico() {
         const btnConfirmar = document.querySelector('[onclick="agregarCita()"]');
         if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
         generarChipsHora();
+        generarChipsHoraFin();
     } else {
         render();
         if (titulo) titulo.innerText = t("titulo_ver_agenda");
@@ -1084,13 +1225,16 @@ async function agregarCita() {
 function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
     editandoCitaId = id;
     selectPaciente.value = pacienteId;
-    inputFecha.value = fecha;
+    establecerSelectsFecha(fecha);
     if (inputMotivo) inputMotivo.value = motivo || "";
     const horaFinInput = document.getElementById("horaFin");
     if (horaFinInput) horaFinInput.value = horaFin || "";
     cambiarVista('nuevo');
     cargarResumenDia().then(() => {
-        setTimeout(() => marcarHoraSeleccionada(hora), 50);
+        setTimeout(() => {
+            marcarHoraSeleccionada(hora);
+            generarChipsHoraFin();
+        }, 50);
     });
 }
 
@@ -1143,12 +1287,15 @@ function cambiarVista(modo) {
         if (btnConfirmar) btnConfirmar.innerText = editandoCitaId ? t("actualizar_cita") : t("confirmar_agendar");
 
         generarChipsHora();
+        generarChipsHoraFin();
         if (!editandoCitaId) {
             document.getElementById("hora").value = "";
             const customInput = document.getElementById("horaCustom");
             if (customInput) customInput.value = "";
             const horaFinInput = document.getElementById("horaFin");
             if (horaFinInput) horaFinInput.value = "";
+            const horaFinCustomInput = document.getElementById("horaFinCustom");
+            if (horaFinCustomInput) horaFinCustomInput.value = "";
             citasDelDiaSeleccionado = [];
             mapaPacientesDia = {};
             const panel = document.getElementById("panelResumenDia");
@@ -1172,6 +1319,14 @@ async function inicializarVistaCitas() {
     const modo = params.get("mode");
     await cargarPacientes();
     await cargarCodigoTelClinica();
+
+    poblarSelectoresFecha();
+    const selDia = document.getElementById("fechaDia");
+    const selMes = document.getElementById("fechaMes");
+    const selAnio = document.getElementById("fechaAnio");
+    if (selDia) selDia.addEventListener("change", actualizarFechaCombinada);
+    if (selMes) selMes.addEventListener("change", () => { actualizarDiasDisponibles(); actualizarFechaCombinada(); });
+    if (selAnio) selAnio.addEventListener("change", () => { actualizarDiasDisponibles(); actualizarFechaCombinada(); });
 
     // Cada vez que cambie la fecha en el formulario, recargamos
     // el resumen del día y los colores de los horarios ocupados.
