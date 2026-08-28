@@ -86,6 +86,48 @@ function esCitaManana(fechaISO) {
     return fechaISO === fechaLocalISO(manana);
 }
 
+/* =========================================================
+   Helpers de rango de horario (para detectar choques reales
+   entre citas con duración, no solo un punto exacto)
+========================================================= */
+function horaAMinutos(horaStr) {
+    if (!horaStr) return 0;
+    const [h, m] = horaStr.split(":").map(Number);
+    return h * 60 + m;
+}
+
+function formatearRangoHora(hora, horaFin) {
+    if (!hora) return "";
+    if (!horaFin) return formatearHora(hora);
+    return `${formatearHora(hora)} - ${formatearHora(horaFin)}`;
+}
+
+// Devuelve la cita existente que ocupa ese minuto exacto (útil para
+// resaltar los chips de hora de inicio). Si la cita antigua no tiene
+// hora_fin guardada (registros de antes de este cambio), se trata
+// como un bloque de 1 minuto para mantener el comportamiento previo.
+function estaEnRangoOcupado(horaCandidata) {
+    const cand = horaAMinutos(horaCandidata);
+    return citasDelDiaSeleccionado.find(c => {
+        const cIni = horaAMinutos(c.hora);
+        const cFin = c.hora_fin ? horaAMinutos(c.hora_fin) : cIni + 1;
+        return cand >= cIni && cand < cFin;
+    });
+}
+
+// Choque real de horario entre un rango [inicio, fin) propuesto y una
+// lista de citas existentes (cada una con su propio rango).
+function buscarChoqueDeRango(inicioStr, finStr, citasExistentes, excluirId) {
+    const ini = horaAMinutos(inicioStr);
+    const fin = horaAMinutos(finStr || inicioStr);
+    return (citasExistentes || []).find(c => {
+        if (excluirId && String(c.id) === String(excluirId)) return false;
+        const cIni = horaAMinutos(c.hora);
+        const cFin = c.hora_fin ? horaAMinutos(c.hora_fin) : cIni + 1;
+        return ini < cFin && fin > cIni;
+    });
+}
+
 function fechaLocalISO(dateObj) {
     const y = dateObj.getFullYear();
     const m = String(dateObj.getMonth() + 1).padStart(2, "0");
@@ -170,7 +212,7 @@ async function cargarResumenDia() {
     try {
         const { data: citasDia, error } = await supabaseClient
             .from('citas')
-            .select('id, hora, motivo, paciente_id')
+            .select('id, hora, hora_fin, motivo, paciente_id')
             .eq('clinica_id', clinicaID)
             .eq('fecha', fecha)
             .in('estado', ['programada', 'confirmada', 'solicitud']);
@@ -223,7 +265,7 @@ function renderPanelResumenDia() {
         const nombre = mapaPacientesDia[c.paciente_id] || "Paciente";
         filas += `
             <div style="display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.06);">
-                <span style="color:#93c5fd; font-weight:bold; min-width:70px;">${formatearHora(c.hora)}</span>
+                <span style="color:#93c5fd; font-weight:bold; min-width:70px;">${formatearRangoHora(c.hora, c.hora_fin)}</span>
                 <span style="flex:1; color:#e2e8f0;">${nombre}${c.motivo ? ` — <span style="opacity:0.7;">${c.motivo}</span>` : ""}</span>
             </div>
         `;
@@ -240,10 +282,11 @@ function renderPanelResumenDia() {
 }
 
 function chipOcupadoClick(horaStr) {
-    const cita = citasDelDiaSeleccionado.find(c => c.hora === horaStr);
+    const cita = estaEnRangoOcupado(horaStr);
     const nombre = cita ? (mapaPacientesDia[cita.paciente_id] || "un paciente") : "un paciente";
     const motivo = cita && cita.motivo ? ` (${cita.motivo})` : "";
-    alert(`⚠️ Ya hay una cita a las ${formatearHora(horaStr)} con ${nombre}${motivo}.\n\nSi de verdad necesitas agendar a esta misma hora, usa el campo "¿Otra hora?" y confirma cuando el sistema te lo pregunte.`);
+    const rango = cita ? formatearRangoHora(cita.hora, cita.hora_fin) : formatearHora(horaStr);
+    alert(`⚠️ Ya hay una cita de ${rango} con ${nombre}${motivo}.\n\nSi de verdad necesitas agendar a esta misma hora, usa el campo "¿Otra hora?" y confirma cuando el sistema te lo pregunte.`);
 }
 
 /* =========================================================
@@ -267,7 +310,7 @@ function generarChipsHora() {
         for (let h = periodo.inicio; h < periodo.fin; h++) {
             [0, 30].forEach(min => {
                 const horaStr = `${String(h).padStart(2, "0")}:${String(min).padStart(2, "0")}`;
-                const ocupado = citasDelDiaSeleccionado.some(c => c.hora === horaStr);
+                const ocupado = !!estaEnRangoOcupado(horaStr);
                 const seleccionado = horaStr === horaSeleccionadaActual;
 
                 if (ocupado) {
@@ -296,12 +339,13 @@ function seleccionarHoraCustom() {
     if (!customInput || !customInput.value) return;
 
     const horaElegida = customInput.value;
-    const ocupado = citasDelDiaSeleccionado.find(c => c.hora === horaElegida);
+    const ocupado = estaEnRangoOcupado(horaElegida);
 
     if (ocupado) {
         const nombre = mapaPacientesDia[ocupado.paciente_id] || "un paciente";
         const motivo = ocupado.motivo ? ` (${ocupado.motivo})` : "";
-        const continuar = confirm(`⚠️ Ya hay una cita a las ${formatearHora(horaElegida)} con ${nombre}${motivo}.\n\n¿Deseas agendar de todas formas a esta misma hora?`);
+        const rango = formatearRangoHora(ocupado.hora, ocupado.hora_fin);
+        const continuar = confirm(`⚠️ Ya hay una cita de ${rango} con ${nombre}${motivo}.\n\n¿Deseas agendar de todas formas a esta misma hora?`);
         if (!continuar) {
             customInput.value = "";
             document.getElementById("hora").value = "";
@@ -384,7 +428,7 @@ async function render() {
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, paciente_id, estado, motivo, whatsapp_enviado')
+        .select('id, fecha, hora, hora_fin, paciente_id, estado, motivo, whatsapp_enviado')
         .eq('clinica_id', clinicaID)
         .in('estado', ['programada', 'confirmada', 'cancelada'])
         .order('fecha', { ascending: true })
@@ -456,7 +500,7 @@ async function render() {
                 </span>
                 <span class="appt-chip appt-chip-time">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    ${formatearHora(c.hora)}
+                    ${formatearRangoHora(c.hora, c.hora_fin)}
                 </span>
             </div>
 
@@ -469,7 +513,7 @@ async function render() {
                     ${c.whatsapp_enviado ? t("whatsapp_reenviar_btn") : t("whatsapp_btn")}
                 </button>` : ""}
                 ${!cancelada ? `
-                <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${jsStringParaOnclick(c.motivo)})">
+                <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', '${c.hora_fin || ''}', ${jsStringParaOnclick(c.motivo)})">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                     ${t("editar_cita_btn") || "Editar"}
                 </button>` : ""}
@@ -521,7 +565,7 @@ async function renderSolicitudes() {
 
     const { data: solicitudes, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, paciente_id, motivo')
+        .select('id, fecha, hora, hora_fin, paciente_id, motivo')
         .eq('clinica_id', clinicaID)
         .eq('estado', 'solicitud')
         .order('fecha', { ascending: true })
@@ -575,7 +619,7 @@ async function renderSolicitudes() {
                 </span>
                 <span class="appt-chip appt-chip-time">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    ${formatearHora(s.hora)}
+                    ${formatearRangoHora(s.hora, s.hora_fin)}
                 </span>
             </div>
 
@@ -682,7 +726,7 @@ async function cargarCitasDelMes() {
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, paciente_id, estado, motivo, whatsapp_enviado')
+        .select('id, fecha, hora, hora_fin, paciente_id, estado, motivo, whatsapp_enviado')
         .eq('clinica_id', clinicaID)
         .in('estado', ['programada', 'confirmada', 'cancelada'])
         .gte('fecha', primerDia)
@@ -817,7 +861,7 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                 <div class="appt-tags">
                     <span class="appt-chip appt-chip-time">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                        ${formatearHora(c.hora)}
+                        ${formatearRangoHora(c.hora, c.hora_fin)}
                     </span>
                 </div>
                 ${c.motivo ? `<p class="appt-motivo">${c.motivo}</p>` : ""}
@@ -828,7 +872,7 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                         ${c.whatsapp_enviado ? t("whatsapp_reenviar_btn") : t("whatsapp_btn")}
                     </button>` : ""}
                     ${!cancelada ? `
-                    <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', ${jsStringParaOnclick(c.motivo)})">
+                    <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', '${c.hora_fin || ''}', ${jsStringParaOnclick(c.motivo)})">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
                         ${t("editar_cita_btn") || "Editar"}
                     </button>` : ""}
@@ -923,24 +967,28 @@ async function agregarCita() {
     const paciente_id = selectPaciente.value;
     const fecha = inputFecha.value;
     const hora = inputHora.value;
+    const horaFin = document.getElementById("horaFin") ? document.getElementById("horaFin").value : "";
     const motivo = inputMotivo ? inputMotivo.value.trim() : "";
 
-    if (!paciente_id || !fecha || !hora) {
-        return alert("Completa todos los campos para agendar.");
+    if (!paciente_id || !fecha || !hora || !horaFin) {
+        return alert("Completa todos los campos (incluyendo hora de fin) para agendar.");
+    }
+
+    if (horaAMinutos(horaFin) <= horaAMinutos(hora)) {
+        return alert("La hora de fin debe ser después de la hora de inicio.");
     }
 
     // Verificación final de seguridad (por si algo cambió mientras la secretaria llenaba el formulario)
     try {
-        const { data: choque, error: errorChoque } = await supabaseClient
+        const { data: citasDelDia, error: errorChoque } = await supabaseClient
             .from('citas')
-            .select('id, motivo, paciente_id')
+            .select('id, hora, hora_fin, motivo, paciente_id')
             .eq('clinica_id', clinicaID)
             .eq('fecha', fecha)
-            .eq('hora', hora)
             .in('estado', ['programada', 'confirmada', 'solicitud']);
 
-        if (!errorChoque && choque && choque.length > 0) {
-            const otraCita = choque.find(c => String(c.id) !== String(editandoCitaId));
+        if (!errorChoque && citasDelDia) {
+            const otraCita = buscarChoqueDeRango(hora, horaFin, citasDelDia, editandoCitaId);
             if (otraCita) {
                 const { data: pacData } = await supabaseClient
                     .from('pacientes')
@@ -948,8 +996,9 @@ async function agregarCita() {
                     .eq('id', otraCita.paciente_id)
                     .maybeSingle();
                 const nombreOcupante = pacData ? pacData.nombre : "otro paciente";
+                const rango = formatearRangoHora(otraCita.hora, otraCita.hora_fin);
                 const continuar = confirm(
-                    `⚠️ Ya existe una cita a las ${formatearHora(hora)} el ${fecha} con ${nombreOcupante}${otraCita.motivo ? ` (${otraCita.motivo})` : ""}.\n\n¿Deseas agendar de todas formas a esta misma hora?`
+                    `⚠️ Ya existe una cita de ${rango} el ${fecha} con ${nombreOcupante}${otraCita.motivo ? ` (${otraCita.motivo})` : ""}.\n\n¿Deseas agendar de todas formas en este horario?`
                 );
                 if (!continuar) return;
             }
@@ -966,6 +1015,7 @@ async function agregarCita() {
         paciente_id: Number(paciente_id),
         fecha: fecha,
         hora: hora,
+        hora_fin: horaFin,
         motivo: motivo || null,
         clinica_id: clinicaID
     };
@@ -1004,6 +1054,8 @@ async function agregarCita() {
         inputHora.value = "";
         selectPaciente.value = "";
         if (inputMotivo) inputMotivo.value = "";
+        const horaFinInput = document.getElementById("horaFin");
+        if (horaFinInput) horaFinInput.value = "";
         const customInput = document.getElementById("horaCustom");
         if (customInput) customInput.value = "";
         citasDelDiaSeleccionado = [];
@@ -1016,11 +1068,13 @@ async function agregarCita() {
     }
 }
 
-function editarCita(id, pacienteId, fecha, hora, motivo) {
+function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
     editandoCitaId = id;
     selectPaciente.value = pacienteId;
     inputFecha.value = fecha;
     if (inputMotivo) inputMotivo.value = motivo || "";
+    const horaFinInput = document.getElementById("horaFin");
+    if (horaFinInput) horaFinInput.value = horaFin || "";
     cambiarVista('nuevo');
     cargarResumenDia().then(() => {
         setTimeout(() => marcarHoraSeleccionada(hora), 50);
@@ -1080,6 +1134,8 @@ function cambiarVista(modo) {
             document.getElementById("hora").value = "";
             const customInput = document.getElementById("horaCustom");
             if (customInput) customInput.value = "";
+            const horaFinInput = document.getElementById("horaFin");
+            if (horaFinInput) horaFinInput.value = "";
             citasDelDiaSeleccionado = [];
             mapaPacientesDia = {};
             const panel = document.getElementById("panelResumenDia");
