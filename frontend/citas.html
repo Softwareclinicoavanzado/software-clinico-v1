@@ -143,7 +143,12 @@
             <option value="" data-i18n="seleccione_paciente">Seleccione un paciente</option>
           </select>
           <label><strong data-i18n="fecha_label">Fecha</strong></label>
-          <input type="date" id="fecha" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
+          <div style="display:flex; gap:8px; margin-bottom:15px;">
+            <select id="fechaDia" style="flex:1; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;"></select>
+            <select id="fechaMes" style="flex:2; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;"></select>
+            <select id="fechaAnio" style="flex:1; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;"></select>
+          </div>
+          <input type="hidden" id="fecha">
           <div id="panelResumenDia" style="margin-bottom:15px;"></div>
 
           <label><strong data-i18n="hora_label">Hora</strong></label>
@@ -157,7 +162,14 @@
           </div>
 
           <label style="margin-top:14px; display:block;"><strong data-i18n="hora_fin_label">Hora de fin (aproximada)</strong></label>
-          <input type="time" id="horaFin" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
+          <div class="time-picker-wrapper">
+            <div class="time-picker-grid" id="timePickerGridFin"></div>
+            <div class="time-picker-custom">
+              <span data-i18n="hora_personalizada">¿Otra hora?</span>
+              <input type="time" id="horaFinCustom" onchange="seleccionarHoraFinCustom()">
+            </div>
+            <input type="hidden" id="horaFin">
+          </div>
 
           <label><strong data-i18n="motivo_label">Razón de la cita</strong></label>
           <textarea id="motivo" data-i18n-placeholder="motivo_placeholder" placeholder="Ej. Consulta de rutina, dolor de cabeza, seguimiento..." style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333; height: 90px; resize: vertical;"></textarea>
