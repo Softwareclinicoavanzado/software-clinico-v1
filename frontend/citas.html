@@ -152,24 +152,20 @@
           <div id="panelResumenDia" style="margin-bottom:15px;"></div>
 
           <label><strong data-i18n="hora_label">Hora</strong></label>
-          <div class="time-picker-wrapper">
-            <div class="time-picker-grid" id="timePickerGrid"></div>
-            <div class="time-picker-custom">
-              <span data-i18n="hora_personalizada">¿Otra hora?</span>
-              <input type="time" id="horaCustom" onchange="seleccionarHoraCustom()">
-            </div>
-            <input type="hidden" id="hora">
+          <div style="background:#1a1a1a; border:1px solid #333; border-radius:10px; padding:16px; margin-bottom:8px;">
+            <div id="horaSliderValor" style="font-size:22px; font-weight:bold; color:#93c5fd; text-align:center; margin-bottom:12px;">--:--</div>
+            <input type="range" id="horaSlider" min="0" max="1435" step="5" style="width:100%;">
           </div>
+          <div id="horaSliderAviso" style="font-size:12px; color:#f59e0b; margin-bottom:15px; min-height:16px;"></div>
+          <input type="hidden" id="hora">
 
           <label style="margin-top:14px; display:block;"><strong data-i18n="hora_fin_label">Hora de fin (aproximada)</strong></label>
-          <div class="time-picker-wrapper">
-            <div class="time-picker-grid" id="timePickerGridFin"></div>
-            <div class="time-picker-custom">
-              <span data-i18n="hora_personalizada">¿Otra hora?</span>
-              <input type="time" id="horaFinCustom" onchange="seleccionarHoraFinCustom()">
-            </div>
-            <input type="hidden" id="horaFin">
+          <div style="background:#1a1a1a; border:1px solid #333; border-radius:10px; padding:16px; margin-bottom:8px;">
+            <div id="horaFinSliderValor" style="font-size:22px; font-weight:bold; color:#93c5fd; text-align:center; margin-bottom:12px;">--:--</div>
+            <input type="range" id="horaFinSlider" min="0" max="1435" step="5" style="width:100%;">
           </div>
+          <div id="horaFinSliderAviso" style="font-size:12px; color:#f59e0b; margin-bottom:15px; min-height:16px;"></div>
+          <input type="hidden" id="horaFin">
 
           <label><strong data-i18n="motivo_label">Razón de la cita</strong></label>
           <textarea id="motivo" data-i18n-placeholder="motivo_placeholder" placeholder="Ej. Consulta de rutina, dolor de cabeza, seguimiento..." style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333; height: 90px; resize: vertical;"></textarea>
