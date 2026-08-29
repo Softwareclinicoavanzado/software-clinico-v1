@@ -730,9 +730,9 @@ async function renderSolicitudes() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                     ${t("aprobar_btn")}
                 </button>
-                <button type="button" class="btn-action btn-action-danger" onclick="rechazarSolicitud('${s.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                    ${t("rechazar_btn")}
+                <button type="button" class="btn-action" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="reprogramarSolicitud('${s.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                    ${t("reprogramar_btn")}
                 </button>
             </div>
         `;
@@ -742,16 +742,14 @@ async function renderSolicitudes() {
 
 async function aprobarSolicitud(id) {
     try {
-        const { error } = await supabaseClient
-            .from('citas')
-            .update({ estado: 'programada' })
-            .eq('id', id)
-            .eq('estado', 'solicitud');
+        const { error } = await supabaseClient.functions.invoke("responder-solicitud", {
+            body: { id: id, accion: "aprobar" }
+        });
 
         if (error) throw error;
 
         if (typeof registrarAuditoria === "function") {
-            registrarAuditoria("editar", "solicitud_cita", `Solicitud ${id} aprobada`);
+            registrarAuditoria("editar", "solicitud_cita", `Solicitud ${id} aprobada desde el software`);
         }
 
         alert(t("solicitud_aprobada_msg"));
@@ -763,28 +761,26 @@ async function aprobarSolicitud(id) {
     }
 }
 
-async function rechazarSolicitud(id) {
+async function reprogramarSolicitud(id) {
     if (!confirm(t("confirmar_rechazar_solicitud"))) return;
 
     try {
-        const { error } = await supabaseClient
-            .from('citas')
-            .update({ estado: 'cancelada' })
-            .eq('id', id)
-            .eq('estado', 'solicitud');
+        const { error } = await supabaseClient.functions.invoke("responder-solicitud", {
+            body: { id: id, accion: "reprogramar" }
+        });
 
         if (error) throw error;
 
         if (typeof registrarAuditoria === "function") {
-            registrarAuditoria("editar", "solicitud_cita", `Solicitud ${id} rechazada`);
+            registrarAuditoria("editar", "solicitud_cita", `Solicitud ${id} — se pidió reprogramar desde el software`);
         }
 
         alert(t("solicitud_rechazada_msg"));
         renderSolicitudes();
         actualizarBadgeSolicitudes();
     } catch (e) {
-        console.error("Error al rechazar solicitud:", e);
-        alert("Error al rechazar la solicitud.");
+        console.error("Error al reprogramar solicitud:", e);
+        alert("Error al procesar la solicitud.");
     }
 }
 
