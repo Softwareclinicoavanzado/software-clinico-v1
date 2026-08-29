@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClinicOS | Responder solicitud</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f4f6fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  .card {
+    max-width: 420px;
+    width: 100%;
+    background: white;
+    border-radius: 16px;
+    padding: 28px 28px 32px;
+    text-align: center;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .icono { font-size: 48px; margin-bottom: 12px; }
+  h1 { font-size: 20px; color: #1e293b; margin: 0 0 12px; }
+  p { font-size: 14px; color: #64748b; margin: 0; line-height: 1.5; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+    animation: girar 0.8s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div id="contenido">
+      <div class="spinner"></div>
+      <h1 id="tituloTexto">Procesando...</h1>
+      <p id="mensajeTexto">Un momento por favor.</p>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://klaygjvawybfksmahbhd.supabase.co";
+
+    const TXT = {
+      es: {
+        invalido_titulo: "Enlace inválido",
+        invalido_mensaje: "Este enlace no es válido o ya fue utilizado.",
+        aprobada_titulo: "✅ Solicitud aprobada",
+        aprobada_mensaje: "La cita quedó agendada. Se le avisó al paciente por correo.",
+        reprogramar_titulo: "🔄 Se pidió reprogramar",
+        reprogramar_mensaje: "Se avisó al paciente por correo para que elija otro horario.",
+        ya_procesada_titulo: "Esta solicitud ya fue procesada",
+        ya_procesada_mensaje: "Alguien más ya respondió esta solicitud anteriormente.",
+        no_encontrada_titulo: "Solicitud no encontrada",
+        no_encontrada_mensaje: "No pudimos encontrar esta solicitud.",
+        error_titulo: "Error inesperado",
+        error_mensaje: "Ocurrió un error. Intenta desde el software directamente.",
+      },
+      en: {
+        invalido_titulo: "Invalid link",
+        invalido_mensaje: "This link isn't valid or was already used.",
+        aprobada_titulo: "✅ Request approved",
+        aprobada_mensaje: "The appointment is scheduled. The patient was notified by email.",
+        reprogramar_titulo: "🔄 Reschedule requested",
+        reprogramar_mensaje: "The patient was notified by email to choose another time.",
+        ya_procesada_titulo: "This request was already processed",
+        ya_procesada_mensaje: "Someone else already responded to this request.",
+        no_encontrada_titulo: "Request not found",
+        no_encontrada_mensaje: "We couldn't find this request.",
+        error_titulo: "Unexpected error",
+        error_mensaje: "Something went wrong. Try from the software directly.",
+      },
+      fr: {
+        invalido_titulo: "Lien invalide",
+        invalido_mensaje: "Ce lien n'est pas valide ou a déjà été utilisé.",
+        aprobada_titulo: "✅ Demande approuvée",
+        aprobada_mensaje: "Le rendez-vous est planifié. Le patient a été informé par e-mail.",
+        reprogramar_titulo: "🔄 Reprogrammation demandée",
+        reprogramar_mensaje: "Le patient a été informé par e-mail pour choisir un autre horaire.",
+        ya_procesada_titulo: "Cette demande a déjà été traitée",
+        ya_procesada_mensaje: "Quelqu'un d'autre a déjà répondu à cette demande.",
+        no_encontrada_titulo: "Demande introuvable",
+        no_encontrada_mensaje: "Nous n'avons pas pu trouver cette demande.",
+        error_titulo: "Erreur inattendue",
+        error_mensaje: "Une erreur s'est produite. Réessayez depuis le logiciel.",
+      },
+    };
+
+    function idiomaValido(l) {
+      return ["es", "en", "fr"].includes(l) ? l : "es";
+    }
+
+    function pintar(tx, codigo) {
+      const contenido = document.getElementById("contenido");
+      const clave = tx[`${codigo}_titulo`] ? codigo : "error";
+      const icono = codigo === "aprobada" ? "✅" : codigo === "reprogramar" ? "🔄" : "⚠️";
+      contenido.innerHTML = `
+        <div class="icono">${icono}</div>
+        <h1>${tx[`${clave}_titulo`]}</h1>
+        <p>${tx[`${clave}_mensaje`]}</p>
+      `;
+    }
+
+    async function procesar() {
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get("id");
+      const accion = params.get("accion");
+      const token = params.get("token");
+      const idioma = idiomaValido(params.get("lang") || "es");
+      const tx = TXT[idioma];
+
+      if (!id || !accion || !token) {
+        pintar(tx, "invalido");
+        return;
+      }
+
+      try {
+        const res = await fetch(
+          `${SUPABASE_URL}/functions/v1/responder-solicitud?id=${encodeURIComponent(id)}&accion=${encodeURIComponent(accion)}&token=${encodeURIComponent(token)}`
+        );
+        const data = await res.json();
+        pintar(tx, data.codigo || "error");
+      } catch (e) {
+        pintar(tx, "error");
+      }
+    }
+
+    procesar();
+  </script>
+</body>
+</html>
