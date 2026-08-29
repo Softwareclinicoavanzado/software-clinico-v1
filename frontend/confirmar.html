@@ -82,6 +82,17 @@
     animation: girar 0.8s linear infinite;
   }
   @keyframes girar { to { transform: rotate(360deg); } }
+  .btn-reprogramar {
+    display: inline-block;
+    margin-top: 18px;
+    background: #3b82f6;
+    color: white;
+    text-decoration: none;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 12px 22px;
+    border-radius: 8px;
+  }
 </style>
 </head>
 <body>
@@ -108,8 +119,9 @@
         procesando_mensaje: "Un momento por favor.",
         confirmada_titulo: "¡Cita confirmada!",
         confirmada_mensaje: "Gracias por confirmar tu asistencia. Te esperamos en la fecha y hora programada.",
-        cancelada_titulo: "Cita cancelada",
-        cancelada_mensaje: "Tu cita ha sido cancelada. Si deseas reprogramar, contacta directamente a la clínica.",
+        reprogramar_titulo: "Cita liberada",
+        reprogramar_mensaje: "Tu horario quedó liberado. Cuando quieras, elige uno nuevo:",
+        reprogramar_btn: "🗓️ Elegir nuevo horario",
         ya_inactiva_titulo: "Esta cita ya no está activa",
         ya_inactiva_mensaje: "Esta cita ya fue cancelada o marcada como completada anteriormente.",
         no_encontrada_titulo: "Cita no encontrada",
@@ -128,8 +140,9 @@
         procesando_mensaje: "One moment please.",
         confirmada_titulo: "Appointment confirmed!",
         confirmada_mensaje: "Thank you for confirming your attendance. We'll see you at the scheduled date and time.",
-        cancelada_titulo: "Appointment cancelled",
-        cancelada_mensaje: "Your appointment has been cancelled. If you'd like to reschedule, please contact the clinic directly.",
+        reprogramar_titulo: "Appointment released",
+        reprogramar_mensaje: "Your time slot has been freed up. Whenever you're ready, choose a new one:",
+        reprogramar_btn: "🗓️ Choose new time",
         ya_inactiva_titulo: "This appointment is no longer active",
         ya_inactiva_mensaje: "This appointment was already cancelled or marked as completed previously.",
         no_encontrada_titulo: "Appointment not found",
@@ -148,8 +161,9 @@
         procesando_mensaje: "Un instant s'il vous plaît.",
         confirmada_titulo: "Rendez-vous confirmé !",
         confirmada_mensaje: "Merci d'avoir confirmé votre présence. Nous vous attendons à la date et à l'heure prévues.",
-        cancelada_titulo: "Rendez-vous annulé",
-        cancelada_mensaje: "Votre rendez-vous a été annulé. Si vous souhaitez le reprogrammer, veuillez contacter directement la clinique.",
+        reprogramar_titulo: "Rendez-vous libéré",
+        reprogramar_mensaje: "Votre créneau a été libéré. Quand vous voulez, choisissez-en un nouveau :",
+        reprogramar_btn: "🗓️ Choisir un nouvel horaire",
         ya_inactiva_titulo: "Ce rendez-vous n'est plus actif",
         ya_inactiva_mensaje: "Ce rendez-vous a déjà été annulé ou marqué comme terminé auparavant.",
         no_encontrada_titulo: "Rendez-vous introuvable",
@@ -192,13 +206,20 @@
       }
 
       const codigo = ultimoEstado.codigo || "error";
-      const icono = ultimoEstado.exito ? "✅" : "⚠️";
+      const icono = ultimoEstado.exito ? (codigo === "reprogramar" ? "🔄" : "✅") : "⚠️";
       const clave = TXT[idiomaActual][`${codigo}_titulo`] ? codigo : "error";
+
+      let botonExtra = "";
+      if (codigo === "reprogramar" && ultimoEstado.clinica_id) {
+        const urlPublica = `https://softwareclinicoavanzado.github.io/software-clinico-v1/frontend/agendar-publico.html?clinica=${ultimoEstado.clinica_id}&lang=${idiomaActual}`;
+        botonExtra = `<a class="btn-reprogramar" href="${urlPublica}">${tx.reprogramar_btn}</a>`;
+      }
 
       contenido.innerHTML = `
         <div class="icono">${icono}</div>
         <h1>${tx[`${clave}_titulo`]}</h1>
         <p>${tx[`${clave}_mensaje`]}</p>
+        ${botonExtra}
       `;
     }
 
@@ -230,7 +251,7 @@
           `${SUPABASE_URL}/functions/v1/confirmar-cita?id=${encodeURIComponent(id)}&accion=${encodeURIComponent(accion)}&token=${encodeURIComponent(token)}`
         );
         const data = await res.json();
-        ultimoEstado = { exito: !!data.exito, codigo: data.codigo || "error" };
+        ultimoEstado = { exito: !!data.exito, codigo: data.codigo || "error", clinica_id: data.clinica_id || null };
         pintar();
       } catch (e) {
         ultimoEstado = { exito: false, codigo: "conexion" };
