@@ -526,7 +526,7 @@ async function render() {
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, hora_fin, paciente_id, estado, motivo, whatsapp_enviado, asistio')
+        .select('id, fecha, hora, hora_fin, paciente_id, estado, motivo, whatsapp_enviado, asistio, tipo_pago, monto, cobrado')
         .order('hora', { ascending: true });
 
     if (error) {
@@ -590,6 +590,9 @@ async function render() {
                             ${completada && (c.asistio === null || c.asistio === undefined) ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("sin_marcar_badge")}</div>` : ""}
                             ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
                             ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
+                            ${!cancelada ? `<div class="appt-today-badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border-color:rgba(99,102,241,0.35);">${c.tipo_pago === "seguro" ? t("tipo_pago_seguro") : t("tipo_pago_particular")}${c.monto ? ` — Q${Number(c.monto).toFixed(2)}` : ""}</div>` : ""}
+                            ${!cancelada && c.cobrado ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cobrado_badge")}</div>` : ""}
+                            ${!cancelada && !c.cobrado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("pendiente_cobro_badge")}</div>` : ""}
                         </div>
                     </div>
                 </div>
@@ -619,6 +622,11 @@ async function render() {
                     ${t("no_asistio_btn")}
                 </button>
                 ` : `
+                ${!cancelada && !c.cobrado ? `
+                <button type="button" class="btn-action" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    ${t("marcar_cobrado_btn")}
+                </button>` : ""}
                 ${!cancelada ? `
                 <button type="button" class="btn-action" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);" onclick="enviarWhatsAppRecordatorio('${c.id}', '${(paciente && paciente.telefono) || ''}', ${jsStringParaOnclick(nombrePaciente)}, '${c.fecha}', '${c.hora}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -1080,6 +1088,10 @@ async function agregarCita() {
     const hora = inputHora.value;
     const horaFin = document.getElementById("horaFin") ? document.getElementById("horaFin").value : "";
     const motivo = inputMotivo ? inputMotivo.value.trim() : "";
+    const tipoPago = document.getElementById("tipoPago") ? document.getElementById("tipoPago").value : "particular";
+    const montoInput = document.getElementById("monto");
+    const monto = montoInput && montoInput.value !== "" ? parseFloat(montoInput.value) : null;
+    const cobrado = document.getElementById("cobrado") ? document.getElementById("cobrado").checked : false;
 
     if (!paciente_id || !fecha || !hora || !horaFin) {
         return alert("Completa todos los campos (incluyendo hora de fin) para agendar.");
@@ -1128,6 +1140,9 @@ async function agregarCita() {
         hora: hora,
         hora_fin: horaFin,
         motivo: motivo || null,
+        tipo_pago: tipoPago,
+        monto: monto,
+        cobrado: cobrado,
         clinica_id: clinicaID
     };
 
@@ -1167,6 +1182,12 @@ async function agregarCita() {
         if (inputMotivo) inputMotivo.value = "";
         const horaFinInput = document.getElementById("horaFin");
         if (horaFinInput) horaFinInput.value = "";
+        const tipoPagoSelect = document.getElementById("tipoPago");
+        if (tipoPagoSelect) tipoPagoSelect.value = "particular";
+        const montoInputReset = document.getElementById("monto");
+        if (montoInputReset) montoInputReset.value = "";
+        const cobradoCheckbox = document.getElementById("cobrado");
+        if (cobradoCheckbox) cobradoCheckbox.checked = false;
         citasDelDiaSeleccionado = [];
         mapaPacientesDia = {};
         cambiarVista('ver');
@@ -1177,7 +1198,7 @@ async function agregarCita() {
     }
 }
 
-function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
+async function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
     editandoCitaId = id;
     selectPaciente.value = pacienteId;
     establecerSelectsFecha(fecha);
@@ -1190,6 +1211,45 @@ function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
             establecerHoraFinSlider(horaFin);
         }, 50);
     });
+
+    // Traemos tipo de pago / monto / cobrado directo de la base
+    try {
+        const { data } = await supabaseClient
+            .from('citas')
+            .select('tipo_pago, monto, cobrado')
+            .eq('id', id)
+            .maybeSingle();
+
+        const tipoPagoSelect = document.getElementById("tipoPago");
+        const montoInput = document.getElementById("monto");
+        const cobradoCheckbox = document.getElementById("cobrado");
+
+        if (tipoPagoSelect) tipoPagoSelect.value = (data && data.tipo_pago) || "particular";
+        if (montoInput) montoInput.value = (data && data.monto !== null && data.monto !== undefined) ? data.monto : "";
+        if (cobradoCheckbox) cobradoCheckbox.checked = !!(data && data.cobrado);
+    } catch (e) {
+        console.warn("No se pudo cargar info de pago de la cita:", e);
+    }
+}
+
+async function marcarCobrado(id) {
+    try {
+        const { error } = await supabaseClient
+            .from('citas')
+            .update({ cobrado: true })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("editar", "cobro_cita", `Cita ${id} marcada como cobrada`);
+        }
+
+        render();
+    } catch (e) {
+        console.error("Error al marcar cobrado:", e);
+        alert("No se pudo marcar como cobrado.");
+    }
 }
 
 async function marcarAsistencia(id, asistio) {
