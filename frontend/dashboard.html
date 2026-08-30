@@ -215,6 +215,25 @@
           </div>
         </div>
 
+        <!-- Resumen de cobros del mes -->
+        <div class="card" id="cobrosWidget" style="display:none; margin-top:20px;">
+          <h3 style="color:#93c5fd; margin-bottom:14px; font-size:15px;" data-i18n="cobros_titulo">💰 Cobros este mes</h3>
+          <div style="display:flex; gap:20px; flex-wrap:wrap;">
+            <div>
+              <div id="cobrosCobrado" style="font-size:24px; font-weight:bold; color:#22c55e;">Q0.00</div>
+              <div style="font-size:12px; color:var(--text-muted);" data-i18n="cobros_cobrado_label">Cobrado</div>
+            </div>
+            <div>
+              <div id="cobrosPendiente" style="font-size:24px; font-weight:bold; color:#f59e0b;">Q0.00</div>
+              <div style="font-size:12px; color:var(--text-muted);" data-i18n="cobros_pendiente_label">Pendiente de cobro</div>
+            </div>
+            <div>
+              <div id="cobrosCantidadPendiente" style="font-size:24px; font-weight:bold; color:#94a3b8;">--</div>
+              <div style="font-size:12px; color:var(--text-muted);" data-i18n="cobros_cantidad_pendiente_label">Citas sin cobrar</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>
