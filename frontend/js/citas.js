@@ -1,5 +1,7 @@
 // ========================= CITAS PRO (CLOUD EDITION) =========================
 const clinicaID = typeof getClinicaID === "function" ? getClinicaID() : localStorage.getItem("clinicaID");
+const rolActualCitas = localStorage.getItem("rol");
+const puedeVerMontos = rolActualCitas === "admin" || rolActualCitas === "doctor";
 
 if (!clinicaID) {
     alert("Sesión inválida");
@@ -590,7 +592,7 @@ async function render() {
                             ${completada && (c.asistio === null || c.asistio === undefined) ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("sin_marcar_badge")}</div>` : ""}
                             ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
                             ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
-                            ${!cancelada ? `<div class="appt-today-badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border-color:rgba(99,102,241,0.35);">${c.tipo_pago === "seguro" ? t("tipo_pago_seguro") : t("tipo_pago_particular")}${c.monto ? ` — Q${Number(c.monto).toFixed(2)}` : ""}</div>` : ""}
+                            ${!cancelada ? `<div class="appt-today-badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border-color:rgba(99,102,241,0.35);">${c.tipo_pago === "seguro" ? t("tipo_pago_seguro") : t("tipo_pago_particular")}${(c.monto && puedeVerMontos) ? ` — Q${Number(c.monto).toFixed(2)}` : ""}</div>` : ""}
                             ${!cancelada && c.cobrado ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cobrado_badge")}</div>` : ""}
                             ${!cancelada && !c.cobrado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("pendiente_cobro_badge")}</div>` : ""}
                         </div>
@@ -1347,6 +1349,13 @@ async function inicializarVistaCitas() {
     const modo = params.get("mode");
     await cargarPacientes();
     await cargarCodigoTelClinica();
+
+    // Ocultamos el campo de monto para roles que no deben ver
+    // cifras financieras exactas (ej. recepción)
+    const wrapperMonto = document.getElementById("wrapperMonto");
+    if (wrapperMonto && !puedeVerMontos) {
+        wrapperMonto.style.display = "none";
+    }
 
     poblarSelectoresFecha();
     const selDia = document.getElementById("fechaDia");
