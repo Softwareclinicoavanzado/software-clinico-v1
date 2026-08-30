@@ -150,6 +150,34 @@ async function cargarWidgetAsistencia(clinicaID) {
     }
 }
 
+/* =========================================================
+   CONTADOR DE SOLICITUDES PENDIENTES (badge en el sidebar)
+========================================================= */
+async function actualizarBadgeSolicitudesDashboard(clinicaID) {
+    const badge = document.getElementById("badgeSolicitudesDashboard");
+    if (!badge) return;
+
+    try {
+        const { count, error } = await supabaseClient
+            .from('citas')
+            .select('id', { count: 'exact', head: true })
+            .eq('clinica_id', clinicaID)
+            .eq('estado', 'solicitud');
+
+        if (error) throw error;
+
+        const n = count || 0;
+        if (n > 0) {
+            badge.innerText = n;
+            badge.style.display = "inline-block";
+        } else {
+            badge.style.display = "none";
+        }
+    } catch (e) {
+        console.warn("No se pudo cargar el contador de solicitudes:", e);
+    }
+}
+
 function retraducirContenidoDinamico() {
     const clinicaElem = document.getElementById("clinica");
     const usuarioElem = document.getElementById("usuarioInfo");
@@ -182,4 +210,5 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarEstadisticas(clinicaID);
     cargarWidgetWhatsappPendiente(clinicaID);
     cargarWidgetAsistencia(clinicaID);
+    actualizarBadgeSolicitudesDashboard(clinicaID);
 });
