@@ -95,6 +95,61 @@ async function cargarWidgetWhatsappPendiente(clinicaID) {
     }
 }
 
+/* =========================================================
+   TASA DE ASISTENCIA DEL MES
+========================================================= */
+async function cargarWidgetAsistencia(clinicaID) {
+    const widget = document.getElementById("asistenciaWidget");
+    if (!widget) return;
+
+    try {
+        const hoy = new Date();
+        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        const y = inicioMes.getFullYear();
+        const m = String(inicioMes.getMonth() + 1).padStart(2, "0");
+        const d = String(inicioMes.getDate()).padStart(2, "0");
+        const inicioMesStr = `${y}-${m}-${d}`;
+
+        const hoyY = hoy.getFullYear();
+        const hoyM = String(hoy.getMonth() + 1).padStart(2, "0");
+        const hoyD = String(hoy.getDate()).padStart(2, "0");
+        const hoyStr = `${hoyY}-${hoyM}-${hoyD}`;
+
+        const { data: citasMes, error } = await supabaseClient
+            .from('citas')
+            .select('asistio')
+            .eq('clinica_id', clinicaID)
+            .eq('estado', 'completada')
+            .gte('fecha', inicioMesStr)
+            .lte('fecha', hoyStr);
+
+        if (error) throw error;
+
+        const total = (citasMes || []).length;
+        if (total === 0) {
+            widget.style.display = "none";
+            return;
+        }
+
+        const asistieron = citasMes.filter(c => c.asistio === true).length;
+        const noShows = citasMes.filter(c => c.asistio === false).length;
+        const sinMarcar = citasMes.filter(c => c.asistio === null || c.asistio === undefined).length;
+        const marcadas = asistieron + noShows;
+        const tasa = marcadas > 0 ? Math.round((asistieron / marcadas) * 100) : 0;
+
+        const tasaElem = document.getElementById("asistenciaTasa");
+        const noShowsElem = document.getElementById("asistenciaNoShows");
+        const sinMarcarElem = document.getElementById("asistenciaSinMarcar");
+        if (tasaElem) tasaElem.innerText = marcadas > 0 ? `${tasa}%` : "--%";
+        if (noShowsElem) noShowsElem.innerText = noShows;
+        if (sinMarcarElem) sinMarcarElem.innerText = sinMarcar;
+
+        widget.style.display = "block";
+    } catch (e) {
+        console.warn("No se pudo cargar la tasa de asistencia:", e);
+    }
+}
+
 function retraducirContenidoDinamico() {
     const clinicaElem = document.getElementById("clinica");
     const usuarioElem = document.getElementById("usuarioInfo");
@@ -126,4 +181,5 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     actualizarEstadisticas(clinicaID);
     cargarWidgetWhatsappPendiente(clinicaID);
+    cargarWidgetAsistencia(clinicaID);
 });
