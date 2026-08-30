@@ -268,6 +268,8 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarEstadisticas(clinicaID);
     cargarWidgetWhatsappPendiente(clinicaID);
     cargarWidgetAsistencia(clinicaID);
-    cargarWidgetCobros(clinicaID);
+    if (rol === "admin" || rol === "doctor") {
+        cargarWidgetCobros(clinicaID);
+    }
     actualizarBadgeSolicitudesDashboard(clinicaID);
 });
