@@ -178,6 +178,64 @@ async function actualizarBadgeSolicitudesDashboard(clinicaID) {
     }
 }
 
+/* =========================================================
+   RESUMEN DE COBROS DEL MES
+========================================================= */
+async function cargarWidgetCobros(clinicaID) {
+    const widget = document.getElementById("cobrosWidget");
+    if (!widget) return;
+
+    try {
+        const hoy = new Date();
+        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        const y = inicioMes.getFullYear();
+        const m = String(inicioMes.getMonth() + 1).padStart(2, "0");
+        const d = String(inicioMes.getDate()).padStart(2, "0");
+        const inicioMesStr = `${y}-${m}-${d}`;
+
+        const { data: citasMes, error } = await supabaseClient
+            .from('citas')
+            .select('monto, cobrado')
+            .eq('clinica_id', clinicaID)
+            .neq('estado', 'cancelada')
+            .neq('estado', 'solicitud')
+            .gte('fecha', inicioMesStr);
+
+        if (error) throw error;
+
+        const total = (citasMes || []).length;
+        if (total === 0) {
+            widget.style.display = "none";
+            return;
+        }
+
+        let totalCobrado = 0;
+        let totalPendiente = 0;
+        let cantidadPendiente = 0;
+
+        (citasMes || []).forEach(c => {
+            const monto = Number(c.monto) || 0;
+            if (c.cobrado) {
+                totalCobrado += monto;
+            } else {
+                totalPendiente += monto;
+                cantidadPendiente++;
+            }
+        });
+
+        const cobradoElem = document.getElementById("cobrosCobrado");
+        const pendienteElem = document.getElementById("cobrosPendiente");
+        const cantidadElem = document.getElementById("cobrosCantidadPendiente");
+        if (cobradoElem) cobradoElem.innerText = `Q${totalCobrado.toFixed(2)}`;
+        if (pendienteElem) pendienteElem.innerText = `Q${totalPendiente.toFixed(2)}`;
+        if (cantidadElem) cantidadElem.innerText = cantidadPendiente;
+
+        widget.style.display = "block";
+    } catch (e) {
+        console.warn("No se pudo cargar el resumen de cobros:", e);
+    }
+}
+
 function retraducirContenidoDinamico() {
     const clinicaElem = document.getElementById("clinica");
     const usuarioElem = document.getElementById("usuarioInfo");
@@ -210,5 +268,6 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarEstadisticas(clinicaID);
     cargarWidgetWhatsappPendiente(clinicaID);
     cargarWidgetAsistencia(clinicaID);
+    cargarWidgetCobros(clinicaID);
     actualizarBadgeSolicitudesDashboard(clinicaID);
 });
