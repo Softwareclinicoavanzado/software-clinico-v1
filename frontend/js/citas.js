@@ -526,10 +526,7 @@ async function render() {
 
     const { data: citasCloud, error } = await supabaseClient
         .from('citas')
-        .select('id, fecha, hora, hora_fin, paciente_id, estado, motivo, whatsapp_enviado')
-        .eq('clinica_id', clinicaID)
-        .in('estado', ['programada', 'confirmada', 'cancelada'])
-        .order('fecha', { ascending: true })
+        .select('id, fecha, hora, hora_fin, paciente_id, estado, motivo, whatsapp_enviado, asistio')
         .order('hora', { ascending: true });
 
     if (error) {
@@ -564,12 +561,16 @@ async function render() {
         const hoy = esCitaHoy(c.fecha);
         const confirmada = c.estado === "confirmada";
         const cancelada = c.estado === "cancelada";
+        const completada = c.estado === "completada";
 
         const div = document.createElement("div");
         div.className = "appt-card";
         if (cancelada) {
             div.style.border = "2px solid #ef4444";
             div.style.background = "rgba(239,68,68,0.06)";
+        }
+        if (completada) {
+            div.style.opacity = "0.85";
         }
         div.innerHTML = `
             <div class="appt-card-top">
@@ -583,7 +584,10 @@ async function render() {
                             ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
                             ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
                             ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
-                            ${!confirmada && !cancelada ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("cita_pendiente_badge")}</div>` : ""}
+                            ${!confirmada && !cancelada && !completada ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("cita_pendiente_badge")}</div>` : ""}
+                            ${completada && c.asistio === true ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("asistio_badge")}</div>` : ""}
+                            ${completada && c.asistio === false ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("no_asistio_badge")}</div>` : ""}
+                            ${completada && (c.asistio === null || c.asistio === undefined) ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("sin_marcar_badge")}</div>` : ""}
                             ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
                             ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
                         </div>
@@ -605,6 +609,16 @@ async function render() {
             ${c.motivo ? `<p class="appt-motivo">${c.motivo}</p>` : ""}
 
             <div class="patient-actions">
+                ${completada ? `
+                <button type="button" class="btn-action" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.35);" onclick="marcarAsistencia('${c.id}', true)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    ${t("asistio_btn")}
+                </button>
+                <button type="button" class="btn-action" style="background:rgba(239,68,68,0.15); color:#ef4444; border-color:rgba(239,68,68,0.35);" onclick="marcarAsistencia('${c.id}', false)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                    ${t("no_asistio_btn")}
+                </button>
+                ` : `
                 ${!cancelada ? `
                 <button type="button" class="btn-action" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);" onclick="enviarWhatsAppRecordatorio('${c.id}', '${(paciente && paciente.telefono) || ''}', ${jsStringParaOnclick(nombrePaciente)}, '${c.fecha}', '${c.hora}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
@@ -619,6 +633,7 @@ async function render() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                     ${cancelada ? t("eliminar_de_lista_btn") : (t("cancelar_cita_btn") || "Cancelar")}
                 </button>
+                `}
             </div>
         `;
         listaCitas.appendChild(div);
@@ -822,7 +837,7 @@ async function cargarCitasDelMes() {
         .from('citas')
         .select('id, fecha, hora, hora_fin, paciente_id, estado, motivo, whatsapp_enviado')
         .eq('clinica_id', clinicaID)
-        .in('estado', ['programada', 'confirmada', 'cancelada'])
+        .in('estado', ['programada', 'confirmada', 'cancelada', 'completada'])
         .gte('fecha', primerDia)
         .lte('fecha', ultimoDia)
         .order('hora', { ascending: true });
@@ -1175,6 +1190,26 @@ function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
             establecerHoraFinSlider(horaFin);
         }, 50);
     });
+}
+
+async function marcarAsistencia(id, asistio) {
+    try {
+        const { error } = await supabaseClient
+            .from('citas')
+            .update({ asistio: asistio })
+            .eq('id', id);
+
+        if (error) throw error;
+
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("editar", "asistencia_cita", `Cita ${id} marcada como: ${asistio ? "asistió" : "no asistió"}`);
+        }
+
+        render();
+    } catch (e) {
+        console.error("Error al marcar asistencia:", e);
+        alert("No se pudo guardar la asistencia.");
+    }
 }
 
 async function eliminarCita(id) {
