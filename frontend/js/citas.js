@@ -527,9 +527,7 @@ async function render() {
     await archivarCitasVencidas();
 
     const { data: citasCloud, error } = await supabaseClient
-        .from('citas')
-        .select('id, fecha, hora, hora_fin, paciente_id, estado, motivo, whatsapp_enviado, asistio, tipo_pago, monto, cobrado')
-        .order('hora', { ascending: true });
+        .rpc('obtener_citas_agenda', { p_clinica_id: clinicaID });
 
     if (error) {
         console.error("Error cargando citas:", error);
