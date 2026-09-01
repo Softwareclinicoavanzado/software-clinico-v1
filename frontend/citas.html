@@ -142,6 +142,10 @@
           <select id="pacienteSelect" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white;">
             <option value="" data-i18n="seleccione_paciente">Seleccione un paciente</option>
           </select>
+          <label><strong data-i18n="medico_label">Médico (opcional)</strong></label>
+          <select id="medicoSelect" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white;">
+            <option value="" data-i18n="sin_medico_asignar">Sin asignar</option>
+          </select>
           <label><strong data-i18n="fecha_label">Fecha</strong></label>
           <div style="display:flex; gap:8px; margin-bottom:15px;">
             <select id="fechaDia" style="flex:1; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;"></select>
@@ -190,7 +194,12 @@
         </div>
 
         <div id="seccionLista" style="display: none;">
-          <h2 style="color: #3498db; margin-bottom: 15px;" data-i18n="citas_programadas">📋 Citas Programadas</h2>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+            <h2 style="color: #3498db; margin:0;" data-i18n="citas_programadas">📋 Citas Programadas</h2>
+            <select id="filtroMedicoAgenda" style="padding:8px 12px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;" onchange="render()">
+              <option value="" data-i18n="filtro_todos_medicos">Todos los médicos</option>
+            </select>
+          </div>
           <ul class="lista" id="listaCitas" style="padding: 0;"></ul>
         </div>
 
