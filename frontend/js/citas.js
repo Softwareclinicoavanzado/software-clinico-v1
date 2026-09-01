@@ -474,6 +474,60 @@ function inicializarSlidersHora() {
 
 /* ========================================================= */
 
+let listaMedicos = [];
+
+async function cargarMedicos() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('perfiles')
+            .select('id, nombre')
+            .eq('clinica_id', clinicaID)
+            .eq('rol', 'doctor')
+            .eq('activo', true)
+            .order('nombre', { ascending: true });
+
+        if (error) throw error;
+        listaMedicos = data || [];
+    } catch (e) {
+        console.warn("No se pudo cargar la lista de médicos:", e);
+        listaMedicos = [];
+    }
+
+    const selForm = document.getElementById("medicoSelect");
+    const selFiltro = document.getElementById("filtroMedicoAgenda");
+
+    if (selForm) {
+        selForm.innerHTML = `<option value="">${t("sin_medico_asignar") || "Sin asignar"}</option>`;
+        listaMedicos.forEach(m => {
+            const op = document.createElement("option");
+            op.value = m.id;
+            op.textContent = m.nombre;
+            selForm.appendChild(op);
+        });
+        const labelMedico = selForm.previousElementSibling;
+        const mostrar = listaMedicos.length > 0;
+        selForm.style.display = mostrar ? "" : "none";
+        if (labelMedico) labelMedico.style.display = mostrar ? "" : "none";
+    }
+
+    if (selFiltro) {
+        selFiltro.innerHTML = `<option value="">${t("filtro_todos_medicos") || "Todos los médicos"}</option>`;
+        listaMedicos.forEach(m => {
+            const op = document.createElement("option");
+            op.value = m.id;
+            op.textContent = m.nombre;
+            selFiltro.appendChild(op);
+        });
+        selFiltro.style.display = listaMedicos.length > 1 ? "" : "none";
+    }
+}
+
+function nombreMedico(medicoId) {
+    if (!medicoId) return null;
+    const m = listaMedicos.find(x => x.id === medicoId);
+    return m ? m.nombre : null;
+}
+
 async function cargarPacientes() {
     const { data: pacientes, error } = await supabaseClient
         .from('pacientes')
@@ -553,7 +607,13 @@ async function render() {
         .select('id, nombre, telefono')
         .eq('clinica_id', clinicaID);
 
-    citasCloud.forEach((c) => {
+    const filtroMedicoSel = document.getElementById("filtroMedicoAgenda");
+    const filtroMedicoValor = filtroMedicoSel ? filtroMedicoSel.value : "";
+    const citasFiltradas = filtroMedicoValor
+        ? citasCloud.filter(c => c.medico_id === filtroMedicoValor)
+        : citasCloud;
+
+    citasFiltradas.forEach((c) => {
         const paciente = pacientesData
             ? pacientesData.find(p => Number(p.id) === Number(c.paciente_id))
             : null;
@@ -593,6 +653,7 @@ async function render() {
                             ${!cancelada ? `<div class="appt-today-badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border-color:rgba(99,102,241,0.35);">${c.tipo_pago === "seguro" ? t("tipo_pago_seguro") : t("tipo_pago_particular")}${(c.monto && puedeVerMontos) ? ` — Q${Number(c.monto).toFixed(2)}` : ""}</div>` : ""}
                             ${!cancelada && c.cobrado ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cobrado_badge")}</div>` : ""}
                             ${!cancelada && !c.cobrado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("pendiente_cobro_badge")}</div>` : ""}
+                            ${!cancelada && nombreMedico(c.medico_id) ? `<div class="appt-today-badge" style="background:rgba(139,92,246,0.15); color:#a78bfa; border-color:rgba(139,92,246,0.35);">👨‍⚕️ ${nombreMedico(c.medico_id)}</div>` : ""}
                         </div>
                     </div>
                 </div>
@@ -1092,6 +1153,8 @@ async function agregarCita() {
     const montoInput = document.getElementById("monto");
     const monto = montoInput && montoInput.value !== "" ? parseFloat(montoInput.value) : null;
     const cobrado = document.getElementById("cobrado") ? document.getElementById("cobrado").checked : false;
+    const medicoSelect = document.getElementById("medicoSelect");
+    const medicoId = medicoSelect && medicoSelect.value ? medicoSelect.value : null;
 
     if (!paciente_id || !fecha || !hora || !horaFin) {
         return alert("Completa todos los campos (incluyendo hora de fin) para agendar.");
@@ -1143,6 +1206,7 @@ async function agregarCita() {
         tipo_pago: tipoPago,
         monto: monto,
         cobrado: cobrado,
+        medico_id: medicoId,
         clinica_id: clinicaID
     };
 
@@ -1188,6 +1252,8 @@ async function agregarCita() {
         if (montoInputReset) montoInputReset.value = "";
         const cobradoCheckbox = document.getElementById("cobrado");
         if (cobradoCheckbox) cobradoCheckbox.checked = false;
+        const medicoSelectReset = document.getElementById("medicoSelect");
+        if (medicoSelectReset) medicoSelectReset.value = "";
         citasDelDiaSeleccionado = [];
         mapaPacientesDia = {};
         cambiarVista('ver');
@@ -1212,21 +1278,23 @@ async function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
         }, 50);
     });
 
-    // Traemos tipo de pago / monto / cobrado directo de la base
+    // Traemos tipo de pago / monto / cobrado / médico directo de la base
     try {
         const { data } = await supabaseClient
             .from('citas')
-            .select('tipo_pago, monto, cobrado')
+            .select('tipo_pago, monto, cobrado, medico_id')
             .eq('id', id)
             .maybeSingle();
 
         const tipoPagoSelect = document.getElementById("tipoPago");
         const montoInput = document.getElementById("monto");
         const cobradoCheckbox = document.getElementById("cobrado");
+        const medicoSelect = document.getElementById("medicoSelect");
 
         if (tipoPagoSelect) tipoPagoSelect.value = (data && data.tipo_pago) || "particular";
         if (montoInput) montoInput.value = (data && data.monto !== null && data.monto !== undefined) ? data.monto : "";
         if (cobradoCheckbox) cobradoCheckbox.checked = !!(data && data.cobrado);
+        if (medicoSelect) medicoSelect.value = (data && data.medico_id) || "";
     } catch (e) {
         console.warn("No se pudo cargar info de pago de la cita:", e);
     }
@@ -1347,6 +1415,7 @@ async function inicializarVistaCitas() {
     const modo = params.get("mode");
     await cargarPacientes();
     await cargarCodigoTelClinica();
+    await cargarMedicos();
 
     // Ocultamos el campo de monto para roles que no deben ver
     // cifras financieras exactas (ej. recepción)
