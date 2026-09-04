@@ -194,16 +194,15 @@ async function cargarWidgetCobros(clinicaID) {
         const inicioMesStr = `${y}-${m}-${d}`;
 
         const { data: citasMes, error } = await supabaseClient
-            .from('citas')
-            .select('monto, cobrado')
-            .eq('clinica_id', clinicaID)
-            .neq('estado', 'cancelada')
-            .neq('estado', 'solicitud')
-            .gte('fecha', inicioMesStr);
+            .rpc('obtener_citas_agenda', { p_clinica_id: clinicaID });
 
         if (error) throw error;
 
-        const total = (citasMes || []).length;
+        const citasDelMesFiltradas = (citasMes || []).filter(c =>
+            c.fecha >= inicioMesStr && c.estado !== 'cancelada'
+        );
+
+        const total = citasDelMesFiltradas.length;
         if (total === 0) {
             widget.style.display = "none";
             return;
@@ -213,7 +212,7 @@ async function cargarWidgetCobros(clinicaID) {
         let totalPendiente = 0;
         let cantidadPendiente = 0;
 
-        (citasMes || []).forEach(c => {
+        citasDelMesFiltradas.forEach(c => {
             const monto = Number(c.monto) || 0;
             if (c.cobrado) {
                 totalCobrado += monto;
