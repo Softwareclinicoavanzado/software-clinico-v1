@@ -682,6 +682,11 @@ async function render() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     ${t("no_asistio_btn")}
                 </button>
+                ${!c.cobrado ? `
+                <button type="button" class="btn-action" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    ${t("marcar_cobrado_btn")}
+                </button>` : ""}
                 ` : `
                 ${!cancelada && !c.cobrado ? `
                 <button type="button" class="btn-action" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
@@ -1075,14 +1080,23 @@ async function seleccionarDiaCalendario(fechaStr) {
 }
 
 async function eliminarCitaDesdeCalendario(id) {
-    if (!confirm("¿Deseas cancelar esta cita permanentemente?")) return;
-    const { error } = await supabaseClient.from('citas').delete().eq('id', id);
-    if (error) {
-        alert("No se pudo eliminar la cita.");
-        return;
-    }
-    if (typeof registrarAuditoria === "function") {
-        registrarAuditoria("eliminar", "cita", "Cita cancelada desde el calendario");
+    const citaActual = calCitasDelMes.find(c => String(c.id) === String(id));
+    const yaEstaCancelada = citaActual && citaActual.estado === 'cancelada';
+
+    if (yaEstaCancelada) {
+        if (!confirm("¿Deseas quitar esta cita de la lista permanentemente? Esto no se puede deshacer.")) return;
+        const { error } = await supabaseClient.from('citas').delete().eq('id', id);
+        if (error) { alert("No se pudo eliminar la cita."); return; }
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("eliminar", "cita", "Cita eliminada de la lista desde el calendario");
+        }
+    } else {
+        if (!confirm("¿Deseas cancelar esta cita?")) return;
+        const { error } = await supabaseClient.from('citas').update({ estado: 'cancelada' }).eq('id', id);
+        if (error) { alert("No se pudo cancelar la cita."); return; }
+        if (typeof registrarAuditoria === "function") {
+            registrarAuditoria("editar", "cita", "Cita cancelada desde el calendario");
+        }
     }
     await cargarCitasDelMes();
     renderCalendario();
@@ -1254,6 +1268,7 @@ async function agregarCita() {
         if (cobradoCheckbox) cobradoCheckbox.checked = false;
         const medicoSelectReset = document.getElementById("medicoSelect");
         if (medicoSelectReset) medicoSelectReset.value = "";
+        poblarSelectoresFecha();
         citasDelDiaSeleccionado = [];
         mapaPacientesDia = {};
         cambiarVista('ver');
@@ -1341,20 +1356,34 @@ async function marcarAsistencia(id, asistio) {
 }
 
 async function eliminarCita(id) {
-    if (!confirm("¿Deseas cancelar esta cita permanentemente?")) return;
+    try {
+        const { data: citaActual } = await supabaseClient
+            .from('citas')
+            .select('estado')
+            .eq('id', id)
+            .maybeSingle();
 
-    const { error } = await supabaseClient
-        .from('citas')
-        .delete()
-        .eq('id', id);
+        const yaEstaCancelada = citaActual && citaActual.estado === 'cancelada';
 
-    if (error) {
-        alert("No se pudo eliminar la cita.");
-    } else {
-        if (typeof registrarAuditoria === "function") {
-            registrarAuditoria("eliminar", "cita", "Cita cancelada");
+        if (yaEstaCancelada) {
+            if (!confirm("¿Deseas quitar esta cita de la lista permanentemente? Esto no se puede deshacer.")) return;
+            const { error } = await supabaseClient.from('citas').delete().eq('id', id);
+            if (error) { alert("No se pudo eliminar la cita."); return; }
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("eliminar", "cita", "Cita eliminada de la lista");
+            }
+        } else {
+            if (!confirm("¿Deseas cancelar esta cita?")) return;
+            const { error } = await supabaseClient.from('citas').update({ estado: 'cancelada' }).eq('id', id);
+            if (error) { alert("No se pudo cancelar la cita."); return; }
+            if (typeof registrarAuditoria === "function") {
+                registrarAuditoria("editar", "cita", "Cita cancelada");
+            }
         }
         render();
+    } catch (e) {
+        console.error("Error al procesar la cancelación:", e);
+        alert("Ocurrió un error.");
     }
 }
 
@@ -1390,6 +1419,7 @@ function cambiarVista(modo) {
 
         inicializarSlidersHora();
         if (!editandoCitaId) {
+            poblarSelectoresFecha();
             establecerHoraSlider("");
             establecerHoraFinSlider("");
             citasDelDiaSeleccionado = [];
