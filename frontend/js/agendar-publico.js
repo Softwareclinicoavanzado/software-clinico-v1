@@ -105,7 +105,7 @@ function aplicarTextosPublico() {
     document.getElementById("lblTelefono").innerText = t("telefono_label");
     document.getElementById("lblEmail").innerText = t("publico_email_label");
     document.getElementById("lblFecha").innerText = t("fecha_label");
-    document.getElementById("lblMotivo").innerText = t("motivo_label");
+    document.getElementById("lblMotivo").innerText = t("publico_motivo_label");
     document.getElementById("pubNombre").placeholder = t("publico_nombre_placeholder");
     document.getElementById("pubTelefono").placeholder = t("publico_telefono_placeholder");
     document.getElementById("pubMotivo").placeholder = t("motivo_placeholder");
@@ -125,7 +125,7 @@ async function cargarHorasOcupadasPublico() {
         return;
     }
 
-    panel.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">⏳ ${t("publico_elige_fecha")}...</p>`;
+    panel.innerHTML = `<p style="font-size:12px; color:var(--text-muted);">⏳ ${t("publico_cargando_horarios")}...</p>`;
 
     try {
         const { data, error } = await supabaseClient.rpc("horas_ocupadas_publico", {
