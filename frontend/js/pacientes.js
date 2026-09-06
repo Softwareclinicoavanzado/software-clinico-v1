@@ -213,7 +213,18 @@ function retraducirContenidoDinamico() {
     const params = new URLSearchParams(window.location.search);
     const modo = params.get("mode");
     const titulo = document.getElementById("tituloPagina");
-    if (titulo) titulo.innerText = modo === "nuevo" ? t("gestion_pacientes") : t("listado_pacientes");
+
+    // Si hay una edición activa (se entró vía editarPaciente(), que no cambia
+    // la URL), hay que respetar ese estado en vez del modo de la URL —
+    // si no, el título y el botón "Guardar Cambios" se revertían a los
+    // textos de "nuevo paciente" al cambiar de idioma a mitad de una edición.
+    if (editandoID) {
+        if (titulo) titulo.innerText = t("actualizar_perfil_titulo");
+        const btnSubmit = document.querySelector(".btn-primary");
+        if (btnSubmit) btnSubmit.innerText = t("guardar_cambios_btn");
+    } else if (titulo) {
+        titulo.innerText = modo === "nuevo" ? t("gestion_pacientes") : t("listado_pacientes");
+    }
 }
 
 /* ========================================================= */
@@ -341,7 +352,7 @@ function exportarPacienteIndividualExcel(id) {
 ========================================================= */
 function generarPDFListaPacientes(lista, titulo) {
     if (!window.jspdf) {
-        alert("No se pudo cargar la librería PDF.");
+        alert(t("error_libreria_pdf"));
         return;
     }
     const { jsPDF } = window.jspdf;
@@ -517,11 +528,11 @@ function editarPaciente(id) {
 
 async function agregarPaciente() {
     const nombre = inputs.nombre.value.trim();
-    if (!nombre) return alert("El nombre es obligatorio");
+    if (!nombre) return alert(t("nombre_obligatorio"));
 
     const emailValor = inputs.email.value.trim();
     if (!emailTieneFormatoValido(emailValor)) {
-        alert("El correo electrónico no tiene un formato válido (ej: nombre@dominio.com)");
+        alert(t("email_formato_invalido"));
         inputs.email.focus();
         return;
     }
@@ -551,7 +562,7 @@ async function agregarPaciente() {
             if (typeof registrarAuditoria === "function") {
                 registrarAuditoria("editar", "paciente", nombre);
             }
-            alert("¡Perfil actualizado con éxito!");
+            alert(t("perfil_actualizado_exito"));
             editandoID = null;
         } else {
             const { error } = await supabaseClient
@@ -561,20 +572,20 @@ async function agregarPaciente() {
             if (typeof registrarAuditoria === "function") {
                 registrarAuditoria("crear", "paciente", nombre);
             }
-            alert("¡Paciente registrado con éxito!");
+            alert(t("paciente_registrado_exito"));
         }
         Object.values(inputs).forEach(input => { if(input) input.value = ""; });
         window.location.href = "pacientes.html?mode=ver";
     } catch (err) {
         console.error("Error detallado de Supabase:", err);
-        alert("Error al sincronizar: " + (err.message || "Verifica la consola"));
+        alert(t("error_sincronizar") + (err.message || t("verifica_consola")));
     }
 }
 
 async function eliminarPaciente(id) {
     const p = pacientes.find(pac => Number(pac.id) === Number(id));
     if (!p) return;
-    if (confirm(`⚠️ ¿ELIMINAR PACIENTE DEFINITIVAMENTE?\n\nNombre: ${p.nombre}`)) {
+    if (confirm(`${t("confirmar_eliminar_paciente")} ${p.nombre}`)) {
         try {
             const { error } = await supabaseClient
                 .from('pacientes')
@@ -586,7 +597,7 @@ async function eliminarPaciente(id) {
             }
             cargarDatos();
         } catch (err) {
-            alert("Error al eliminar: " + err.message);
+            alert(t("error_eliminar") + err.message);
         }
     }
 }
