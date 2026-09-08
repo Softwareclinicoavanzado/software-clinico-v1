@@ -251,7 +251,15 @@ async function enviarSolicitudPublico() {
    INICIALIZACIÓN
 ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
-    const savedLang = localStorage.getItem("lang") || "es";
+    // El link de "Elegir nuevo horario" en confirmar.html llega con ?lang=
+    // para respetar el idioma que el paciente ya había elegido ahí. Si no
+    // viene (o no es válido), se usa el idioma guardado, y si tampoco hay
+    // ninguno, español por defecto.
+    const idiomasValidos = ["es", "en", "fr"];
+    const langParam = params.get("lang");
+    const savedLang = (langParam && idiomasValidos.includes(langParam))
+        ? langParam
+        : (localStorage.getItem("lang") || "es");
     if (typeof changeLanguage === "function") changeLanguage(savedLang);
 
     if (!clinicaIdPublico) {
