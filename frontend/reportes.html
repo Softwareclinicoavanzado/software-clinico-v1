@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reportes | ClinicOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!--
+    NOTA: agrega aquí arriba del <div class="card"> lo que uses en tus
+    otras páginas internas (citas.html, pacientes.html) para el
+    sidebar/topbar y la inicialización de supabaseClient — esta página
+    no lo trae porque no tengo ese archivo para copiarlo igual.
+  -->
+
+  <div style="max-width:520px; margin:0 auto; padding:24px 16px;">
+
+    <button type="button" class="btn-action" onclick="volver()" style="margin-bottom:16px;" data-i18n="volver_dashboard">Volver al Dashboard</button>
+
+    <div class="card">
+      <h2 style="margin-bottom:18px;" data-i18n="reportes_titulo">Reporte Mensual</h2>
+
+      <div style="display:flex; gap:10px; margin-bottom:18px;">
+        <div style="flex:1;">
+          <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;" data-i18n="reportes_mes_label">Mes</label>
+          <select id="reporteMes" style="width:100%; padding:10px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155);"></select>
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;" data-i18n="reportes_anio_label">Año</label>
+          <select id="reporteAnio" style="width:100%; padding:10px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155);"></select>
+        </div>
+      </div>
+
+      <div id="panelReporte"></div>
+    </div>
+
+  </div>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/reportes.js"></script>
+</body>
+</html>
