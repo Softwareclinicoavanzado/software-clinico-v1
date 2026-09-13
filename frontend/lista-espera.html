@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Lista de Espera | ClinicOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!--
+    NOTA: igual que en reportes.html, agrega aquí arriba el
+    sidebar/topbar y el script que inicializa supabaseClient que
+    uses en citas.html o pacientes.html.
+  -->
+
+  <div style="max-width:520px; margin:0 auto; padding:24px 16px;">
+
+    <button type="button" class="btn-action" onclick="volver()" style="margin-bottom:16px;" data-i18n="volver_dashboard">Volver al Dashboard</button>
+
+    <div class="card" style="margin-bottom:20px;">
+      <h2 style="margin-bottom:8px;" data-i18n="lista_espera_titulo">Lista de Espera</h2>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;" data-i18n="lista_espera_desc">
+        Cuando se cancele una cita en la fecha que elijas, se le avisa automáticamente por correo a quien esté aquí esperando esa fecha.
+      </p>
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;" data-i18n="lista_espera_nombre_label">Nombre completo</label>
+      <input type="text" id="esperaNombre">
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" data-i18n="lista_espera_telefono_label">Teléfono (opcional)</label>
+      <input type="tel" id="esperaTelefono">
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" data-i18n="lista_espera_email_label">Correo electrónico</label>
+      <input type="email" id="esperaEmail">
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" data-i18n="lista_espera_fecha_label">Fecha que espera</label>
+      <input type="date" id="esperaFecha">
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;" data-i18n="lista_espera_motivo_label">Motivo (opcional)</label>
+      <textarea id="esperaMotivo" rows="2" style="width:100%; padding:12px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155); resize:vertical;"></textarea>
+
+      <button type="button" class="btn-primary" style="margin-top:18px;" onclick="agregarAListaEspera()" data-i18n="lista_espera_agregar_btn">➕ Agregar a la Lista</button>
+    </div>
+
+    <div id="listaEspera"></div>
+
+  </div>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/lista-espera.js"></script>
+</body>
+</html>
