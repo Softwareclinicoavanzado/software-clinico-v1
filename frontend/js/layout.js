@@ -71,18 +71,26 @@ window.logout = function() {
 };
 
 /* =========================
-   Mostrar/ocultar "Gestionar Usuarios", "Auditoría" y "Recordatorios por Correo"
-   en el sidebar según el rol (corre en TODAS las páginas)
+   Mostrar/ocultar ítems del sidebar según el rol (corre en
+   TODAS las páginas). "Configuración de Pagos" solo para admin
+   (ahí van llaves de pago); "Reportes" para admin y doctor,
+   igual que ya filtra reportes.js internamente.
 ========================= */
 document.addEventListener("DOMContentLoaded", () => {
     const rol = localStorage.getItem("rol");
     const liUsuarios = document.getElementById("liUsuarios");
     const liAuditoria = document.getElementById("liAuditoria");
     const liConfigCorreo = document.getElementById("liConfigCorreo");
+    const liConfigPagos = document.getElementById("liConfigPagos");
+    const liReportes = document.getElementById("liReportes");
     if (rol === "admin") {
         if (liUsuarios) liUsuarios.style.display = "block";
         if (liAuditoria) liAuditoria.style.display = "block";
         if (liConfigCorreo) liConfigCorreo.style.display = "block";
+        if (liConfigPagos) liConfigPagos.style.display = "block";
+    }
+    if (rol === "admin" || rol === "doctor") {
+        if (liReportes) liReportes.style.display = "block";
     }
 });
 
