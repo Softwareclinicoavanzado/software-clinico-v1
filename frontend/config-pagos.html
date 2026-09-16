@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Configuración de Pagos | ClinicOS</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./css/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!--
+    NOTA: igual que reportes.html y lista-espera.html, agrega aquí
+    arriba el sidebar/topbar y el script que inicializa
+    supabaseClient que uses en citas.html o pacientes.html.
+  -->
+
+  <div style="max-width:520px; margin:0 auto; padding:24px 16px;">
+
+    <button type="button" class="btn-action" onclick="volver()" style="margin-bottom:16px;">Volver al Dashboard</button>
+
+    <div class="card">
+      <h2 style="margin-bottom:6px;">💳 Configuración de Pagos</h2>
+      <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
+        Activa un depósito obligatorio para agendar por el link público. Elige tu país y el sistema te sugiere la mejor pasarela — puedes cambiarla si quieres.
+      </p>
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">País</label>
+      <select id="pagoPais" style="width:100%; padding:10px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155);"></select>
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;">Proveedor de pago</label>
+      <select id="pagoProveedor" style="width:100%; padding:10px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155);">
+        <option value="recurrente">Recurrente</option>
+        <option value="stripe">Stripe</option>
+        <option value="mercadopago">MercadoPago</option>
+      </select>
+
+      <p id="pagoAyudaProveedor" style="font-size:12px; color:var(--text-muted); margin:10px 0 0; line-height:1.5;"></p>
+
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <div style="flex:1;">
+          <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Moneda</label>
+          <input type="text" id="pagoMoneda" maxlength="3" style="width:100%; text-transform:uppercase;" placeholder="GTQ">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Monto del depósito</label>
+          <input type="number" id="pagoMonto" min="1" step="0.01" placeholder="50.00">
+        </div>
+      </div>
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;">Llave secreta (Secret Key / Access Token)</label>
+      <input type="password" id="pagoSecretKey" placeholder="sk_live_... / APP_USR-...">
+
+      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;">Webhook Secret</label>
+      <input type="password" id="pagoWebhookSecret" placeholder="whsec_...">
+
+      <p style="font-size:12px; color:var(--text-muted); margin:10px 0 0;">
+        URL de webhook para registrar en tu cuenta:<br>
+        <code id="pagoUrlWebhook" style="font-size:11px; word-break:break-all;"></code>
+      </p>
+
+      <label style="display:flex; align-items:center; gap:8px; margin-top:16px; font-size:14px;">
+        <input type="checkbox" id="pagoActivo" style="width:auto;">
+        Exigir depósito para agendar por el link público
+      </label>
+
+      <button type="button" class="btn-primary" style="margin-top:20px;" id="btnGuardarPagos" onclick="guardarConfigPagos()">💾 Guardar Configuración</button>
+    </div>
+
+  </div>
+
+  <script src="./js/storage.js"></script>
+  <script src="./js/translations.js"></script>
+  <script src="./js/config-pagos.js"></script>
+</body>
+</html>
