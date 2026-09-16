@@ -166,6 +166,7 @@ const translations = {
         publico_sin_horarios: "No hay horarios disponibles para esta fecha, intenta con otro día.",
         publico_email_label: "Correo electrónico (opcional)",
         publico_motivo_label: "Razón de la cita (opcional)",
+        publico_pagar_depositar_btn: "Pagar depósito y agendar",
         periodo_manana: "Mañana",
         periodo_tarde: "Tarde",
         periodo_noche: "Noche",
@@ -314,6 +315,9 @@ const translations = {
         config_correo_activo_desde: "Recordatorios activos desde",
         config_correo_enviando: "Enviando...",
         config_correo_prueba_exito: "✅ Correo de prueba enviado. Revisa tu bandeja.",
+
+        config_pagos_link: "💳 Configuración de Pagos",
+        config_pagos_titulo: "Configuración de Pagos",
 
         btn_nuevo: "Nuevo Registro",
         buscar: "Buscar...",
@@ -485,6 +489,7 @@ const translations = {
         publico_sin_horarios: "No available times for this date, try another day.",
         publico_email_label: "Email (optional)",
         publico_motivo_label: "Appointment Reason (optional)",
+        publico_pagar_depositar_btn: "Pay deposit and book",
         periodo_manana: "Morning",
         periodo_tarde: "Afternoon",
         periodo_noche: "Evening",
@@ -633,6 +638,9 @@ const translations = {
         config_correo_activo_desde: "Reminders active from",
         config_correo_enviando: "Sending...",
         config_correo_prueba_exito: "✅ Test email sent. Check your inbox.",
+
+        config_pagos_link: "💳 Payment Settings",
+        config_pagos_titulo: "Payment Settings",
 
         btn_nuevo: "Add New",
         buscar: "Search...",
@@ -804,6 +812,7 @@ const translations = {
         publico_sin_horarios: "Aucun horaire disponible pour cette date, essayez un autre jour.",
         publico_email_label: "E-mail (optionnel)",
         publico_motivo_label: "Raison du rendez-vous (optionnel)",
+        publico_pagar_depositar_btn: "Payer l'acompte et réserver",
         periodo_manana: "Matin",
         periodo_tarde: "Après-midi",
         periodo_noche: "Soir",
@@ -952,6 +961,9 @@ const translations = {
         config_correo_activo_desde: "Rappels actifs depuis",
         config_correo_enviando: "Envoi en cours...",
         config_correo_prueba_exito: "✅ E-mail test envoyé. Vérifiez votre boîte de réception.",
+
+        config_pagos_link: "💳 Configuration des Paiements",
+        config_pagos_titulo: "Configuration des Paiements",
 
         btn_nuevo: "Ajouter nouveau",
         buscar: "Chercher...",
