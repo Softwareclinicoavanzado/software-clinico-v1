@@ -1,76 +1,181 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <title>ClinicOS | Configuración de Pagos</title>
   <meta charset="UTF-8">
-  <title>Configuración de Pagos | ClinicOS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
-  <!--
-    NOTA: igual que reportes.html y lista-espera.html, agrega aquí
-    arriba el sidebar/topbar y el script que inicializa
-    supabaseClient que uses en citas.html o pacientes.html.
-  -->
+  <div class="app-shell">
 
-  <div style="max-width:520px; margin:0 auto; padding:24px 16px;">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-    <button type="button" class="btn-action" onclick="volver()" style="margin-bottom:16px;">Volver al Dashboard</button>
-
-    <div class="card">
-      <h2 style="margin-bottom:6px;">💳 Configuración de Pagos</h2>
-      <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
-        Activa un depósito obligatorio para agendar por el link público. Elige tu país y el sistema te sugiere la mejor pasarela — puedes cambiarla si quieres.
-      </p>
-
-      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">País</label>
-      <select id="pagoPais" style="width:100%; padding:10px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155);"></select>
-
-      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;">Proveedor de pago</label>
-      <select id="pagoProveedor" style="width:100%; padding:10px; border-radius:10px; background:var(--bg-input, #1e293b); color:inherit; border:1px solid var(--border-color, #334155);">
-        <option value="recurrente">Recurrente</option>
-        <option value="stripe">Stripe</option>
-        <option value="mercadopago">MercadoPago</option>
-      </select>
-
-      <p id="pagoAyudaProveedor" style="font-size:12px; color:var(--text-muted); margin:10px 0 0; line-height:1.5;"></p>
-
-      <div style="display:flex; gap:10px; margin-top:14px;">
-        <div style="flex:1;">
-          <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Moneda</label>
-          <input type="text" id="pagoMoneda" maxlength="3" style="width:100%; text-transform:uppercase;" placeholder="GTQ">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"/><path d="M9 12l2 2 4-4"/></svg>
         </div>
-        <div style="flex:1;">
-          <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin-bottom:6px;">Monto del depósito</label>
-          <input type="number" id="pagoMonto" min="1" step="0.01" placeholder="50.00">
+        <span class="sidebar-brand-name">ClinicOS</span>
+      </div>
+
+      <ul class="sidebar-nav">
+        <li>
+          <button class="sidebar-link" type="button" onclick="volver()" data-nav="dashboard">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V9.5Z"/></svg>
+            <span data-i18n="menu_dashboard">Dashboard</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" type="button" onclick="window.location.href='pacientes.html?mode=ver'" data-nav="pacientes-ver">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <span data-i18n="ver_pacientes_link">Ver Pacientes</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" type="button" onclick="window.location.href='citas.html?mode=ver'" data-nav="citas-ver">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            <span data-i18n="ver_agenda_link">Ver Agenda</span>
+          </button>
+        </li>
+        <li>
+          <button class="sidebar-link" type="button" onclick="window.location.href='lista-espera.html'" data-nav="lista-espera">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+            <span data-i18n="lista_espera_link">⏳ Lista de Espera</span>
+          </button>
+        </li>
+        <li id="liReportes" style="display:none;">
+          <button class="sidebar-link" type="button" onclick="window.location.href='reportes.html'" data-nav="reportes">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8 12 14.7l-3.5-3.5L3 16.5"/></svg>
+            <span data-i18n="reportes_link">📊 Reportes</span>
+          </button>
+        </li>
+        <li id="liUsuarios" style="display:none;">
+          <button class="sidebar-link" type="button" onclick="irUsuarios()" data-nav="usuarios">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <span data-i18n="gestionar_usuarios_link">Gestionar Usuarios</span>
+          </button>
+        </li>
+        <li id="liAuditoria" style="display:none;">
+          <button class="sidebar-link" type="button" onclick="window.location.href='auditoria.html'" data-nav="auditoria">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            <span data-i18n="auditoria_link">Auditoría</span>
+          </button>
+        </li>
+        <li id="liConfigCorreo" style="display:none;">
+          <button class="sidebar-link" type="button" onclick="window.location.href='configuracion-correo.html'" data-nav="config-correo">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+            <span data-i18n="config_correo_link">Recordatorios por Correo</span>
+          </button>
+        </li>
+        <li id="liConfigPagos" style="display:none;">
+          <button class="sidebar-link" type="button" onclick="window.location.href='config-pagos.html'" data-nav="config-pagos">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+            <span data-i18n="config_pagos_link">💳 Configuración de Pagos</span>
+          </button>
+        </li>
+      </ul>
+
+      <div class="sidebar-divider"></div>
+      <button class="sidebar-link danger-link" type="button" onclick="logout()" id="btnLogout">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+        <span data-i18n="cerrar_sesion">Cerrar sesión</span>
+      </button>
+    </aside>
+
+    <div class="main-area">
+      <div class="topbar">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <button class="hamburger-btn" onclick="toggleSidebar()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          </button>
+          <div class="topbar-title">
+            <span id="tituloPagina" data-i18n="config_pagos_titulo">Configuración de Pagos</span>
+          </div>
+        </div>
+
+        <div class="lang-switcher">
+          <button class="lang-btn" type="button" id="langMainBtn" onclick="toggleLangDropdown()">
+            <span class="lang-flag-current" id="langFlagActual">🇲🇽</span>
+            <span id="langBtnTexto">ES</span>
+            <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </button>
+          <div class="lang-dropdown" id="langDropdown">
+            <button class="lang-option" data-lang="es" onclick="seleccionarIdioma('es')"><span class="flag">🇲🇽</span> Español</button>
+            <button class="lang-option" data-lang="en" onclick="seleccionarIdioma('en')"><span class="flag">🇺🇸</span> English</button>
+            <button class="lang-option" data-lang="fr" onclick="seleccionarIdioma('fr')"><span class="flag">🇫🇷</span> Français</button>
+          </div>
         </div>
       </div>
 
-      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;">Llave secreta (Secret Key / Access Token)</label>
-      <input type="password" id="pagoSecretKey" placeholder="sk_live_... / APP_USR-...">
+      <div class="content-area">
+        <div class="card" style="max-width:520px;">
+          <h3 style="margin-bottom:6px;" data-i18n="config_pagos_titulo">Configuración de Pagos</h3>
+          <p style="font-size:13px; color:var(--text-muted); margin-bottom:18px;">
+            Activa un depósito obligatorio para agendar por el link público. Elige tu país y el sistema te sugiere la mejor pasarela — puedes cambiarla si quieres.
+          </p>
 
-      <label style="font-size:13px; font-weight:600; color:var(--text-secondary); display:block; margin:14px 0 6px;">Webhook Secret</label>
-      <input type="password" id="pagoWebhookSecret" placeholder="whsec_...">
+          <label><strong>País</strong></label>
+          <select id="pagoPais" style="width:100%; margin-bottom:14px; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;"></select>
 
-      <p style="font-size:12px; color:var(--text-muted); margin:10px 0 0;">
-        URL de webhook para registrar en tu cuenta:<br>
-        <code id="pagoUrlWebhook" style="font-size:11px; word-break:break-all;"></code>
-      </p>
+          <label><strong>Proveedor de pago</strong></label>
+          <select id="pagoProveedor" style="width:100%; margin-bottom:6px; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;">
+            <option value="recurrente">Recurrente</option>
+            <option value="stripe">Stripe</option>
+            <option value="mercadopago">MercadoPago</option>
+          </select>
 
-      <label style="display:flex; align-items:center; gap:8px; margin-top:16px; font-size:14px;">
-        <input type="checkbox" id="pagoActivo" style="width:auto;">
-        Exigir depósito para agendar por el link público
-      </label>
+          <p id="pagoAyudaProveedor" style="font-size:12px; color:var(--text-muted); margin:6px 0 14px; line-height:1.5;"></p>
 
-      <button type="button" class="btn-primary" style="margin-top:20px;" id="btnGuardarPagos" onclick="guardarConfigPagos()">💾 Guardar Configuración</button>
+          <div style="display:flex; gap:10px; margin-bottom:15px;">
+            <div style="flex:1;">
+              <label><strong>Moneda</strong></label>
+              <input type="text" id="pagoMoneda" maxlength="3" style="width:100%; text-transform:uppercase; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;" placeholder="GTQ">
+            </div>
+            <div style="flex:1;">
+              <label><strong>Monto del depósito</strong></label>
+              <input type="number" id="pagoMonto" min="1" step="0.01" style="width:100%; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;" placeholder="50.00">
+            </div>
+          </div>
+
+          <label><strong>Llave secreta (Secret Key / Access Token)</strong></label>
+          <input type="password" id="pagoSecretKey" style="width:100%; margin-bottom:15px; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;" placeholder="sk_live_... / APP_USR-...">
+
+          <label><strong>Webhook Secret</strong></label>
+          <input type="password" id="pagoWebhookSecret" style="width:100%; margin-bottom:10px; padding:10px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;" placeholder="whsec_...">
+
+          <p style="font-size:12px; color:var(--text-muted); margin:6px 0 0;">
+            URL de webhook para registrar en tu cuenta:<br>
+            <code id="pagoUrlWebhook" style="font-size:11px; word-break:break-all;"></code>
+          </p>
+
+          <label style="display:flex; align-items:center; gap:8px; margin:16px 0; cursor:pointer;">
+            <input type="checkbox" id="pagoActivo" style="width:18px; height:18px;">
+            Exigir depósito para agendar por el link público
+          </label>
+
+          <button type="button" style="background-color:#2ecc71; width:100%;" id="btnGuardarPagos" onclick="guardarConfigPagos()">💾 Guardar Configuración</button>
+        </div>
+      </div>
     </div>
-
   </div>
 
-  <script src="./js/storage.js"></script>
+  <script src="./js/session.js"></script>
   <script src="./js/translations.js"></script>
+  <script src="./js/storage.js"></script>
+  <script src="./js/layout.js"></script>
+  <script src="./js/auditoria.js"></script>
   <script src="./js/config-pagos.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const savedLang = localStorage.getItem("lang") || "es";
+        if(typeof changeLanguage === 'function') {
+            changeLanguage(savedLang);
+        }
+        if(typeof revelarContenido === 'function') revelarContenido();
+    });
+  </script>
 </body>
 </html>
