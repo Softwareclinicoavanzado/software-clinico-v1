@@ -25,6 +25,16 @@ let paciente = null;
 let historial = [];
 let editandoNotaId = null;
 
+// Antes esta función usaba siempre el locale "es-GT" sin importar el
+// idioma configurado por la clínica — una clínica en inglés o francés
+// veía las fechas de sus notas médicas en formato español. Ahora
+// respeta el idioma actual, igual que el resto de la app.
+function localeSegunIdioma() {
+    const lang = localStorage.getItem("lang") || "es";
+    const mapa = { es: "es-GT", en: "en-US", fr: "fr-FR" };
+    return mapa[lang] || "es-GT";
+}
+
 async function inicializarHistorial() {
     try {
         const { data: pacienteData, error: errorPac } = await supabaseClient
@@ -168,7 +178,7 @@ async function agregarNota() {
                 clinica_id: clinicaID,
                 tipo: tipoNotaInput.value,
                 texto: texto,
-                fecha: new Date().toLocaleString("es-GT")
+                fecha: new Date().toLocaleString(localeSegunIdioma())
             };
 
             const { error } = await supabaseClient
