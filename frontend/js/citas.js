@@ -22,11 +22,43 @@ const titulo = document.getElementById("tituloPagina");
 
 let citas = [];
 let editandoCitaId = null;
-let codigoTelPaisClinica = "502"; // valor por defecto mientras carga desde la base de datos
+let codigoTelPaisClinica = "502";
 
-// Citas activas del día seleccionado en el formulario (para detectar choques de horario)
 let citasDelDiaSeleccionado = [];
 let mapaPacientesDia = {};
+
+// paciente_id -> arreglo de textos de alergia. Se carga una vez y se
+// usa para mostrar una alerta roja bien visible en la agenda y el
+// calendario, sin tener que entrar al historial de cada paciente.
+let alergiasPorPaciente = {};
+
+async function cargarAlergiasClinica() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('historial')
+            .select('paciente_id, texto')
+            .eq('clinica_id', clinicaID)
+            .eq('tipo', 'Alergia');
+
+        if (error) throw error;
+
+        alergiasPorPaciente = {};
+        (data || []).forEach(h => {
+            if (!alergiasPorPaciente[h.paciente_id]) alergiasPorPaciente[h.paciente_id] = [];
+            alergiasPorPaciente[h.paciente_id].push(h.texto);
+        });
+    } catch (e) {
+        console.warn("No se pudieron cargar las alergias de los pacientes:", e);
+        alergiasPorPaciente = {};
+    }
+}
+
+function badgeAlergiaHTML(pacienteId) {
+    const alergias = alergiasPorPaciente[pacienteId];
+    if (!alergias || alergias.length === 0) return "";
+    const detalle = alergias.join(" · ").replace(/"/g, "&quot;");
+    return `<div class="appt-today-badge" style="background:rgba(239,68,68,0.28); color:#fecaca; border-color:rgba(239,68,68,0.6); font-weight:bold;" title="${detalle}">⚠️ ${detalle}</div>`;
+}
 
 async function cargarCodigoTelClinica() {
     try {
@@ -44,9 +76,6 @@ async function cargarCodigoTelClinica() {
     }
 }
 
-/* =========================
-   Helpers visuales (mismos que pacientes.js, para consistencia)
-========================= */
 function iniciales(nombre) {
     if (!nombre) return "?";
     const partes = nombre.trim().split(" ").filter(Boolean);
@@ -88,11 +117,6 @@ function esCitaManana(fechaISO) {
     return fechaISO === fechaLocalISO(manana);
 }
 
-/* =========================================================
-   SELECTORES DE FECHA (día / mes / año) — reemplazan el
-   input nativo type="date" para que sea más fácil de usar
-   sin necesitar teclado ni flechas.
-========================================================= */
 function poblarSelectoresFecha() {
     const selDia = document.getElementById("fechaDia");
     const selMes = document.getElementById("fechaMes");
@@ -124,8 +148,6 @@ function poblarSelectoresFecha() {
     actualizarFechaCombinada();
 }
 
-// Recalcula cuántos días tiene el mes/año elegido (ej. no dejar
-// escoger "31 de febrero") y regenera el selector de día.
 function actualizarDiasDisponibles() {
     const selDia = document.getElementById("fechaDia");
     const selMes = document.getElementById("fechaMes");
@@ -157,8 +179,6 @@ function actualizarFechaCombinada() {
     cargarResumenDia();
 }
 
-// Usado al editar una cita existente, para que los 3 selectores
-// muestren la fecha real que ya tenía guardada esa cita.
 function establecerSelectsFecha(fechaISO) {
     if (!fechaISO) return;
     const [y, m, d] = fechaISO.split("-");
@@ -174,10 +194,6 @@ function establecerSelectsFecha(fechaISO) {
     if (inputFecha) inputFecha.value = fechaISO;
 }
 
-/* =========================================================
-   Helpers de rango de horario (para detectar choques reales
-   entre citas con duración, no solo un punto exacto)
-========================================================= */
 function horaAMinutos(horaStr) {
     if (!horaStr) return 0;
     const [h, m] = horaStr.split(":").map(Number);
@@ -190,10 +206,6 @@ function formatearRangoHora(hora, horaFin) {
     return `${formatearHora(hora)} - ${formatearHora(horaFin)}`;
 }
 
-// Devuelve la cita existente que ocupa ese minuto exacto (útil para
-// resaltar los chips de hora de inicio). Si la cita antigua no tiene
-// hora_fin guardada (registros de antes de este cambio), se trata
-// como un bloque de 1 minuto para mantener el comportamiento previo.
 function estaEnRangoOcupado(horaCandidata) {
     const cand = horaAMinutos(horaCandidata);
     return citasDelDiaSeleccionado.find(c => {
@@ -203,8 +215,6 @@ function estaEnRangoOcupado(horaCandidata) {
     });
 }
 
-// Choque real de horario entre un rango [inicio, fin) propuesto y una
-// lista de citas existentes (cada una con su propio rango).
 function buscarChoqueDeRango(inicioStr, finStr, citasExistentes, excluirId) {
     const ini = horaAMinutos(inicioStr);
     const fin = horaAMinutos(finStr || inicioStr);
@@ -223,32 +233,18 @@ function fechaLocalISO(dateObj) {
     return `${y}-${m}-${d}`;
 }
 
-/* =========================================================
-   Helper: convierte un texto a un literal JS seguro para
-   insertar dentro de un atributo onclick="..." (que usa
-   comillas dobles). Evita que comillas dentro del texto
-   (ej. el motivo de la cita) rompan el HTML del botón.
-========================================================= */
 function jsStringParaOnclick(str) {
     return JSON.stringify(str || "").replace(/"/g, "&quot;");
 }
 
-/* =========================================================
-   RECORDATORIO POR WHATSAPP (1 clic, sin API, gratis)
-   Abre WhatsApp con el mensaje ya escrito, listo para enviar,
-   y marca la cita como "whatsapp_enviado" para seguimiento.
-========================================================= */
 async function enviarWhatsAppRecordatorio(citaId, telefono, nombrePaciente, fechaISO, horaStr) {
     if (!telefono) {
         alert(t("whatsapp_sin_telefono"));
         return;
     }
 
-    // Dejamos solo los dígitos del número
     let numeroLimpio = telefono.replace(/[^\d]/g, "");
 
-    // Si el número no trae ya el código de país al inicio, se lo agregamos
-    // usando el código telefónico configurado para esta clínica.
     if (!numeroLimpio.startsWith(codigoTelPaisClinica)) {
         numeroLimpio = codigoTelPaisClinica + numeroLimpio;
     }
@@ -261,7 +257,6 @@ async function enviarWhatsAppRecordatorio(citaId, telefono, nombrePaciente, fech
     const url = `https://wa.me/${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
     window.open(url, "_blank");
 
-    // Marcamos la cita como "WhatsApp enviado" para llevar seguimiento
     try {
         await supabaseClient
             .from('citas')
@@ -271,7 +266,6 @@ async function enviarWhatsAppRecordatorio(citaId, telefono, nombrePaciente, fech
         console.warn("No se pudo marcar el WhatsApp como enviado:", e);
     }
 
-    // Refrescamos la vista actual para reflejar el cambio
     if (seccionCal && seccionCal.style.display === "block") {
         await cargarCitasDelMes();
         renderCalendario();
@@ -280,11 +274,6 @@ async function enviarWhatsAppRecordatorio(citaId, telefono, nombrePaciente, fech
     }
 }
 
-/* =========================================================
-   RESUMEN DEL DÍA + DETECCIÓN DE HORARIOS OCUPADOS
-   Se carga cada vez que se elige/cambia la fecha en el
-   formulario de agendar/editar cita.
-========================================================= */
 async function cargarResumenDia() {
     const panel = document.getElementById("panelResumenDia");
     const fecha = inputFecha.value;
@@ -309,7 +298,6 @@ async function cargarResumenDia() {
 
         if (error) throw error;
 
-        // Si estamos editando una cita, la excluimos de la lista de "ocupados"
         citasDelDiaSeleccionado = (citasDia || [])
             .filter(c => String(c.id) !== String(editandoCitaId))
             .sort((a, b) => a.hora.localeCompare(b.hora));
@@ -381,10 +369,6 @@ function chipOcupadoClick(horaStr) {
     alert(`⚠️ Ya hay una cita de ${rango} con ${nombre}${motivo}.\n\nSi de verdad necesitas agendar a esta misma hora, usa el campo "¿Otra hora?" y confirma cuando el sistema te lo pregunte.`);
 }
 
-/* =========================================================
-   BARRAS DESLIZABLES DE HORA (arrastrar para elegir cualquier
-   hora exacta, en vez de bloques fijos)
-========================================================= */
 function minutosAHoraStr(mins) {
     const h = Math.floor(mins / 60);
     const m = mins % 60;
@@ -436,7 +420,7 @@ function establecerHoraSlider(horaStr) {
     const slider = document.getElementById("horaSlider");
     const valorTexto = document.getElementById("horaSliderValor");
     if (!slider) return;
-    const mins = horaStr ? horaAMinutos(horaStr) : 480; // 8:00 AM por defecto
+    const mins = horaStr ? horaAMinutos(horaStr) : 480;
     slider.value = mins;
     const horaFinal = horaStr || minutosAHoraStr(mins);
     if (inputHora) inputHora.value = horaFinal;
@@ -450,7 +434,7 @@ function establecerHoraFinSlider(horaStr) {
     const valorTexto = document.getElementById("horaFinSliderValor");
     const horaFinInput = document.getElementById("horaFin");
     if (!slider) return;
-    const mins = horaStr ? horaAMinutos(horaStr) : 510; // 8:30 AM por defecto
+    const mins = horaStr ? horaAMinutos(horaStr) : 510;
     slider.value = mins;
     const horaFinal = horaStr || minutosAHoraStr(mins);
     if (horaFinInput) horaFinInput.value = horaFinal;
@@ -471,8 +455,6 @@ function inicializarSlidersHora() {
         sliderFin.dataset.listo = "1";
     }
 }
-
-/* ========================================================= */
 
 let listaMedicos = [];
 
@@ -593,7 +575,6 @@ async function render() {
         return;
     }
 
-    // Aviso de citas de mañana que aún no tienen WhatsApp enviado
     const pendientesManana = citasCloud.filter(c => esCitaManana(c.fecha) && !c.whatsapp_enviado && c.estado !== 'cancelada');
     if (pendientesManana.length > 0) {
         const banner = document.createElement("div");
@@ -641,6 +622,7 @@ async function render() {
                     <div>
                         <div class="patient-name">${nombrePaciente}</div>
                         <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px; align-items:flex-start;">
+                            ${badgeAlergiaHTML(c.paciente_id)}
                             ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
                             ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
                             ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
@@ -714,11 +696,6 @@ async function render() {
     });
 }
 
-/* =========================================================
-   SOLICITUDES PENDIENTES (agendadas desde el link público)
-   No son citas reales todavía — hay que aprobarlas o
-   rechazarlas antes de que entren a la agenda de verdad.
-========================================================= */
 async function actualizarBadgeSolicitudes() {
     try {
         const { count, error } = await supabaseClient
@@ -793,6 +770,7 @@ async function renderSolicitudes() {
                     <div>
                         <div class="patient-name">${nombrePaciente}</div>
                         <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px; align-items:flex-start;">
+                            ${badgeAlergiaHTML(s.paciente_id)}
                             <div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("solicitud_origen_publico")}</div>
                         </div>
                     </div>
@@ -873,9 +851,6 @@ async function reprogramarSolicitud(id) {
     }
 }
 
-/* =========================================================
-   CALENDARIO VISUAL (vista de mes)
-========================================================= */
 let calFecha = new Date();
 let calCitasDelMes = [];
 let calPacientesMap = {};
@@ -972,13 +947,16 @@ function renderCalendario() {
             const nombre = (calPacientesMap[c.paciente_id] && calPacientesMap[c.paciente_id].nombre) || "?";
             const esCancelada = c.estado === "cancelada";
             const esConfirmada = c.estado === "confirmada";
+            const tieneAlergia = !!alergiasPorPaciente[c.paciente_id];
             const estiloChip = esCancelada
                 ? ' style="background:rgba(239,68,68,0.25); color:#fca5a5; border:1px solid rgba(239,68,68,0.5);"'
                 : esConfirmada
                     ? ' style="background:rgba(34,197,94,0.2); color:#86efac; border:1px solid rgba(34,197,94,0.4);"'
                     : '';
             const icono = esCancelada ? "❌ " : esConfirmada ? "✅ " : "";
-            chipsHtml += `<div class="calendar-appt-chip"${estiloChip}>${icono}${formatearHora(c.hora)} · ${nombre.split(" ")[0]}</div>`;
+            const iconoAlergia = tieneAlergia ? "⚠️ " : "";
+            const tituloAlergia = tieneAlergia ? (alergiasPorPaciente[c.paciente_id] || []).join(' · ').replace(/"/g, '&quot;') : '';
+            chipsHtml += `<div class="calendar-appt-chip"${estiloChip} title="${tituloAlergia}">${iconoAlergia}${icono}${formatearHora(c.hora)} · ${nombre.split(" ")[0]}</div>`;
         });
         if (citasDia.length > maxVisible) {
             chipsHtml += `<div class="calendar-more-badge">+${citasDia.length - maxVisible} ${t("calendario_mas") || "más"}</div>`;
@@ -1032,6 +1010,7 @@ function renderDetalleDiaSeleccionado(citasPorDia) {
                         <div>
                             <div class="patient-name">${nombre}</div>
                             <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px; align-items:flex-start;">
+                                ${badgeAlergiaHTML(c.paciente_id)}
                                 ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
                                 ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
                                 ${!confirmada && !cancelada ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("cita_pendiente_badge")}</div>` : ""}
@@ -1132,9 +1111,6 @@ async function abrirCalendario() {
     renderCalendario();
 }
 
-/* =========================================================
-   RETRADUCCIÓN AL CAMBIAR IDIOMA SIN RECARGAR
-========================================================= */
 function retraducirContenidoDinamico() {
     if (seccionCal && seccionCal.style.display === "block") {
         renderCalendario();
@@ -1154,8 +1130,6 @@ function retraducirContenidoDinamico() {
         if (titulo) titulo.innerText = t("titulo_ver_agenda");
     }
 }
-
-/* ========================================================= */
 
 async function agregarCita() {
     const paciente_id = selectPaciente.value;
@@ -1178,7 +1152,6 @@ async function agregarCita() {
         return alert("La hora de fin debe ser después de la hora de inicio.");
     }
 
-    // Verificación final de seguridad (por si algo cambió mientras la secretaria llenaba el formulario)
     try {
         const { data: citasDelDia, error: errorChoque } = await supabaseClient
             .from('citas')
@@ -1293,7 +1266,6 @@ async function editarCita(id, pacienteId, fecha, hora, horaFin, motivo) {
         }, 50);
     });
 
-    // Traemos tipo de pago / monto / cobrado / médico directo de la base
     try {
         const { data } = await supabaseClient
             .from('citas')
@@ -1446,9 +1418,8 @@ async function inicializarVistaCitas() {
     await cargarPacientes();
     await cargarCodigoTelClinica();
     await cargarMedicos();
+    await cargarAlergiasClinica();
 
-    // Ocultamos el campo de monto para roles que no deben ver
-    // cifras financieras exactas (ej. recepción)
     const wrapperMonto = document.getElementById("wrapperMonto");
     if (wrapperMonto && !puedeVerMontos) {
         wrapperMonto.style.display = "none";
@@ -1462,8 +1433,6 @@ async function inicializarVistaCitas() {
     if (selMes) selMes.addEventListener("change", () => { actualizarDiasDisponibles(); actualizarFechaCombinada(); });
     if (selAnio) selAnio.addEventListener("change", () => { actualizarDiasDisponibles(); actualizarFechaCombinada(); });
 
-    // Cada vez que cambie la fecha en el formulario, recargamos
-    // el resumen del día y los colores de los horarios ocupados.
     if (inputFecha) {
         inputFecha.addEventListener("change", cargarResumenDia);
     }
