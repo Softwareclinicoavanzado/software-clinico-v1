@@ -9,6 +9,40 @@ const rol = localStorage.getItem("rol") || "admin";
 let pacientes = [];
 let pacientesFiltradosActual = [];
 let editandoID = null;
+
+// paciente_id -> arreglo de textos de alergia. Mismo patrón que en
+// citas.js: se carga una vez y se usa para mostrar una alerta roja
+// bien visible en la tarjeta del paciente.
+let alergiasPorPaciente = {};
+
+async function cargarAlergiasClinica() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('historial')
+            .select('paciente_id, texto')
+            .eq('clinica_id', clinicaID)
+            .eq('tipo', 'Alergia');
+
+        if (error) throw error;
+
+        alergiasPorPaciente = {};
+        (data || []).forEach(h => {
+            if (!alergiasPorPaciente[h.paciente_id]) alergiasPorPaciente[h.paciente_id] = [];
+            alergiasPorPaciente[h.paciente_id].push(h.texto);
+        });
+    } catch (e) {
+        console.warn("No se pudieron cargar las alergias de los pacientes:", e);
+        alergiasPorPaciente = {};
+    }
+}
+
+function badgeAlergiaHTML(pacienteId) {
+    const alergias = alergiasPorPaciente[pacienteId];
+    if (!alergias || alergias.length === 0) return "";
+    const detalle = alergias.join(" · ").replace(/"/g, "&quot;");
+    return `<span class="patient-tag" style="background:rgba(239,68,68,0.28); color:#fecaca; border-color:rgba(239,68,68,0.6); font-weight:bold;" title="${detalle}">⚠️ ${detalle}</span>`;
+}
+
 const inputs = {
     nombre: document.getElementById("nombre"),
     dpi: document.getElementById("dpi"),
@@ -34,6 +68,7 @@ async function cargarDatos() {
         if (error) throw error;
         pacientes = data;
         pacientesFiltradosActual = data;
+        await cargarAlergiasClinica();
         poblarFiltros();
         render();
     } catch (err) {
@@ -71,19 +106,11 @@ function traducirSexo(valor) {
     return clave ? t(clave) : valor;
 }
 
-/* =========================
-   Validación de formato de email
-   (el email es opcional: si está vacío no se marca error;
-   si tiene contenido, debe tener forma de correo válido)
-========================= */
 function emailTieneFormatoValido(email) {
     if (!email) return true;
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-/* =========================================================
-   FILTROS AVANZADOS
-========================================================= */
 function toggleFiltrosPanel() {
     const panel = document.getElementById("panelFiltros");
     const btn = document.getElementById("btnToggleFiltros");
@@ -199,14 +226,10 @@ function limpiarFiltros() {
     render(pacientes);
 }
 
-/* Mantiene compatibilidad: el input de búsqueda sigue llamando a esta función */
 function filtrarPacientes() {
     aplicarFiltros();
 }
 
-/* =========================================================
-   RETRADUCCIÓN AL CAMBIAR IDIOMA SIN RECARGAR
-========================================================= */
 function retraducirContenidoDinamico() {
     poblarFiltros();
     aplicarFiltros();
@@ -214,10 +237,6 @@ function retraducirContenidoDinamico() {
     const modo = params.get("mode");
     const titulo = document.getElementById("tituloPagina");
 
-    // Si hay una edición activa (se entró vía editarPaciente(), que no cambia
-    // la URL), hay que respetar ese estado en vez del modo de la URL —
-    // si no, el título y el botón "Guardar Cambios" se revertían a los
-    // textos de "nuevo paciente" al cambiar de idioma a mitad de una edición.
     if (editandoID) {
         if (titulo) titulo.innerText = t("actualizar_perfil_titulo");
         const btnSubmit = document.querySelector(".btn-primary");
@@ -227,11 +246,6 @@ function retraducirContenidoDinamico() {
     }
 }
 
-/* ========================================================= */
-
-/* =========================================================
-   EXPORTAR A EXCEL (SheetJS)
-========================================================= */
 function nombreArchivoSeguro(str) {
     return (str || "archivo").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
         .replace(/[^a-zA-Z0-9]+/g, "_").replace(/^_+|_+$/g, "");
@@ -347,9 +361,6 @@ function exportarPacienteIndividualExcel(id) {
     XLSX.writeFile(wb, nombreArchivo);
 }
 
-/* =========================================================
-   EXPORTAR LISTA COMPLETA A PDF (tabla, no historial médico)
-========================================================= */
 function generarPDFListaPacientes(lista, titulo) {
     if (!window.jspdf) {
         alert(t("error_libreria_pdf"));
@@ -407,11 +418,6 @@ function exportarFiltradosPDF() {
     generarPDFListaPacientes(pacientesFiltradosActual, t("pdf_titulo_filtrados") || "Listado de Pacientes (Filtrado)");
 }
 
-/* ========================================================= */
-
-/* =========================
-   Render de tarjetas de paciente (rediseño premium)
-========================= */
 function render(data = pacientes) {
     pacientesFiltradosActual = data;
 
@@ -472,6 +478,7 @@ function render(data = pacientes) {
             </div>
 
             <div class="patient-tags">
+                ${badgeAlergiaHTML(p.id)}
                 <span class="patient-tag">${edadTexto}</span>
                 <span class="patient-tag">${sexoTexto}</span>
                 <span class="patient-tag">${telTexto}</span>
