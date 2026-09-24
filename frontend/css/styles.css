@@ -1672,3 +1672,33 @@ button.danger:hover {
   width: auto;
   flex: 0 0 130px;
 }
+/* === Arreglo: botones de acción se veían como bloques apilados de ancho
+   completo en vez de píldoras compactas una junto a otra === */
+.patient-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+}
+
+.patient-actions .btn-action {
+    width: auto !important;
+    flex: 0 1 auto !important;
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 16px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 600;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: inherit;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.patient-actions .btn-action svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+}
