@@ -93,8 +93,14 @@ function colorAvatar(nombre) {
 function formatearFecha(fechaISO) {
     if (!fechaISO) return "";
     const [y, m, d] = fechaISO.split("-");
-    const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-    return `${d} ${meses[parseInt(m, 10) - 1]}`;
+    const lang = localStorage.getItem("lang") || "es";
+    const mapaMesesCortos = {
+        es: ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
+        en: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+        fr: ["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"]
+    };
+    const meses = mapaMesesCortos[lang] || mapaMesesCortos.es;
+    return `${d} ${meses[parseInt(m, 10) - 1]} ${y}`;
 }
 
 function formatearHora(horaStr) {
