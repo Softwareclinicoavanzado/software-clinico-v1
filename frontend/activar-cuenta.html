@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClinicOS | Activa tu cuenta</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #0f172a, #1e293b);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    max-width: 400px;
+    width: 100%;
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 34px 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.25);
+  }
+  h1 { font-size: 19px; color: #1e293b; text-align: center; margin: 0 0 6px; }
+  p.subtitulo { font-size: 13px; color: #64748b; text-align: center; margin: 0 0 24px; }
+  label { font-size: 13px; font-weight: 600; color: #334155; display: block; margin-bottom: 6px; }
+  input {
+    width: 100%;
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 14px;
+    margin-bottom: 16px;
+    color: #1e293b;
+  }
+  button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  #mensajeError { color: #ef4444; font-size: 13px; text-align: center; margin-bottom: 14px; display: none; }
+  #vistaExito { display: none; text-align: center; }
+  #vistaExito .icono { font-size: 44px; margin-bottom: 10px; }
+  #vistaInvalido { display: none; text-align: center; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div id="vistaForm">
+      <h1>Activa tu cuenta</h1>
+      <p class="subtitulo">Crea tu contraseña para entrar a ClinicOS.</p>
+      <div id="mensajeError"></div>
+      <label>Nueva contraseña</label>
+      <input type="password" id="pass1" placeholder="Mínimo 8 caracteres">
+      <label>Confirmar contraseña</label>
+      <input type="password" id="pass2" placeholder="Repite la contraseña">
+      <button type="button" id="btnActivar" onclick="activarCuenta()">Activar mi cuenta</button>
+    </div>
+
+    <div id="vistaExito">
+      <div class="icono">✅</div>
+      <h1>¡Listo!</h1>
+      <p class="subtitulo">Tu contraseña quedó guardada. Ya puedes entrar al sistema.</p>
+      <button type="button" onclick="window.location.href='index.html'">Ir a iniciar sesión</button>
+    </div>
+
+    <div id="vistaInvalido">
+      <div class="icono">⚠️</div>
+      <h1>Este link ya no es válido</h1>
+      <p class="subtitulo">Puede que ya hayas activado tu cuenta antes, o que el link haya expirado. Intenta iniciar sesión directamente, o contáctanos.</p>
+      <button type="button" onclick="window.location.href='index.html'">Ir a iniciar sesión</button>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://klaygjvawybfksmahbhd.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsYXlnanZhd3liZmtzbWFoYmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTcyNDUsImV4cCI6MjA5MTMzMzI0NX0.YKwGPFw29rsxe-mfyga5jTGIQYM7SNFDXvogE2WAx1Y";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let sesionValida = false;
+
+    async function revisarSesionDesdeLink() {
+      // Supabase deja el token en el "hash" de la URL (#access_token=...)
+      // cuando la persona llega desde el link de invitación del correo.
+      const { data, error } = await supabaseClient.auth.getSession();
+      if (!error && data && data.session) {
+        sesionValida = true;
+        return;
+      }
+      // Si no hay sesión todavía, puede que el SDK necesite un momento
+      // para procesar el hash de la URL — reintenta una vez.
+      await new Promise((r) => setTimeout(r, 500));
+      const { data: data2 } = await supabaseClient.auth.getSession();
+      sesionValida = !!(data2 && data2.session);
+    }
+
+    function mostrarError(msg) {
+      const el = document.getElementById("mensajeError");
+      el.innerText = msg;
+      el.style.display = "block";
+    }
+
+    async function activarCuenta() {
+      const pass1 = document.getElementById("pass1").value;
+      const pass2 = document.getElementById("pass2").value;
+
+      if (!pass1 || pass1.length < 8) {
+        mostrarError("La contraseña debe tener al menos 8 caracteres.");
+        return;
+      }
+      if (pass1 !== pass2) {
+        mostrarError("Las contraseñas no coinciden.");
+        return;
+      }
+
+      const btn = document.getElementById("btnActivar");
+      btn.disabled = true;
+      btn.innerText = "Guardando...";
+
+      try {
+        const { error } = await supabaseClient.auth.updateUser({ password: pass1 });
+        if (error) throw error;
+
+        document.getElementById("vistaForm").style.display = "none";
+        document.getElementById("vistaExito").style.display = "block";
+      } catch (e) {
+        mostrarError("No se pudo guardar la contraseña: " + e.message);
+        btn.disabled = false;
+        btn.innerText = "Activar mi cuenta";
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await revisarSesionDesdeLink();
+      if (!sesionValida) {
+        document.getElementById("vistaForm").style.display = "none";
+        document.getElementById("vistaInvalido").style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>
