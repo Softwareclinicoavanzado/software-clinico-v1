@@ -51,16 +51,15 @@
   }
   button:disabled { opacity: 0.6; cursor: not-allowed; }
   #mensajeError { color: #ef4444; font-size: 13px; text-align: center; margin-bottom: 14px; display: none; }
-  #vistaExito { display: none; text-align: center; }
-  #vistaExito .icono { font-size: 44px; margin-bottom: 10px; }
-  #vistaInvalido { display: none; text-align: center; }
+  #vistaExito, #vistaInvalido { display: none; text-align: center; }
+  .icono { font-size: 44px; margin-bottom: 10px; }
 </style>
 </head>
 <body>
   <div class="card">
     <div id="vistaForm">
       <h1>Activa tu cuenta</h1>
-      <p class="subtitulo">Crea tu contraseña para entrar a ClinicOS.</p>
+      <p class="subtitulo">Crea tu contraseña para entrar a ClinicOS. No se activa nada todavía — solo pasa cuando le des clic al botón de abajo.</p>
       <div id="mensajeError"></div>
       <label>Nueva contraseña</label>
       <input type="password" id="pass1" placeholder="Mínimo 8 caracteres">
@@ -89,22 +88,8 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsYXlnanZhd3liZmtzbWFoYmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTcyNDUsImV4cCI6MjA5MTMzMzI0NX0.YKwGPFw29rsxe-mfyga5jTGIQYM7SNFDXvogE2WAx1Y";
     const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    let sesionValida = false;
-
-    async function revisarSesionDesdeLink() {
-      // Supabase deja el token en el "hash" de la URL (#access_token=...)
-      // cuando la persona llega desde el link de invitación del correo.
-      const { data, error } = await supabaseClient.auth.getSession();
-      if (!error && data && data.session) {
-        sesionValida = true;
-        return;
-      }
-      // Si no hay sesión todavía, puede que el SDK necesite un momento
-      // para procesar el hash de la URL — reintenta una vez.
-      await new Promise((r) => setTimeout(r, 500));
-      const { data: data2 } = await supabaseClient.auth.getSession();
-      sesionValida = !!(data2 && data2.session);
-    }
+    let tokenHash = null;
+    let tipoToken = null;
 
     function mostrarError(msg) {
       const el = document.getElementById("mensajeError");
@@ -112,6 +97,23 @@
       el.style.display = "block";
     }
 
+    // Solo LEE los parámetros de la URL — no verifica nada todavía.
+    // Leer la URL es seguro e inofensivo, así que esto sí puede pasar
+    // apenas carga la página sin ningún riesgo.
+    function leerParametrosURL() {
+      const params = new URLSearchParams(window.location.search);
+      tokenHash = params.get("token_hash");
+      tipoToken = params.get("type") || "invite";
+
+      if (!tokenHash) {
+        document.getElementById("vistaForm").style.display = "none";
+        document.getElementById("vistaInvalido").style.display = "block";
+      }
+    }
+
+    // Esto SÍ consume el token — por eso solo se llama desde el clic
+    // real del botón "Activar mi cuenta", nunca automáticamente al
+    // cargar la página.
     async function activarCuenta() {
       const pass1 = document.getElementById("pass1").value;
       const pass2 = document.getElementById("pass2").value;
@@ -124,31 +126,35 @@
         mostrarError("Las contraseñas no coinciden.");
         return;
       }
+      if (!tokenHash) {
+        mostrarError("Este link no es válido.");
+        return;
+      }
 
       const btn = document.getElementById("btnActivar");
       btn.disabled = true;
       btn.innerText = "Guardando...";
 
       try {
-        const { error } = await supabaseClient.auth.updateUser({ password: pass1 });
-        if (error) throw error;
+        const { error: errorVerificacion } = await supabaseClient.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: tipoToken,
+        });
+        if (errorVerificacion) throw errorVerificacion;
+
+        const { error: errorPassword } = await supabaseClient.auth.updateUser({ password: pass1 });
+        if (errorPassword) throw errorPassword;
 
         document.getElementById("vistaForm").style.display = "none";
         document.getElementById("vistaExito").style.display = "block";
       } catch (e) {
-        mostrarError("No se pudo guardar la contraseña: " + e.message);
+        mostrarError("No se pudo activar la cuenta: " + e.message);
         btn.disabled = false;
         btn.innerText = "Activar mi cuenta";
       }
     }
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      await revisarSesionDesdeLink();
-      if (!sesionValida) {
-        document.getElementById("vistaForm").style.display = "none";
-        document.getElementById("vistaInvalido").style.display = "block";
-      }
-    });
+    document.addEventListener("DOMContentLoaded", leerParametrosURL);
   </script>
 </body>
 </html>
