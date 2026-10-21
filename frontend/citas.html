@@ -13,102 +13,8 @@
 
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-brand">
-        <div class="sidebar-brand-icon">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"/><path d="M9 12l2 2 4-4"/></svg>
-        </div>
-        <span class="sidebar-brand-name">ClinicOS</span>
-      </div>
-
-      <ul class="sidebar-nav">
-        <li>
-          <button class="sidebar-link" type="button" onclick="volver()" data-nav="dashboard">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5 12 3l9 6.5V21a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1V9.5Z"/></svg>
-            <span data-i18n="menu_dashboard">Dashboard</span>
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-link" type="button" onclick="irPacientes('ver')" data-nav="pacientes-ver">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-            <span data-i18n="ver_pacientes_link">Ver Pacientes</span>
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-link" type="button" onclick="irPacientes('nuevo')" data-nav="pacientes-nuevo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><path d="M20 8v6M23 11h-6"/></svg>
-            <span data-i18n="agregar_paciente_link">Agregar Paciente</span>
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-link" type="button" onclick="cambiarVista('ver'); history.replaceState(null,'','citas.html?mode=ver'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" data-nav="citas-ver">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-            <span data-i18n="ver_agenda_link">Ver Agenda</span>
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-link" type="button" onclick="cambiarVista('calendario'); history.replaceState(null,'','citas.html?mode=calendario'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" data-nav="citas-calendario">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><circle cx="8" cy="15" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="15" r="1.5" fill="currentColor" stroke="none"/></svg>
-            <span data-i18n="calendario_btn">Calendario</span>
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-link" type="button" onclick="cambiarVista('nuevo'); history.replaceState(null,'','citas.html?mode=nuevo'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" data-nav="citas-nuevo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18M12 14v6M9 17h6"/></svg>
-            <span data-i18n="agendar_cita_link">Agendar Cita</span>
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-link" type="button" onclick="cambiarVista('solicitudes'); history.replaceState(null,'','citas.html?mode=solicitudes'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" data-nav="citas-solicitudes">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z"/></svg>
-            <span data-i18n="solicitudes_link">Solicitudes</span>
-            <span id="badgeSolicitudes" style="display:none; background:#f59e0b; color:#1e1409; font-size:11px; font-weight:bold; border-radius:999px; padding:1px 7px; margin-left:6px;">0</span>
-          </button>
-        </li>
-        <li>
-          <button class="sidebar-link" type="button" onclick="window.location.href='lista-espera.html'" data-nav="lista-espera">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-            <span data-i18n="lista_espera_link">⏳ Lista de Espera</span>
-          </button>
-        </li>
-        <li id="liReportes" style="display:none;">
-          <button class="sidebar-link" type="button" onclick="window.location.href='reportes.html'" data-nav="reportes">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18.7 8 12 14.7l-3.5-3.5L3 16.5"/></svg>
-            <span data-i18n="reportes_link">📊 Reportes</span>
-          </button>
-        </li>
-        <li id="liUsuarios" style="display:none;">
-          <button class="sidebar-link" type="button" onclick="irUsuarios()" data-nav="usuarios">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            <span data-i18n="gestionar_usuarios_link">Gestionar Usuarios</span>
-          </button>
-        </li>
-        <li id="liAuditoria" style="display:none;">
-          <button class="sidebar-link" type="button" onclick="window.location.href='auditoria.html'" data-nav="auditoria">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-            <span data-i18n="auditoria_link">Auditoría</span>
-          </button>
-        </li>
-        <li id="liConfigCorreo" style="display:none;">
-          <button class="sidebar-link" type="button" onclick="window.location.href='configuracion-correo.html'" data-nav="config-correo">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-            <span data-i18n="config_correo_link">Recordatorios por Correo</span>
-          </button>
-        </li>
-        <li id="liConfigPagos" style="display:none;">
-          <button class="sidebar-link" type="button" onclick="window.location.href='config-pagos.html'" data-nav="config-pagos">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            <span data-i18n="config_pagos_link">💳 Configuración de Pagos</span>
-          </button>
-        </li>
-      </ul>
-
-      <div class="sidebar-divider"></div>
-      <button class="sidebar-link danger-link" type="button" onclick="logout()" id="btnLogout">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
-        <span data-i18n="cerrar_sesion">Cerrar sesión</span>
-      </button>
-    </aside>
+    <!-- El menú lo dibuja js/layout.js (igual en todas las páginas) -->
+    <aside class="sidebar" id="sidebar"></aside>
 
     <div class="main-area">
       <div class="topbar">
@@ -137,19 +43,21 @@
 
       <div class="content-area">
 
-        <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-          <button type="button" onclick="cambiarVista('ver'); history.replaceState(null,'','citas.html?mode=ver'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #3498db; flex: 1; min-width:140px;">
-            <span data-i18n="ver_agenda">📅 Ver Agenda</span>
+        <!-- Pestañas de Citas (reemplazan los 4 botones de colores) -->
+        <div class="tabs-bar" id="tabsCitas">
+          <button type="button" class="tab-btn" data-tab="ver" onclick="navCitas('ver')">
+            <span class="lbl" data-k="tab_agenda">Agenda</span>
           </button>
-          <button type="button" onclick="cambiarVista('calendario'); history.replaceState(null,'','citas.html?mode=calendario'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #8b5cf6; flex: 1; min-width:140px;">
-            <span data-i18n="calendario_btn">🗓️ Calendario</span>
+          <button type="button" class="tab-btn" data-tab="calendario" onclick="navCitas('calendario')">
+            <span class="lbl" data-k="tab_calendario">Calendario</span>
           </button>
-          <button type="button" onclick="cambiarVista('nuevo'); history.replaceState(null,'','citas.html?mode=nuevo'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #2ecc71; flex: 1; min-width:140px;">
-            <span data-i18n="nueva_cita">➕ Nueva Cita</span>
+          <button type="button" class="tab-btn" data-tab="solicitudes" onclick="navCitas('solicitudes')">
+            <span class="lbl" data-k="tab_solicitudes">Solicitudes</span>
+            <span id="badgeSolicitudesBtn" class="tab-badge" style="display:none;">0</span>
           </button>
-          <button type="button" onclick="cambiarVista('solicitudes'); history.replaceState(null,'','citas.html?mode=solicitudes'); if(typeof marcarLinkActivoPorURL==='function') marcarLinkActivoPorURL();" style="background-color: #f59e0b; flex: 1; min-width:140px; position:relative;">
-            <span data-i18n="solicitudes_link">📥 Solicitudes</span>
-            <span id="badgeSolicitudesBtn" style="display:none; position:absolute; top:-6px; right:-6px; background:#ef4444; color:white; font-size:11px; font-weight:bold; border-radius:999px; padding:2px 7px;">0</span>
+          <button type="button" class="tab-btn tab-primary" data-tab="nuevo" onclick="navCitas('nuevo')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="lbl" data-k="tab_nueva">Nueva cita</span>
           </button>
         </div>
 
@@ -192,18 +100,21 @@
           <label><strong data-i18n="motivo_label">Razón de la cita</strong></label>
           <textarea id="motivo" data-i18n-placeholder="motivo_placeholder" placeholder="Ej. Consulta de rutina, dolor de cabeza, seguimiento..." style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333; height: 90px; resize: vertical;"></textarea>
 
-          <label><strong data-i18n="tipo_pago_label">Tipo de pago</strong></label>
-          <select id="tipoPago" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
-            <option value="particular" data-i18n="tipo_pago_particular">Particular</option>
-            <option value="seguro" data-i18n="tipo_pago_seguro">Seguro</option>
-          </select>
+          <!-- Cobros: plan Profesional en adelante (los campos siguen en el DOM, solo se ocultan) -->
+          <div data-requiere="cobros">
+            <label><strong data-i18n="tipo_pago_label">Tipo de pago</strong></label>
+            <select id="tipoPago" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
+              <option value="particular" data-i18n="tipo_pago_particular">Particular</option>
+              <option value="seguro" data-i18n="tipo_pago_seguro">Seguro</option>
+            </select>
+          </div>
 
-          <div id="wrapperMonto">
+          <div id="wrapperMonto" data-requiere="cobros">
             <label><strong data-i18n="monto_label">Monto (opcional)</strong></label>
             <input type="number" id="monto" step="0.01" min="0" placeholder="0.00" style="width: 100%; margin-bottom: 15px; padding: 10px; border-radius: 8px; background: #1a1a1a; color: white; border: 1px solid #333;">
           </div>
 
-          <label style="display:flex; align-items:center; gap:8px; margin-bottom:15px; cursor:pointer;">
+          <label data-requiere="cobros" style="display:flex; align-items:center; gap:8px; margin-bottom:15px; cursor:pointer;">
             <input type="checkbox" id="cobrado" style="width:18px; height:18px;">
             <span data-i18n="ya_cobrado_label">¿Ya se cobró?</span>
           </label>
@@ -214,7 +125,8 @@
         <div id="seccionLista" style="display: none;">
           <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
             <h2 style="color: #3498db; margin:0;" data-i18n="citas_programadas">📋 Citas Programadas</h2>
-            <select id="filtroMedicoAgenda" style="padding:8px 12px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;" onchange="render()">
+            <!-- Filtro por médico: plan Equipo en adelante -->
+            <select id="filtroMedicoAgenda" data-requiere="por_medico" style="padding:8px 12px; border-radius:8px; background:#1a1a1a; color:white; border:1px solid #333;" onchange="render()">
               <option value="" data-i18n="filtro_todos_medicos">Todos los médicos</option>
             </select>
           </div>
@@ -257,12 +169,30 @@
   <script src="./js/auditoria.js"></script>
   <script src="./js/citas.js"></script>
   <script>
+    /* Resalta la pestaña activa de Citas */
+    function marcarTabsCitas(modo) {
+        document.querySelectorAll('#tabsCitas .tab-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tab === modo);
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const savedLang = localStorage.getItem("lang") || "es";
         if(typeof changeLanguage === 'function') {
             changeLanguage(savedLang);
         }
         if(typeof revelarContenido === 'function') revelarContenido();
+
+        // Si citas.js cambia de vista por su cuenta (ej. al guardar una cita), la pestaña la sigue
+        if (typeof window.cambiarVista === 'function') {
+            const original = window.cambiarVista;
+            window.cambiarVista = function (modo) {
+                const r = original.apply(this, arguments);
+                marcarTabsCitas(modo);
+                return r;
+            };
+        }
+        marcarTabsCitas(new URLSearchParams(window.location.search).get('mode') || 'ver');
     });
   </script>
 </body>
