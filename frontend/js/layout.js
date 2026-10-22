@@ -155,11 +155,15 @@ function revelarContenido() {
         "auditoria": "auditoria",
         "config-pagos": "depositos"
     };
-    const requerida = FUNCION_DE_PAGINA[paginaActual()];
-    if (requerida && !tieneFuncion(requerida)) {
-        window.location.replace("dashboard.html");
-        return;
+    function revisarAcceso() {
+        const requerida = FUNCION_DE_PAGINA[paginaActual()];
+        if (requerida && !tieneFuncion(requerida)) {
+            window.location.replace("dashboard.html");
+            return false;
+        }
+        return true;
     }
+    if (!revisarAcceso()) return;
 
     /* ---------- Textos del menú (es / en / fr) ---------- */
     const ETIQUETAS = {
@@ -426,6 +430,23 @@ function revelarContenido() {
         todas.forEach(function (f) { document.body.classList.toggle("sin-" + f, !tieneFuncion(f)); });
         document.body.dataset.plan = planActual();
     }
+
+    /* session.js la llama cuando lee el plan real de la clínica en Supabase */
+    window.aplicarPlanYMenu = function () {
+        const idsBadge = ["badgeSolicitudes", "badgeSolicitudesDashboard"];
+        const previos = idsBadge.map(function (id) {
+            const el = document.getElementById(id);
+            return el ? { id: id, texto: el.textContent, display: el.style.display } : null;
+        }).filter(Boolean);
+        aplicarPlanAlBody();
+        dibujarMenu();
+        traducirEtiquetas();
+        previos.forEach(function (p) {
+            const el = document.getElementById(p.id);
+            if (el) { el.textContent = p.texto; el.style.display = p.display; }
+        });
+        revisarAcceso();
+    };
 
     function iniciar() {
         inyectarEstilos();
