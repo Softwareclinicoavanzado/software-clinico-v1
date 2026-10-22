@@ -1,4 +1,6 @@
 // ========================= CITAS PRO (CLOUD EDITION) =========================
+// Plan: los elementos con data-requiere="funcion" se ocultan solos si el plan de la
+// clínica no incluye esa función (la regla vive en layout.js). Aquí solo se marcan.
 const clinicaID = typeof getClinicaID === "function" ? getClinicaID() : localStorage.getItem("clinicaID");
 const rolActualCitas = localStorage.getItem("rol");
 const puedeVerMontos = rolActualCitas === "admin" || rolActualCitas === "doctor";
@@ -633,14 +635,14 @@ async function render() {
                             ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
                             ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
                             ${!confirmada && !cancelada && !completada ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("cita_pendiente_badge")}</div>` : ""}
-                            ${completada && c.asistio === true ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("asistio_badge")}</div>` : ""}
-                            ${completada && c.asistio === false ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("no_asistio_badge")}</div>` : ""}
-                            ${completada && (c.asistio === null || c.asistio === undefined) ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("sin_marcar_badge")}</div>` : ""}
+                            ${completada && c.asistio === true ? `<div class="appt-today-badge" data-requiere="asistencia" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("asistio_badge")}</div>` : ""}
+                            ${completada && c.asistio === false ? `<div class="appt-today-badge" data-requiere="asistencia" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("no_asistio_badge")}</div>` : ""}
+                            ${completada && (c.asistio === null || c.asistio === undefined) ? `<div class="appt-today-badge" data-requiere="asistencia" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("sin_marcar_badge")}</div>` : ""}
                             ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
                             ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
-                            ${!cancelada ? `<div class="appt-today-badge" style="background:rgba(99,102,241,0.15); color:#818cf8; border-color:rgba(99,102,241,0.35);">${c.tipo_pago === "seguro" ? t("tipo_pago_seguro") : t("tipo_pago_particular")}${(c.monto && puedeVerMontos) ? ` — Q${Number(c.monto).toFixed(2)}` : ""}</div>` : ""}
-                            ${!cancelada && c.cobrado ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cobrado_badge")}</div>` : ""}
-                            ${!cancelada && !c.cobrado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("pendiente_cobro_badge")}</div>` : ""}
+                            ${!cancelada ? `<div class="appt-today-badge" data-requiere="cobros" style="background:rgba(99,102,241,0.15); color:#818cf8; border-color:rgba(99,102,241,0.35);">${c.tipo_pago === "seguro" ? t("tipo_pago_seguro") : t("tipo_pago_particular")}${(c.monto && puedeVerMontos) ? ` — Q${Number(c.monto).toFixed(2)}` : ""}</div>` : ""}
+                            ${!cancelada && c.cobrado ? `<div class="appt-today-badge" data-requiere="cobros" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cobrado_badge")}</div>` : ""}
+                            ${!cancelada && !c.cobrado ? `<div class="appt-today-badge" data-requiere="cobros" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("pendiente_cobro_badge")}</div>` : ""}
                             ${!cancelada && nombreMedico(c.medico_id) ? `<div class="appt-today-badge" style="background:rgba(139,92,246,0.15); color:#a78bfa; border-color:rgba(139,92,246,0.35);">👨‍⚕️ ${nombreMedico(c.medico_id)}</div>` : ""}
                         </div>
                     </div>
@@ -662,22 +664,22 @@ async function render() {
 
             <div class="patient-actions">
                 ${completada ? `
-                <button type="button" class="btn-action" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.35);" onclick="marcarAsistencia('${c.id}', true)">
+                <button type="button" class="btn-action" data-requiere="asistencia" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.35);" onclick="marcarAsistencia('${c.id}', true)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
                     ${t("asistio_btn")}
                 </button>
-                <button type="button" class="btn-action" style="background:rgba(239,68,68,0.15); color:#ef4444; border-color:rgba(239,68,68,0.35);" onclick="marcarAsistencia('${c.id}', false)">
+                <button type="button" class="btn-action" data-requiere="asistencia" style="background:rgba(239,68,68,0.15); color:#ef4444; border-color:rgba(239,68,68,0.35);" onclick="marcarAsistencia('${c.id}', false)">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
                     ${t("no_asistio_btn")}
                 </button>
                 ${!c.cobrado ? `
-                <button type="button" class="btn-action" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
+                <button type="button" class="btn-action" data-requiere="cobros" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                     ${t("marcar_cobrado_btn")}
                 </button>` : ""}
                 ` : `
                 ${!cancelada && !c.cobrado ? `
-                <button type="button" class="btn-action" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
+                <button type="button" class="btn-action" data-requiere="cobros" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
                     ${t("marcar_cobrado_btn")}
                 </button>` : ""}
