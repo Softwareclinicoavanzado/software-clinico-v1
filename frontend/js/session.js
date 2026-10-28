@@ -5,13 +5,23 @@ const SESSION = {
   clinicaID: "clinicaID",
   rol: "rol",
   lastActivity: "ultimaActividad",
-  // Plan de la clínica (se carga desde Supabase en cada página y se borra al cerrar sesión)
+  // Datos que auth.js guarda al iniciar sesión (se borran al cerrarla)
+  clinicaNombre: "clinicaNombre",
+  usuario: "usuario",
+  loginTime: "loginTime",
+  // Plan y estado de la cuenta de la clínica (se refrescan en cada página)
   plan: "plan",
   region: "region",
-  estado: "estadoSuscripcion",
-  pruebaHasta: "pruebaHasta"
+  estado: "estadoCuenta",
+  vencimiento: "fechaVencimientoPrueba"
 };
 const TIMEOUT = 20 * 60 * 1000;
+
+const MSG_SUSPENDIDA = {
+  es: "La cuenta de tu clínica está suspendida. Contacta al equipo de ClinicOS para activarla.",
+  en: "Your clinic's account is suspended. Contact the ClinicOS team to activate it.",
+  fr: "Le compte de votre clinique est suspendu. Contactez l'équipe ClinicOS pour l'activer."
+};
 
 function verificarSesion() {
   const clinicaID = localStorage.getItem(SESSION.clinicaID);
@@ -39,31 +49,59 @@ async function cerrarSesion() {
 }
 
 /* =========================
-   PLAN DE LA CLÍNICA
-   Lee plan / región / estado de la suscripción de la tabla clinicas y lo
-   guarda en localStorage para que layout.js dibuje el menú y bloquee
-   funciones. Si el plan cambió, redibuja el menú al instante.
+   PLAN Y ESTADO DE LA CLÍNICA
+   Lee plan / región / estado de la cuenta con la función segura
+   mi_clinica_info() (si aún no existe en la base, lee la tabla clinicas)
+   y lo guarda en localStorage para que layout.js dibuje el menú y bloquee
+   funciones. Si el plan cambió, redibuja el menú al instante. Si la clínica
+   quedó suspendida, cierra la sesión.
 ========================= */
+async function leerInfoClinica(clinicaID) {
+  try {
+    const r = await supabaseClient.rpc("mi_clinica_info");
+    if (!r.error && r.data) {
+      const fila = Array.isArray(r.data) ? r.data[0] : r.data;
+      if (fila) return fila;
+    }
+  } catch (e) { /* se prueba el respaldo */ }
+  const d = await supabaseClient
+    .from("clinicas")
+    .select("nombre, plan, region, estado_cuenta, fecha_vencimiento_prueba")
+    .eq("id", clinicaID)
+    .maybeSingle();
+  return d && d.data ? d.data : null;
+}
+
+function guardarSiHayValor(clave, valor) {
+  if (valor === undefined || valor === null || valor === "") localStorage.removeItem(clave);
+  else localStorage.setItem(clave, String(valor));
+}
+
 async function cargarPlanClinica() {
   const clinicaID = localStorage.getItem(SESSION.clinicaID);
   if (!clinicaID || typeof supabaseClient === "undefined") return;
   try {
-    const { data, error } = await supabaseClient
-      .from("clinicas")
-      .select("plan, region, estado_suscripcion, prueba_hasta")
-      .eq("id", clinicaID)
-      .maybeSingle();
-    if (error || !data) {
-      console.warn("No se pudo leer el plan de la clínica:", error ? error.message : "sin datos");
+    const info = await leerInfoClinica(clinicaID);
+    if (!info) {
+      console.warn("No se pudo leer el plan de la clínica");
       return;
     }
-    const antes = localStorage.getItem(SESSION.plan);
-    localStorage.setItem(SESSION.plan, data.plan);
-    localStorage.setItem(SESSION.region, data.region);
-    localStorage.setItem(SESSION.estado, data.estado_suscripcion);
-    if (data.prueba_hasta) localStorage.setItem(SESSION.pruebaHasta, data.prueba_hasta);
-    else localStorage.removeItem(SESSION.pruebaHasta);
-    if (antes !== data.plan && typeof aplicarPlanYMenu === "function") aplicarPlanYMenu();
+
+    if (info.estado_cuenta === "suspendida") {
+      const lang = localStorage.getItem("lang") || "es";
+      alert(MSG_SUSPENDIDA[lang] || MSG_SUSPENDIDA.es);
+      await cerrarSesion();
+      return;
+    }
+
+    const planAntes = localStorage.getItem(SESSION.plan);
+    guardarSiHayValor(SESSION.plan, info.plan);
+    guardarSiHayValor(SESSION.region, info.region);
+    guardarSiHayValor(SESSION.estado, info.estado_cuenta);
+    guardarSiHayValor(SESSION.vencimiento, info.fecha_vencimiento_prueba);
+    if (info.nombre) localStorage.setItem(SESSION.clinicaNombre, info.nombre);
+
+    if (planAntes !== info.plan && typeof aplicarPlanYMenu === "function") aplicarPlanYMenu();
   } catch (e) {
     console.warn("Error cargando el plan de la clínica:", e);
   }
