@@ -38,7 +38,11 @@
             desactivada: "Tu cuenta ha sido desactivada. Contacta al administrador.",
             suspendida: "Tu período de prueba terminó o la cuenta de tu clínica está suspendida. Contacta al equipo de ClinicOS para activarla.",
             sin_clinica: "No se encontró la clínica de tu cuenta. Contacta al administrador.",
-            conexion: "No se pudo conectar. Revisa tu internet e inténtalo de nuevo."
+            conexion: "No se pudo conectar. Revisa tu internet e inténtalo de nuevo.",
+            gate_titulo: "Selecciona tu idioma",
+            gate_sub: "Puedes cambiarlo en cualquier momento.",
+            badge_detectado: "Detectado",
+            badge_ultimo: "Último usado"
         },
         en: {
             titulo: "Welcome back",
@@ -63,7 +67,11 @@
             desactivada: "Your account has been deactivated. Contact the administrator.",
             suspendida: "Your trial has ended or your clinic's account is suspended. Contact the ClinicOS team to activate it.",
             sin_clinica: "Your account's clinic could not be found. Contact the administrator.",
-            conexion: "Could not connect. Check your internet and try again."
+            conexion: "Could not connect. Check your internet and try again.",
+            gate_titulo: "Select your language",
+            gate_sub: "You can change it at any time.",
+            badge_detectado: "Detected",
+            badge_ultimo: "Last used"
         },
         fr: {
             titulo: "Content de vous revoir",
@@ -88,7 +96,11 @@
             desactivada: "Votre compte a été désactivé. Contactez l'administrateur.",
             suspendida: "Votre période d'essai est terminée ou le compte de votre clinique est suspendu. Contactez l'équipe ClinicOS pour l'activer.",
             sin_clinica: "La clinique de votre compte est introuvable. Contactez l'administrateur.",
-            conexion: "Connexion impossible. Vérifiez votre internet et réessayez."
+            conexion: "Connexion impossible. Vérifiez votre internet et réessayez.",
+            gate_titulo: "Choisissez votre langue",
+            gate_sub: "Vous pouvez la modifier à tout moment.",
+            badge_detectado: "Détectée",
+            badge_ultimo: "Dernière utilisée"
         }
     };
 
@@ -102,14 +114,24 @@
         } catch (e) { /* modo privado: se ignora */ }
     }
 
-    function idiomaInicial() {
-        const guardado = leerLS("lang");
-        if (IDIOMAS.indexOf(guardado) !== -1) return guardado;
-        const nav = (navigator.language || "es").slice(0, 2).toLowerCase();
-        return IDIOMAS.indexOf(nav) !== -1 ? nav : "es";
+    function idiomaGuardado() {
+        const g = leerLS("lang");
+        return IDIOMAS.indexOf(g) !== -1 ? g : null;
     }
 
-    let lang = idiomaInicial();
+    function idiomaNavegador() {
+        const lista = (navigator.languages && navigator.languages.length) ? navigator.languages : [navigator.language || ""];
+        for (let i = 0; i < lista.length; i++) {
+            const codigo = String(lista[i] || "").slice(0, 2).toLowerCase();
+            if (IDIOMAS.indexOf(codigo) !== -1) return codigo;
+        }
+        return null;
+    }
+
+    // El idioma que se resalta al abrir: el último que usó la persona; si no hay, el del navegador
+    const guardado = idiomaGuardado();
+    const navegador = idiomaNavegador();
+    let lang = guardado || navegador || "es";
     function t(clave) {
         return (T[lang] && T[lang][clave]) || T.es[clave] || clave;
     }
@@ -284,7 +306,51 @@
         } catch (e) { /* se queda en el login */ }
     }
 
+    /* ---------- Pantalla de elección de idioma ----------
+       Aparece al entrar. Resalta el último idioma usado (o el del navegador)
+       y etiqueta cuál detectó el navegador y cuál se usó la última vez. */
+    const gate = $("langGate");
+    const vista = $("loginView");
+
+    function pintarEtiquetasIdioma() {
+        document.querySelectorAll(".lg-gate-card").forEach(function (card) {
+            const l = card.dataset.lang;
+            const badge = card.querySelector(".lg-gate-badge");
+            let texto = "";
+            if (l === navegador) texto = T[l].badge_detectado;
+            else if (l === guardado) texto = T[l].badge_ultimo;
+            badge.textContent = texto;
+            badge.hidden = !texto;
+            card.classList.toggle("is-primary", l === lang);
+        });
+    }
+
+    function abrirPantallaIdioma() {
+        gate.classList.remove("is-hidden");
+        vista.setAttribute("inert", "");
+        vista.setAttribute("aria-hidden", "true");
+        const principal = gate.querySelector('.lg-gate-card[data-lang="' + lang + '"]');
+        if (principal) principal.focus();
+    }
+
+    function cerrarPantallaIdioma() {
+        gate.classList.add("is-hidden");
+        vista.removeAttribute("inert");
+        vista.removeAttribute("aria-hidden");
+        setTimeout(function () { inputUsuario.focus(); }, 60);
+    }
+
+    document.querySelectorAll(".lg-gate-card").forEach(function (card) {
+        card.addEventListener("click", function () {
+            lang = card.dataset.lang;
+            guardarLS("lang", lang);
+            aplicarIdioma();
+            cerrarPantallaIdioma();
+        });
+    });
+
     aplicarIdioma();
-    inputUsuario.focus();
+    pintarEtiquetasIdioma();
+    abrirPantallaIdioma();
     entrarSiYaHaySesion();
 })();
