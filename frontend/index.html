@@ -172,6 +172,67 @@
     }
     .lg-lang-opt:hover, .lg-lang-opt[aria-checked="true"] { background: rgba(59, 130, 246, .14); }
 
+    /* ---------- Pantalla de elección de idioma ---------- */
+    .lg-gate {
+      position: fixed; inset: 0; z-index: 50;
+      display: flex; align-items: center; justify-content: center;
+      padding: 32px 20px; overflow-y: auto;
+      background:
+        radial-gradient(800px 480px at 0% 0%, rgba(59, 130, 246, .28), transparent 62%),
+        radial-gradient(700px 520px at 100% 100%, rgba(99, 102, 241, .24), transparent 60%),
+        linear-gradient(165deg, #0b1429 0%, #070b14 100%);
+      transition: opacity .35s ease, visibility .35s;
+    }
+    .lg-gate.is-hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+    .lg-gate-inner { width: 100%; max-width: 760px; text-align: center; margin: auto; }
+    .lg-gate-logo { display: inline-flex; align-items: center; gap: 12px; margin-bottom: 36px; }
+    .lg-gate h2 { font-size: 30px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 8px; }
+    .lg-gate-sub { color: var(--muted); font-size: 15px; margin-bottom: 36px; }
+    .lg-gate-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+    .lg-gate-card {
+      position: relative;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      padding: 28px 16px 22px; border-radius: 18px; cursor: pointer;
+      border: 1px solid var(--border); background: rgba(15, 23, 42, .55);
+      transition: transform .15s, border-color .15s, box-shadow .15s, background .15s;
+    }
+    .lg-gate-card:hover { transform: translateY(-3px); border-color: rgba(96, 165, 250, .55); background: rgba(30, 41, 59, .6); }
+    .lg-gate-card.is-primary {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, .18), 0 18px 40px rgba(59, 130, 246, .18);
+    }
+    .lg-flag {
+      grid-area: flag;
+      width: 64px; height: 64px; display: grid; place-items: center;
+      font-size: 34px; border-radius: 50%; margin-bottom: 12px;
+      background: rgba(255, 255, 255, .06); border: 1px solid var(--border);
+    }
+    .lg-gate-name { grid-area: name; font-size: 18px; font-weight: 700; }
+    .lg-gate-code { grid-area: code; font-size: 12px; color: var(--muted); letter-spacing: .08em; }
+    .lg-gate-badge {
+      grid-area: badge;
+      margin-top: 10px; padding: 3px 10px; border-radius: 999px;
+      font-size: 11.5px; font-weight: 600; color: #bfdbfe;
+      background: rgba(59, 130, 246, .18); border: 1px solid rgba(59, 130, 246, .35);
+    }
+    .lg-gate-badge[hidden] { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      .lg-gate, .lg-gate-card { transition: none; }
+      .lg-gate-card:hover { transform: none; }
+    }
+    @media (max-width: 640px) {
+      .lg-gate h2 { font-size: 26px; }
+      .lg-gate-options { grid-template-columns: 1fr; gap: 12px; }
+      .lg-gate-card {
+        display: grid; grid-template-columns: auto 1fr auto;
+        grid-template-areas: "flag name badge" "flag code badge";
+        column-gap: 14px; align-items: center; justify-items: start;
+        padding: 14px 18px; text-align: left;
+      }
+      .lg-flag { width: 52px; height: 52px; font-size: 28px; margin-bottom: 0; }
+      .lg-gate-badge { margin-top: 0; }
+    }
+
     /* ---------- Móvil y pantallas angostas ---------- */
     @media (max-width: 900px) {
       .lg-shell { grid-template-columns: 1fr; }
@@ -183,7 +244,42 @@
   </style>
 </head>
 <body>
-  <main class="lg-shell">
+
+  <!-- Pantalla de elección de idioma: aparece al entrar, con el idioma detectado resaltado -->
+  <div class="lg-gate" id="langGate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+    <div class="lg-gate-inner">
+      <div class="lg-gate-logo">
+        <span class="lg-logo-mark">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4Z"/><path d="M9 12l2 2 4-4"/></svg>
+        </span>
+        <span class="lg-logo-name">ClinicOS</span>
+      </div>
+      <h2 id="gateTitle" data-k="gate_titulo">Selecciona tu idioma</h2>
+      <p class="lg-gate-sub" data-k="gate_sub">Puedes cambiarlo en cualquier momento.</p>
+      <div class="lg-gate-options">
+        <button type="button" class="lg-gate-card" data-lang="es">
+          <span class="lg-flag">🇲🇽</span>
+          <span class="lg-gate-name">Español</span>
+          <span class="lg-gate-code">MX</span>
+          <span class="lg-gate-badge" hidden></span>
+        </button>
+        <button type="button" class="lg-gate-card" data-lang="en">
+          <span class="lg-flag">🇺🇸</span>
+          <span class="lg-gate-name">English</span>
+          <span class="lg-gate-code">US</span>
+          <span class="lg-gate-badge" hidden></span>
+        </button>
+        <button type="button" class="lg-gate-card" data-lang="fr">
+          <span class="lg-flag">🇫🇷</span>
+          <span class="lg-gate-name">Français</span>
+          <span class="lg-gate-code">FR</span>
+          <span class="lg-gate-badge" hidden></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <main class="lg-shell" id="loginView">
 
     <section class="lg-brand">
       <div class="lg-logo">
