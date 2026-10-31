@@ -174,7 +174,11 @@ function revelarContenido() {
             logout: "Cerrar sesión", nueva_cita: "Nueva cita", nuevo_paciente: "Agregar paciente",
             funcion_bloqueada: "No incluido en tu plan", desde_plan: "Disponible desde el plan",
             entendido: "Entendido",
-            tab_agenda: "Agenda", tab_calendario: "Calendario", tab_nueva: "Nueva cita", tab_solicitudes: "Solicitudes"
+            tab_agenda: "Agenda", tab_calendario: "Calendario", tab_nueva: "Nueva cita", tab_solicitudes: "Solicitudes",
+            ag_proximas: "Próximas", ag_anteriores: "Anteriores", ag_canceladas: "Canceladas",
+            ag_buscar: "Buscar paciente o motivo...", ag_hoy: "Hoy", ag_manana: "Mañana", ag_mas: "Más",
+            ag_mostrar_mas: "Mostrar más", ag_sin_resultados: "No se encontraron citas con ese filtro.",
+            ag_vacio_proximas: "No hay citas próximas.", ag_vacio_anteriores: "No hay citas anteriores.", ag_vacio_canceladas: "No hay citas canceladas."
         },
         en: {
             dashboard: "Dashboard", citas: "Appointments", lista_espera: "Waitlist", pacientes: "Patients",
@@ -183,7 +187,11 @@ function revelarContenido() {
             logout: "Log out", nueva_cita: "New appointment", nuevo_paciente: "Add patient",
             funcion_bloqueada: "Not included in your plan", desde_plan: "Available from the plan",
             entendido: "Got it",
-            tab_agenda: "Agenda", tab_calendario: "Calendar", tab_nueva: "New appointment", tab_solicitudes: "Requests"
+            tab_agenda: "Agenda", tab_calendario: "Calendar", tab_nueva: "New appointment", tab_solicitudes: "Requests",
+            ag_proximas: "Upcoming", ag_anteriores: "Past", ag_canceladas: "Cancelled",
+            ag_buscar: "Search patient or reason...", ag_hoy: "Today", ag_manana: "Tomorrow", ag_mas: "More",
+            ag_mostrar_mas: "Show more", ag_sin_resultados: "No appointments match this filter.",
+            ag_vacio_proximas: "No upcoming appointments.", ag_vacio_anteriores: "No past appointments.", ag_vacio_canceladas: "No cancelled appointments."
         },
         fr: {
             dashboard: "Tableau de bord", citas: "Rendez-vous", lista_espera: "Liste d'attente", pacientes: "Patients",
@@ -192,7 +200,11 @@ function revelarContenido() {
             logout: "Se déconnecter", nueva_cita: "Nouveau rendez-vous", nuevo_paciente: "Ajouter un patient",
             funcion_bloqueada: "Non inclus dans votre forfait", desde_plan: "Disponible à partir du forfait",
             entendido: "Compris",
-            tab_agenda: "Agenda", tab_calendario: "Calendrier", tab_nueva: "Nouveau rendez-vous", tab_solicitudes: "Demandes"
+            tab_agenda: "Agenda", tab_calendario: "Calendrier", tab_nueva: "Nouveau rendez-vous", tab_solicitudes: "Demandes",
+            ag_proximas: "À venir", ag_anteriores: "Passés", ag_canceladas: "Annulés",
+            ag_buscar: "Rechercher un patient ou un motif...", ag_hoy: "Aujourd'hui", ag_manana: "Demain", ag_mas: "Plus",
+            ag_mostrar_mas: "Afficher plus", ag_sin_resultados: "Aucun rendez-vous ne correspond à ce filtre.",
+            ag_vacio_proximas: "Aucun rendez-vous à venir.", ag_vacio_anteriores: "Aucun rendez-vous passé.", ag_vacio_canceladas: "Aucun rendez-vous annulé."
         }
     };
     function t(clave) {
@@ -202,6 +214,7 @@ function revelarContenido() {
     }
     function traducirEtiquetas() {
         document.querySelectorAll("[data-k]").forEach(function (el) { el.textContent = t(el.dataset.k); });
+        document.querySelectorAll("[data-kph]").forEach(function (el) { el.placeholder = t(el.dataset.kph); });
         document.querySelectorAll("[data-ktitle]").forEach(function (el) {
             const s = t(el.dataset.ktitle);
             el.title = s;
@@ -209,6 +222,7 @@ function revelarContenido() {
         });
     }
     window.traducirEtiquetas = traducirEtiquetas;
+    window.tLayout = t;
 
     /* ---------- Iconos ---------- */
     const I = {
@@ -416,6 +430,10 @@ function revelarContenido() {
 .plan-aviso .plan-aviso-icon svg { width: 20px; height: 20px; }
 .plan-aviso h3 { margin: 0 0 8px; font-size: 17px; }
 .plan-aviso p { margin: 0 0 20px; font-size: 14px; color: #94a3b8; }
+
+/* Los campos de fecha y hora usan colores claros (el botón del calendario se ve en el tema oscuro) */
+input[type="date"], input[type="time"], input[type="month"], input[type="datetime-local"] { color-scheme: dark; }
+input[type="date"]::-webkit-calendar-picker-indicator, input[type="time"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: .9; }
 
 /* Todo elemento con data-requiere="funcion" se oculta si el plan no la incluye */
 ` + ocultar;
