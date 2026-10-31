@@ -58,7 +58,7 @@ async function cargarAlergiasClinica() {
 function badgeAlergiaHTML(pacienteId) {
     const alergias = alergiasPorPaciente[pacienteId];
     if (!alergias || alergias.length === 0) return "";
-    const detalle = alergias.join(" · ").replace(/"/g, "&quot;");
+    const detalle = escHTML(alergias.join(" · "));
     return `<div class="appt-today-badge" style="background:rgba(239,68,68,0.28); color:#fecaca; border-color:rgba(239,68,68,0.6); font-weight:bold;" title="${detalle}">⚠️ ${detalle}</div>`;
 }
 
@@ -564,9 +564,274 @@ async function archivarCitasVencidas() {
     }
 }
 
+/* =========================================================
+   AGENDA | vista ordenada
+   Próximas / Anteriores / Canceladas, agrupadas por día,
+   con búsqueda por paciente o motivo y filtro por médico.
+========================================================= */
+let agendaVista = "proximas";   // proximas | anteriores | canceladas
+let agendaLimite = 50;          // filas que se muestran en Anteriores / Canceladas
+let agendaCache = { citas: [], pacientes: [] };
+
+const ICONOS_AGENDA = {
+    whatsapp: '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+    editar: '<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/>',
+    ok: '<path d="M20 6 9 17l-5-5"/>',
+    no: '<path d="M18 6 6 18M6 6l12 12"/>',
+    cobro: '<rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/>',
+    borrar: '<path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>'
+};
+
+function svgAgenda(nombre) {
+    return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + ICONOS_AGENDA[nombre] + '</svg>';
+}
+
+// Textos propios de la agenda (es / en / fr) que vienen de layout.js
+function tl(clave) {
+    return typeof window.tLayout === "function" ? window.tLayout(clave) : clave;
+}
+
+function escHTML(valor) {
+    return String(valor === undefined || valor === null ? "" : valor)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function quitarAcentos(texto) {
+    return String(texto || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+}
+
+function localeActual() {
+    const lang = localStorage.getItem("lang") || "es";
+    return lang === "es" ? "es-MX" : (lang === "fr" ? "fr-FR" : "en-US");
+}
+
+function etiquetaDiaLarga(fechaISO) {
+    const partes = String(fechaISO || "").split("-").map(Number);
+    if (partes.length !== 3 || !partes[0] || !partes[1] || !partes[2]) return String(fechaISO || "");
+    const txt = new Date(partes[0], partes[1] - 1, partes[2])
+        .toLocaleDateString(localeActual(), { weekday: "long", day: "numeric", month: "long" });
+    return txt.charAt(0).toUpperCase() + txt.slice(1);
+}
+
+function chipAgenda(clase, texto, requiere) {
+    return '<span class="ag-chip ' + clase + '"' + (requiere ? ' data-requiere="' + requiere + '"' : "") + ">" + escHTML(texto) + "</span>";
+}
+
+function botonAgenda(clase, onclick, icono, texto, requiere) {
+    return '<button type="button" class="ag-btn ' + clase + '"' + (requiere ? ' data-requiere="' + requiere + '"' : "") +
+        ' onclick="' + onclick + '">' + (icono ? svgAgenda(icono) : "") + "<span>" + escHTML(texto) + "</span></button>";
+}
+
+function filaAgenda(c, paciente) {
+    const nombre = (paciente && paciente.nombre) || "Paciente no identificado";
+    const telefono = (paciente && paciente.telefono) || "";
+    const cancelada = c.estado === "cancelada";
+    const completada = c.estado === "completada";
+    const confirmada = c.estado === "confirmada";
+    const manana = esCitaManana(c.fecha);
+    const medico = nombreMedico(c.medico_id);
+    const color = colorAvatar(nombre);
+
+    // ----- Etiquetas (chips) -----
+    const chips = [];
+    if (cancelada) chips.push(chipAgenda("ag-chip-red", t("cita_cancelada_badge")));
+    else if (confirmada) chips.push(chipAgenda("ag-chip-green", t("cita_confirmada_badge")));
+    else if (!completada) chips.push(chipAgenda("ag-chip-gray", t("cita_pendiente_badge")));
+
+    if (completada) {
+        if (c.asistio === true) chips.push(chipAgenda("ag-chip-green", t("asistio_badge"), "asistencia"));
+        else if (c.asistio === false) chips.push(chipAgenda("ag-chip-red", t("no_asistio_badge"), "asistencia"));
+        else chips.push(chipAgenda("ag-chip-gray", t("sin_marcar_badge"), "asistencia"));
+    }
+
+    if (!cancelada) {
+        const pago = (c.tipo_pago === "seguro" ? t("tipo_pago_seguro") : t("tipo_pago_particular")) +
+            ((c.monto && puedeVerMontos) ? " — Q" + Number(c.monto).toFixed(2) : "");
+        chips.push(chipAgenda("ag-chip-indigo", pago, "cobros"));
+        chips.push(c.cobrado
+            ? chipAgenda("ag-chip-green", t("cobrado_badge"), "cobros")
+            : chipAgenda("ag-chip-amber", t("pendiente_cobro_badge"), "cobros"));
+        if (c.whatsapp_enviado) chips.push(chipAgenda("ag-chip-wa", t("whatsapp_ya_enviado_badge")));
+        else if (manana && !completada) chips.push(chipAgenda("ag-chip-amber", t("whatsapp_badge_pendiente")));
+        if (medico) chips.push(chipAgenda("ag-chip-violet", "👨‍⚕️ " + medico));
+    }
+
+    // ----- Botones -----
+    const id = "'" + c.id + "'";
+    const pagar = botonAgenda("ag-btn-pay", "marcarCobrado(" + id + ")", "cobro", t("marcar_cobrado_btn"), "cobros");
+    let acciones = "";
+
+    if (cancelada) {
+        acciones = botonAgenda("ag-btn-danger", "eliminarCita(" + id + ")", "borrar", t("eliminar_de_lista_btn"));
+    } else if (completada) {
+        acciones =
+            botonAgenda("ag-btn-ok", "marcarAsistencia(" + id + ", true)", "ok", t("asistio_btn"), "asistencia") +
+            botonAgenda("ag-btn-no", "marcarAsistencia(" + id + ", false)", "no", t("no_asistio_btn"), "asistencia") +
+            (c.cobrado ? "" : pagar);
+    } else {
+        const whatsapp = botonAgenda("ag-btn-wa",
+            "enviarWhatsAppRecordatorio(" + id + ", " + jsStringParaOnclick(telefono) + ", " + jsStringParaOnclick(nombre) + ", " + jsStringParaOnclick(c.fecha) + ", " + jsStringParaOnclick(c.hora) + ")",
+            "whatsapp", c.whatsapp_enviado ? t("whatsapp_reenviar_btn") : t("whatsapp_btn"));
+        const editar = botonAgenda("",
+            "editarCita(" + id + ", '" + c.paciente_id + "', " + jsStringParaOnclick(c.fecha) + ", " + jsStringParaOnclick(c.hora) + ", " + jsStringParaOnclick(c.hora_fin || "") + ", " + jsStringParaOnclick(c.motivo) + ")",
+            "editar", t("editar_cita_btn") || "Editar");
+        const cancelar = botonAgenda("ag-btn-danger", "eliminarCita(" + id + ")", "borrar", t("cancelar_cita_btn") || "Cancelar");
+        const menu = (c.cobrado ? "" : pagar) + cancelar;
+        acciones = whatsapp + editar +
+            '<details class="ag-more"><summary aria-label="' + escHTML(tl("ag_mas")) + '">⋯</summary><div class="ag-menu">' + menu + "</div></details>";
+    }
+
+    return '<div class="ag-row' + (cancelada ? " is-cancelada" : "") + (completada ? " is-completada" : "") + '">' +
+        '<div class="ag-time"><strong>' + escHTML(formatearHora(c.hora)) + "</strong>" +
+            (c.hora_fin ? "<span>– " + escHTML(formatearHora(c.hora_fin)) + "</span>" : "") + "</div>" +
+        '<div class="ag-main">' +
+            '<div class="ag-who"><span class="ag-avatar" style="background:' + color + "20; color:" + color + "; border-color:" + color + '40;">' + escHTML(iniciales(nombre)) + "</span>" +
+            '<span class="ag-name">' + escHTML(nombre) + "</span></div>" +
+            '<div class="ag-alerta">' + badgeAlergiaHTML(c.paciente_id) + "</div>" +
+            (c.motivo ? '<div class="ag-motivo">' + escHTML(c.motivo) + "</div>" : "") +
+            '<div class="ag-chips">' + chips.join("") + "</div>" +
+        "</div>" +
+        '<div class="ag-actions">' + acciones + "</div>" +
+    "</div>";
+}
+
+function pintarAgenda() {
+    if (!listaCitas) return;
+
+    const hoyStr = fechaLocalISO(new Date());
+    const diaSig = new Date();
+    diaSig.setDate(diaSig.getDate() + 1);
+    const mananaStr = fechaLocalISO(diaSig);
+
+    const mapaPac = {};
+    (agendaCache.pacientes || []).forEach(function (p) { mapaPac[Number(p.id)] = p; });
+
+    // ----- Filtros -----
+    const selMedico = document.getElementById("filtroMedicoAgenda");
+    const medicoValor = selMedico ? selMedico.value : "";
+    const inputBuscar = document.getElementById("agBuscar");
+    const termino = quitarAcentos(inputBuscar ? inputBuscar.value.trim() : "");
+
+    let citasFiltradas = agendaCache.citas || [];
+    if (medicoValor) citasFiltradas = citasFiltradas.filter(function (c) { return c.medico_id === medicoValor; });
+    if (termino) {
+        citasFiltradas = citasFiltradas.filter(function (c) {
+            const p = mapaPac[Number(c.paciente_id)];
+            return quitarAcentos(p && p.nombre).indexOf(termino) !== -1 || quitarAcentos(c.motivo).indexOf(termino) !== -1;
+        });
+    }
+
+    // ----- Reparto en Próximas / Anteriores / Canceladas -----
+    const proximas = [], anteriores = [], canceladas = [];
+    citasFiltradas.forEach(function (c) {
+        if (c.estado === "cancelada") canceladas.push(c);
+        else if (c.estado === "completada" || String(c.fecha) < hoyStr) anteriores.push(c);
+        else proximas.push(c);
+    });
+    const clave = function (c) { return String(c.fecha) + " " + String(c.hora); };
+    proximas.sort(function (a, b) { return clave(a).localeCompare(clave(b)); });
+    anteriores.sort(function (a, b) { return clave(b).localeCompare(clave(a)); });
+    canceladas.sort(function (a, b) { return clave(b).localeCompare(clave(a)); });
+
+    const poner = function (id, n) { const el = document.getElementById(id); if (el) el.textContent = n; };
+    poner("agCountProximas", proximas.length);
+    poner("agCountAnteriores", anteriores.length);
+    poner("agCountCanceladas", canceladas.length);
+
+    // ----- Resumen: hoy y mañana (sin contar canceladas) -----
+    const baseResumen = (agendaCache.citas || []).filter(function (c) { return c.estado !== "cancelada"; });
+    const nHoy = baseResumen.filter(function (c) { return c.fecha === hoyStr; }).length;
+    const nManana = baseResumen.filter(function (c) { return c.fecha === mananaStr; }).length;
+    const resumen = document.getElementById("agResumen");
+    if (resumen) {
+        resumen.innerHTML =
+            '<span class="ag-pill' + (nHoy ? " is-hoy" : "") + '"><b>' + nHoy + "</b> " + escHTML(tl("ag_hoy")) + "</span>" +
+            '<span class="ag-pill"><b>' + nManana + "</b> " + escHTML(tl("ag_manana")) + "</span>";
+    }
+
+    const placeholder = tl("ag_buscar");
+    if (inputBuscar && placeholder !== "ag_buscar") inputBuscar.placeholder = placeholder;
+
+    // ----- Lista de la pestaña activa -----
+    const listas = { proximas: proximas, anteriores: anteriores, canceladas: canceladas };
+    const activa = listas[agendaVista] || proximas;
+    listaCitas.innerHTML = "";
+
+    if (agendaVista === "proximas") {
+        const pendientesManana = proximas.filter(function (c) { return esCitaManana(c.fecha) && !c.whatsapp_enviado; });
+        if (pendientesManana.length > 0) {
+            listaCitas.insertAdjacentHTML("beforeend",
+                '<div class="ag-aviso">⚠️ ' + escHTML(t("whatsapp_pendiente_banner").replace("{n}", pendientesManana.length)) + "</div>");
+        }
+    }
+
+    if (!activa.length) {
+        let msg;
+        if (!(agendaCache.citas || []).length) msg = t("sin_citas");
+        else if (termino || medicoValor) msg = tl("ag_sin_resultados");
+        else msg = tl("ag_vacio_" + agendaVista);
+        listaCitas.insertAdjacentHTML("beforeend", '<div class="ag-empty">' + escHTML(msg) + "</div>");
+        return;
+    }
+
+    const limite = agendaVista === "proximas" ? Infinity : agendaLimite;
+    const visibles = activa.slice(0, limite);
+
+    const grupos = [];
+    visibles.forEach(function (c) {
+        let g = grupos[grupos.length - 1];
+        if (!g || g.fecha !== c.fecha) { g = { fecha: c.fecha, items: [] }; grupos.push(g); }
+        g.items.push(c);
+    });
+
+    let html = "";
+    grupos.forEach(function (g) {
+        const larga = etiquetaDiaLarga(g.fecha);
+        const relativo = agendaVista === "proximas";
+        const esHoy = relativo && g.fecha === hoyStr;
+        const titulo = relativo && g.fecha === hoyStr ? tl("ag_hoy") : (relativo && g.fecha === mananaStr ? tl("ag_manana") : larga);
+        const sub = titulo !== larga ? larga : "";
+        html += '<div class="ag-day' + (esHoy ? " is-hoy" : "") + '"><h3>' + escHTML(titulo) + "</h3>" +
+            (sub ? "<span>" + escHTML(sub) + "</span>" : "") +
+            '<span class="ag-day-count">' + g.items.length + "</span></div>";
+        g.items.forEach(function (c) { html += filaAgenda(c, mapaPac[Number(c.paciente_id)]); });
+    });
+
+    if (activa.length > visibles.length) {
+        html += '<div class="ag-mas"><button type="button" class="ag-btn" onclick="mostrarMasAgenda()">' +
+            escHTML(tl("ag_mostrar_mas")) + " (" + (activa.length - visibles.length) + ")</button></div>";
+    }
+    listaCitas.insertAdjacentHTML("beforeend", html);
+}
+
+function cambiarVistaAgenda(vista) {
+    agendaVista = vista;
+    agendaLimite = 50;
+    document.querySelectorAll("#agTabs .ag-tab").forEach(function (b) {
+        b.classList.toggle("active", b.dataset.vista === vista);
+    });
+    pintarAgenda();
+}
+
+function mostrarMasAgenda() {
+    agendaLimite += 50;
+    pintarAgenda();
+}
+
+// Cierra el menú "⋯" al tocar fuera de él
+document.addEventListener("click", function (e) {
+    document.querySelectorAll(".ag-more[open]").forEach(function (d) {
+        if (!d.contains(e.target)) d.removeAttribute("open");
+    });
+});
+
+// Carga los datos y pinta. Los filtros y pestañas solo repintan (pintarAgenda), sin volver a pedir datos.
 async function render() {
     if (!listaCitas) return;
-    listaCitas.innerHTML = "";
 
     await archivarCitasVencidas();
 
@@ -578,130 +843,13 @@ async function render() {
         return;
     }
 
-    if (!citasCloud || citasCloud.length === 0) {
-        listaCitas.innerHTML = `<div class='card'><p style='text-align:center; opacity:0.6;'>${t("sin_citas")}</p></div>`;
-        return;
-    }
-
-    const pendientesManana = citasCloud.filter(c => esCitaManana(c.fecha) && !c.whatsapp_enviado && c.estado !== 'cancelada');
-    if (pendientesManana.length > 0) {
-        const banner = document.createElement("div");
-        banner.style.cssText = "background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.35); border-radius:10px; padding:12px 14px; margin-bottom:14px; font-size:13px; color:#fbbf24; font-weight:600;";
-        banner.innerHTML = `⚠️ ${t("whatsapp_pendiente_banner").replace("{n}", pendientesManana.length)}`;
-        listaCitas.appendChild(banner);
-    }
-
     const { data: pacientesData } = await supabaseClient
         .from('pacientes')
         .select('id, nombre, telefono')
         .eq('clinica_id', clinicaID);
 
-    const filtroMedicoSel = document.getElementById("filtroMedicoAgenda");
-    const filtroMedicoValor = filtroMedicoSel ? filtroMedicoSel.value : "";
-    const citasFiltradas = filtroMedicoValor
-        ? citasCloud.filter(c => c.medico_id === filtroMedicoValor)
-        : citasCloud;
-
-    citasFiltradas.forEach((c) => {
-        const paciente = pacientesData
-            ? pacientesData.find(p => Number(p.id) === Number(c.paciente_id))
-            : null;
-        const nombrePaciente = paciente ? paciente.nombre : "Paciente no identificado";
-        const hoy = esCitaHoy(c.fecha);
-        const confirmada = c.estado === "confirmada";
-        const cancelada = c.estado === "cancelada";
-        const completada = c.estado === "completada";
-
-        const div = document.createElement("div");
-        div.className = "appt-card";
-        if (cancelada) {
-            div.style.border = "2px solid #ef4444";
-            div.style.background = "rgba(239,68,68,0.06)";
-        }
-        if (completada) {
-            div.style.opacity = "0.85";
-        }
-        div.innerHTML = `
-            <div class="appt-card-top">
-                <div class="patient-identity">
-                    <div class="patient-avatar" style="background:${colorAvatar(nombrePaciente)}20; color:${colorAvatar(nombrePaciente)}; border-color:${colorAvatar(nombrePaciente)}40;">
-                        ${iniciales(nombrePaciente)}
-                    </div>
-                    <div>
-                        <div class="patient-name">${nombrePaciente}</div>
-                        <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px; align-items:flex-start;">
-                            ${badgeAlergiaHTML(c.paciente_id)}
-                            ${hoy ? `<div class="appt-today-badge">${t("hoy") || "Hoy"}</div>` : ""}
-                            ${confirmada ? `<div class="appt-today-badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cita_confirmada_badge")}</div>` : ""}
-                            ${cancelada ? `<div class="appt-today-badge" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("cita_cancelada_badge")}</div>` : ""}
-                            ${!confirmada && !cancelada && !completada ? `<div class="appt-today-badge" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("cita_pendiente_badge")}</div>` : ""}
-                            ${completada && c.asistio === true ? `<div class="appt-today-badge" data-requiere="asistencia" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("asistio_badge")}</div>` : ""}
-                            ${completada && c.asistio === false ? `<div class="appt-today-badge" data-requiere="asistencia" style="background:rgba(239,68,68,0.18); color:#ef4444; border-color:rgba(239,68,68,0.4); font-weight:bold;">${t("no_asistio_badge")}</div>` : ""}
-                            ${completada && (c.asistio === null || c.asistio === undefined) ? `<div class="appt-today-badge" data-requiere="asistencia" style="background:rgba(148,163,184,0.15); color:#94a3b8; border-color:rgba(148,163,184,0.3);">${t("sin_marcar_badge")}</div>` : ""}
-                            ${!cancelada && c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);">${t("whatsapp_ya_enviado_badge")}</div>` : ""}
-                            ${!cancelada && esCitaManana(c.fecha) && !c.whatsapp_enviado ? `<div class="appt-today-badge" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("whatsapp_badge_pendiente")}</div>` : ""}
-                            ${!cancelada ? `<div class="appt-today-badge" data-requiere="cobros" style="background:rgba(99,102,241,0.15); color:#818cf8; border-color:rgba(99,102,241,0.35);">${c.tipo_pago === "seguro" ? t("tipo_pago_seguro") : t("tipo_pago_particular")}${(c.monto && puedeVerMontos) ? ` — Q${Number(c.monto).toFixed(2)}` : ""}</div>` : ""}
-                            ${!cancelada && c.cobrado ? `<div class="appt-today-badge" data-requiere="cobros" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.3);">${t("cobrado_badge")}</div>` : ""}
-                            ${!cancelada && !c.cobrado ? `<div class="appt-today-badge" data-requiere="cobros" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);">${t("pendiente_cobro_badge")}</div>` : ""}
-                            ${!cancelada && nombreMedico(c.medico_id) ? `<div class="appt-today-badge" style="background:rgba(139,92,246,0.15); color:#a78bfa; border-color:rgba(139,92,246,0.35);">👨‍⚕️ ${nombreMedico(c.medico_id)}</div>` : ""}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="appt-tags">
-                <span class="appt-chip appt-chip-date">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-                    ${formatearFecha(c.fecha)}
-                </span>
-                <span class="appt-chip appt-chip-time">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                    ${formatearRangoHora(c.hora, c.hora_fin)}
-                </span>
-            </div>
-
-            ${c.motivo ? `<p class="appt-motivo">${c.motivo}</p>` : ""}
-
-            <div class="patient-actions">
-                ${completada ? `
-                <button type="button" class="btn-action" data-requiere="asistencia" style="background:rgba(34,197,94,0.15); color:#22c55e; border-color:rgba(34,197,94,0.35);" onclick="marcarAsistencia('${c.id}', true)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                    ${t("asistio_btn")}
-                </button>
-                <button type="button" class="btn-action" data-requiere="asistencia" style="background:rgba(239,68,68,0.15); color:#ef4444; border-color:rgba(239,68,68,0.35);" onclick="marcarAsistencia('${c.id}', false)">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-                    ${t("no_asistio_btn")}
-                </button>
-                ${!c.cobrado ? `
-                <button type="button" class="btn-action" data-requiere="cobros" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    ${t("marcar_cobrado_btn")}
-                </button>` : ""}
-                ` : `
-                ${!cancelada && !c.cobrado ? `
-                <button type="button" class="btn-action" data-requiere="cobros" style="background:rgba(245,158,11,0.15); color:#f59e0b; border-color:rgba(245,158,11,0.35);" onclick="marcarCobrado('${c.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
-                    ${t("marcar_cobrado_btn")}
-                </button>` : ""}
-                ${!cancelada ? `
-                <button type="button" class="btn-action" style="background:rgba(37,211,102,0.15); color:#25d366; border-color:rgba(37,211,102,0.35);" onclick="enviarWhatsAppRecordatorio('${c.id}', '${(paciente && paciente.telefono) || ''}', ${jsStringParaOnclick(nombrePaciente)}, '${c.fecha}', '${c.hora}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                    ${c.whatsapp_enviado ? t("whatsapp_reenviar_btn") : t("whatsapp_btn")}
-                </button>` : ""}
-                ${!cancelada ? `
-                <button type="button" class="btn-action" onclick="editarCita('${c.id}', '${c.paciente_id}', '${c.fecha}', '${c.hora}', '${c.hora_fin || ''}', ${jsStringParaOnclick(c.motivo)})">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>
-                    ${t("editar_cita_btn") || "Editar"}
-                </button>` : ""}
-                <button type="button" class="btn-action btn-action-danger" onclick="eliminarCita('${c.id}')">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-                    ${cancelada ? t("eliminar_de_lista_btn") : (t("cancelar_cita_btn") || "Cancelar")}
-                </button>
-                `}
-            </div>
-        `;
-        listaCitas.appendChild(div);
-    });
+    agendaCache = { citas: citasCloud || [], pacientes: pacientesData || [] };
+    pintarAgenda();
 }
 
 async function actualizarBadgeSolicitudes() {
@@ -963,7 +1111,7 @@ function renderCalendario() {
                     : '';
             const icono = esCancelada ? "❌ " : esConfirmada ? "✅ " : "";
             const iconoAlergia = tieneAlergia ? "⚠️ " : "";
-            const tituloAlergia = tieneAlergia ? (alergiasPorPaciente[c.paciente_id] || []).join(' · ').replace(/"/g, '&quot;') : '';
+            const tituloAlergia = tieneAlergia ? escHTML((alergiasPorPaciente[c.paciente_id] || []).join(' · ')) : '';
             chipsHtml += `<div class="calendar-appt-chip"${estiloChip} title="${tituloAlergia}">${iconoAlergia}${icono}${formatearHora(c.hora)} · ${nombre.split(" ")[0]}</div>`;
         });
         if (citasDia.length > maxVisible) {
