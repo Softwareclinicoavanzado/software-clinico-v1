@@ -42,7 +42,8 @@
             gate_titulo: "Selecciona tu idioma",
             gate_sub: "Puedes cambiarlo en cualquier momento.",
             badge_detectado: "Detectado",
-            badge_ultimo: "Último usado"
+            badge_ultimo: "Último usado",
+            sesion_expirada: "Tu sesión expiró. Inicia sesión de nuevo."
         },
         en: {
             titulo: "Welcome back",
@@ -71,7 +72,8 @@
             gate_titulo: "Select your language",
             gate_sub: "You can change it at any time.",
             badge_detectado: "Detected",
-            badge_ultimo: "Last used"
+            badge_ultimo: "Last used",
+            sesion_expirada: "Your session expired. Please sign in again."
         },
         fr: {
             titulo: "Content de vous revoir",
@@ -100,7 +102,8 @@
             gate_titulo: "Choisissez votre langue",
             gate_sub: "Vous pouvez la modifier à tout moment.",
             badge_detectado: "Détectée",
-            badge_ultimo: "Dernière utilisée"
+            badge_ultimo: "Dernière utilisée",
+            sesion_expirada: "Votre session a expiré. Veuillez vous reconnecter."
         }
     };
 
@@ -132,6 +135,8 @@
     const guardado = idiomaGuardado();
     const navegador = idiomaNavegador();
     let lang = guardado || navegador || "es";
+    // Aviso que viene del redirect de session.js cuando la sesión venció
+    let avisoInicial = new URLSearchParams(window.location.search).get("sesion") === "expirada" ? "sesion_expirada" : null;
     function t(clave) {
         return (T[lang] && T[lang][clave]) || T.es[clave] || clave;
     }
@@ -161,6 +166,7 @@
             btnToggle.setAttribute("aria-label", t(visible ? "ocultar" : "mostrar"));
         }
         if (btnLogin && btnLogin.disabled) $("loginBtnText").textContent = t("ingresando");
+        if (avisoInicial && errorBox) errorBox.textContent = t(avisoInicial);
     }
 
     function cambiarIdioma(nuevo) {
@@ -235,6 +241,7 @@
 
     async function iniciarSesion(ev) {
         ev.preventDefault();
+        avisoInicial = null;
         showError("");
 
         const email = inputUsuario.value.trim();
