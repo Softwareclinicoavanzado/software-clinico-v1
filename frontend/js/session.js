@@ -72,6 +72,24 @@ async function leerInfoClinica(clinicaID) {
   return d && d.data ? d.data : null;
 }
 
+/* Comprueba que exista una sesión REAL de Supabase. Si solo quedan datos viejos en el
+   navegador (la sesión venció o se cerró en otro lado), el dashboard se veía vacío en
+   silencio: ahora se limpia todo y se vuelve al login con un aviso. */
+async function verificarSesionReal() {
+  if (typeof supabaseClient === "undefined") return true;
+  try {
+    const { data } = await supabaseClient.auth.getSession();
+    if (!data || !data.session) {
+      Object.values(SESSION).forEach(k => localStorage.removeItem(k));
+      window.location.replace("./index.html?sesion=expirada");
+      return false;
+    }
+  } catch (e) {
+    console.warn("No se pudo comprobar la sesión:", e);
+  }
+  return true;
+}
+
 function guardarSiHayValor(clave, valor) {
   if (valor === undefined || valor === null || valor === "") localStorage.removeItem(clave);
   else localStorage.setItem(clave, String(valor));
@@ -107,12 +125,12 @@ async function cargarPlanClinica() {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   verificarSesion();
   ["click", "keydown", "mousemove"].forEach(evt =>
     document.addEventListener(evt, actualizarActividad)
   );
   actualizarActividad();
   setInterval(verificarInactividad, 60000);
-  cargarPlanClinica();
+  if (await verificarSesionReal()) cargarPlanClinica();
 });
