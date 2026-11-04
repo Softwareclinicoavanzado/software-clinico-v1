@@ -58,6 +58,7 @@ const TXT_PUBLICO = {
         err_hora: "Elige una hora disponible.",
         err_motivo: "Cuéntanos el motivo de tu cita (mínimo 3 letras).",
         hora_pasada: "Esta hora ya pasó",
+        hint_fecha: "Toca aquí para elegir el día",
         clinica_no_disponible: "Esta clínica no está recibiendo solicitudes por ahora. Contáctala directamente."
     },
     en: {
@@ -72,6 +73,7 @@ const TXT_PUBLICO = {
         err_hora: "Choose an available time.",
         err_motivo: "Tell us the reason for your appointment (at least 3 letters).",
         hora_pasada: "This time has already passed",
+        hint_fecha: "Tap here to choose the day",
         clinica_no_disponible: "This clinic is not accepting requests right now. Please contact them directly."
     },
     fr: {
@@ -86,6 +88,7 @@ const TXT_PUBLICO = {
         err_hora: "Choisissez un horaire disponible.",
         err_motivo: "Indiquez le motif de votre rendez-vous (au moins 3 lettres).",
         hora_pasada: "Cet horaire est déjà passé",
+        hint_fecha: "Touchez ici pour choisir le jour",
         clinica_no_disponible: "Cette clinique n'accepte pas de demandes pour le moment. Veuillez la contacter directement."
     }
 };
@@ -194,6 +197,7 @@ function aplicarTextosPublico() {
     ponerTextoPublico("txtTitulo", t("publico_titulo"));
     ponerTextoPublico("txtSubtitulo", t("publico_subtitulo"));
     ponerTextoPublico("txtObligatorios", tp("obligatorios"));
+    ponerTextoPublico("txtHintFecha", tp("hint_fecha"));
     ponerEtiquetaPublico("lblNombre", t("nombre_completo"), true);
     ponerEtiquetaPublico("lblTelefono", t("telefono_label"), true);
     ponerEtiquetaPublico("lblEmail", tp("email_label"), true);
@@ -470,6 +474,23 @@ document.addEventListener("DOMContentLoaded", () => {
         limpiarErrorCampoPublico("pubFecha");
         limpiarErrorCampoPublico("pubPanelHoras");
         cargarHorasOcupadasPublico();
+    });
+
+    // La flecha con texto se oculta cuando ya se eligió un día
+    const actualizarAvisoFecha = () => {
+        const aviso = document.getElementById("pubHintFecha");
+        if (aviso) aviso.classList.toggle("oculto", !!inputFecha.value);
+    };
+    inputFecha.addEventListener("change", actualizarAvisoFecha);
+    inputFecha.addEventListener("input", actualizarAvisoFecha);
+
+    // Al tocar cualquier parte del campo se abre el calendario (no solo el iconito)
+    inputFecha.addEventListener("click", (e) => {
+        const caja = inputFecha.getBoundingClientRect();
+        if (e.clientX > caja.right - 44) return; // el iconito ya lo abre solo
+        if (typeof inputFecha.showPicker === "function") {
+            try { inputFecha.showPicker(); } catch (err) { /* el navegador no lo permitió */ }
+        }
     });
 
     // El aviso de cada campo desaparece cuando la persona lo corrige
