@@ -621,9 +621,14 @@ function chipAgenda(clase, texto, requiere) {
     return '<span class="ag-chip ' + clase + '"' + (requiere ? ' data-requiere="' + requiere + '"' : "") + ">" + escHTML(texto) + "</span>";
 }
 
+// Los textos traducidos traen un emoji al inicio; como el botón ya tiene su ícono, se quita
+function sinEmojiInicial(texto) {
+    return String(texto === undefined || texto === null ? "" : texto).replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, "");
+}
+
 function botonAgenda(clase, onclick, icono, texto, requiere) {
     return '<button type="button" class="ag-btn ' + clase + '"' + (requiere ? ' data-requiere="' + requiere + '"' : "") +
-        ' onclick="' + onclick + '">' + (icono ? svgAgenda(icono) : "") + "<span>" + escHTML(texto) + "</span></button>";
+        ' onclick="' + onclick + '">' + (icono ? svgAgenda(icono) : "") + "<span>" + escHTML(icono ? sinEmojiInicial(texto) : texto) + "</span></button>";
 }
 
 function filaAgenda(c, paciente) {
