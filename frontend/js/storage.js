@@ -4,7 +4,9 @@
 const STORAGE_VERSION = "1.3.1";
 
 const supabaseUrl = 'https://klaygjvawybfksmahbhd.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsYXlnanZhd3liZmtzbWFoYmhkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU3NTcyNDUsImV4cCI6MjA5MTMzMzI0NX0.YKwGPFw29rsxe-mfyga5jTGIQYM7SNFDXvogE2WAx1Y';
+// Llave PUBLICABLE (reemplaza a la llave "anon" vieja). Es pública por diseño:
+// la seguridad real está en las políticas RLS de la base de datos.
+const supabaseKey = 'sb_publishable_ZoyBvw_JncKIesGmjEpEuA_dSIZZV4Z';
 
 // ✅ Renombrado a supabaseClient para evitar conflicto con el SDK global
 const supabaseClient = window.supabase.createClient(supabaseUrl, supabaseKey);
